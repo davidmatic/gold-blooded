@@ -14,6 +14,7 @@ interface Fixture {
 const FIXTURES: Partial<Record<JobType, URL>> = {
   "daily-news": new URL("./fixtures/daily-news.json", import.meta.url),
   "thursday-preview": new URL("./fixtures/thursday-preview.json", import.meta.url),
+  offseason: new URL("./fixtures/offseason.json", import.meta.url),
 };
 
 async function loadFixture(job: JobType): Promise<Fixture> {

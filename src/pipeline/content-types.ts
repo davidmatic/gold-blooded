@@ -3,6 +3,8 @@
 import type { z } from "astro/zod";
 import { GAME_WEEK_FILES, gamePreviewSchema, seasonRecapSchema } from "../content/game-week";
 import { newsSummarySchema } from "../content/news-summary";
+import { draftCoverageSchema, draftDates, freeAgencyTrackerSchema, OFFSEASON_FILES, offseasonYear } from "../content/offseason";
+import { mergeDraftCoverage, mergeFreeAgencyTracker } from "./running-documents";
 import { gameWeekSlug, seasonRecord, type ScheduledGame } from "./calendar";
 import type { ContentType, Job, SourceSnapshot } from "./types";
 
@@ -14,6 +16,11 @@ interface ContentTypeDefinition {
   path(data: Record<string, unknown>, job: Job): string;
   /** A run writes exactly one of these (a Game Week Page has one Game Preview). */
   single?: boolean;
+  /**
+   * For a running document: folds the writer's update into the document as it stood (from the
+   * snapshot), before the owned fields are filled in. Without it the draft is the whole entry.
+   */
+  merge?(draft: Record<string, unknown>, snapshot: SourceSnapshot): Record<string, unknown>;
 }
 
 export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
@@ -66,7 +73,28 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
     },
     path: (data) => `game-weeks/${data.gameWeek}/${GAME_WEEK_FILES["season-recap"]}`,
   },
+  "free-agency-tracker": {
+    schema: freeAgencyTrackerSchema,
+    single: true,
+    merge: (draft, snapshot) => mergeFreeAgencyTracker(draft, snapshot.current?.["free-agency-tracker"]?.data),
+    owned: (job) => offseasonOwned(job, "Free Agency Tracker"),
+    path: (data) => `offseason/${data.offseason}/${OFFSEASON_FILES["free-agency-tracker"]}`,
+  },
+  "draft-coverage": {
+    schema: draftCoverageSchema,
+    single: true,
+    merge: (draft, snapshot) => mergeDraftCoverage(draft, snapshot.current?.["draft-coverage"]?.data),
+    owned: (job) => ({ ...offseasonOwned(job, "Draft Coverage"), draft: draftDates(offseasonYear(job.date)) }),
+    path: (data) => `offseason/${data.offseason}/${OFFSEASON_FILES["draft-coverage"]}`,
+  },
 };
+
+/** Fields the pipeline owns on both Offseason running documents. */
+function offseasonOwned(job: Job, name: string) {
+  if (job.calendar?.period !== "offseason") throw new Error(`the ${name} is written only in the Offseason`);
+  const year = offseasonYear(job.date);
+  return { title: `${year} ${name}`, offseason: year, updated: job.date };
+}
 
 function venue(game: ScheduledGame): "home" | "away" | "neutral" {
   return game.neutralSite ? "neutral" : game.home ? "home" : "away";
