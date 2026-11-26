@@ -1,7 +1,10 @@
 // Types at the publish pipeline's seam (Seam 1 in spec #1).
+import type { GamePreviewData, SeasonRecapData } from "../content/game-week";
 import type { GameStatus, NewsSummaryData, PracticeStatus } from "../content/news-summary";
+import type { CalendarPosition, ScheduledGame } from "./calendar";
 
 export type { GameStatus, PracticeStatus };
+export type { CalendarPeriod, CalendarPosition, GameType, ScheduledGame } from "./calendar";
 
 /** The scheduled jobs. Each has its own workflow. */
 export type JobType = "daily-news" | "post-game" | "thursday-preview" | "film-room";
@@ -10,6 +13,13 @@ export type JobType = "daily-news" | "post-game" | "thursday-preview" | "film-ro
 export interface Job {
   type: JobType;
   date: string;
+  /**
+   * What the writer should produce this run. Set by the pipeline once it has the source
+   * snapshot, so it is absent when the sources collect.
+   */
+  contentTypes?: ContentType[];
+  /** Where the date falls on the calendar, for jobs that depend on it. Set with contentTypes. */
+  calendar?: CalendarPosition;
 }
 
 /** One piece of raw source material: an article, report, or transcript. */
@@ -35,13 +45,15 @@ export interface InjuryReportEntry {
 
 /**
  * Everything a job's sources returned, gathered once per run.
- * Later tickets add nflverse stats, schedule, and transcripts.
+ * Later tickets add nflverse stats and transcripts.
  */
 export interface SourceSnapshot {
   date: string;
   documents: SourceDocument[];
   /** The official NFL injury report. Absent when the sources couldn't get one. */
   injuryReport?: InjuryReportEntry[];
+  /** The 49ers' nflverse schedule (all seasons it covers). Jobs that use the calendar need it. */
+  schedule?: ScheduledGame[];
   /** Best-effort outlets the sources couldn't collect this run (blocked, down), and why. */
   skipped?: SkippedSource[];
 }
@@ -66,6 +78,8 @@ export interface ContentWriter {
 /** Content types the pipeline can publish, by their frontmatter. */
 export interface ContentTypes {
   "news-summary": NewsSummaryData;
+  "game-preview": GamePreviewData;
+  "season-recap": SeasonRecapData;
 }
 export type ContentType = keyof ContentTypes;
 

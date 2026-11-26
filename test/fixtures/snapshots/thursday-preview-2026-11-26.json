@@ -1,0 +1,555 @@
+{
+  "date": "2026-11-26",
+  "documents": [
+    {
+      "url": "https://www.49ers.com/news/injury-report-wednesday-week-13",
+      "outlet": "49ers.com",
+      "title": "49ers Wednesday Injury Report",
+      "publishedAt": "2026-11-25T20:00:00Z",
+      "text": "Did not participate: LB Fred Warner (ankle). Limited: WR Brandon Aiyuk (hamstring)."
+    },
+    {
+      "url": "https://www.nbcsportsbayarea.com/nfl/san-francisco-49ers/practice-squad-signing",
+      "outlet": "NBC Sports Bay Area",
+      "title": "49ers sign cornerback to practice squad",
+      "publishedAt": "2026-11-25T18:30:00Z",
+      "text": "The 49ers signed a cornerback to the practice squad on Wednesday."
+    },
+    {
+      "url": "https://www.49ers.com/news/shanahan-press-conference-wednesday",
+      "outlet": "49ers.com",
+      "title": "Kyle Shanahan Wednesday press conference",
+      "publishedAt": "2026-11-25T19:00:00Z",
+      "text": "Q: What stood out on the film?\n\nShanahan: We have to be better on third down. That's on all of us,\nstarting with me."
+    }
+  ],
+  "injuryReport": [
+    {
+      "player": "Fred Warner",
+      "practiceStatus": "DNP"
+    },
+    {
+      "player": "Brandon Aiyuk",
+      "practiceStatus": "LP"
+    },
+    {
+      "player": "C.J. West",
+      "practiceStatus": "FP",
+      "gameStatus": "Questionable"
+    }
+  ],
+  "schedule": [
+    {
+      "gameId": "2025_01_SF_SEA",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 1,
+      "gameday": "2025-09-07",
+      "kickoff": "2025-09-07T20:05:00.000Z",
+      "opponent": "SEA",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 17,
+        "opponent": 13
+      }
+    },
+    {
+      "gameId": "2025_02_SF_NO",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 2,
+      "gameday": "2025-09-14",
+      "kickoff": "2025-09-14T17:00:00.000Z",
+      "opponent": "NO",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 26,
+        "opponent": 21
+      }
+    },
+    {
+      "gameId": "2025_03_ARI_SF",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 3,
+      "gameday": "2025-09-21",
+      "kickoff": "2025-09-21T20:25:00.000Z",
+      "opponent": "ARI",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 16,
+        "opponent": 15
+      }
+    },
+    {
+      "gameId": "2025_04_JAX_SF",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 4,
+      "gameday": "2025-09-28",
+      "kickoff": "2025-09-28T20:05:00.000Z",
+      "opponent": "JAX",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 21,
+        "opponent": 26
+      }
+    },
+    {
+      "gameId": "2025_05_SF_LA",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 5,
+      "gameday": "2025-10-02",
+      "kickoff": "2025-10-03T00:15:00.000Z",
+      "opponent": "LA",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 26,
+        "opponent": 23
+      }
+    },
+    {
+      "gameId": "2025_06_SF_TB",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 6,
+      "gameday": "2025-10-12",
+      "kickoff": "2025-10-12T20:25:00.000Z",
+      "opponent": "TB",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 19,
+        "opponent": 30
+      }
+    },
+    {
+      "gameId": "2025_07_ATL_SF",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 7,
+      "gameday": "2025-10-19",
+      "kickoff": "2025-10-20T00:20:00.000Z",
+      "opponent": "ATL",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 20,
+        "opponent": 10
+      }
+    },
+    {
+      "gameId": "2025_08_SF_HOU",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 8,
+      "gameday": "2025-10-26",
+      "kickoff": "2025-10-26T17:00:00.000Z",
+      "opponent": "HOU",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 15,
+        "opponent": 26
+      }
+    },
+    {
+      "gameId": "2025_09_SF_NYG",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 9,
+      "gameday": "2025-11-02",
+      "kickoff": "2025-11-02T18:00:00.000Z",
+      "opponent": "NYG",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 34,
+        "opponent": 24
+      }
+    },
+    {
+      "gameId": "2025_10_LA_SF",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 10,
+      "gameday": "2025-11-09",
+      "kickoff": "2025-11-09T21:25:00.000Z",
+      "opponent": "LA",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 26,
+        "opponent": 42
+      }
+    },
+    {
+      "gameId": "2025_11_SF_ARI",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 11,
+      "gameday": "2025-11-16",
+      "kickoff": "2025-11-16T21:05:00.000Z",
+      "opponent": "ARI",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 41,
+        "opponent": 22
+      }
+    },
+    {
+      "gameId": "2025_12_CAR_SF",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 12,
+      "gameday": "2025-11-24",
+      "kickoff": "2025-11-25T01:15:00.000Z",
+      "opponent": "CAR",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 20,
+        "opponent": 9
+      }
+    },
+    {
+      "gameId": "2025_13_SF_CLE",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 13,
+      "gameday": "2025-11-30",
+      "kickoff": "2025-11-30T18:00:00.000Z",
+      "opponent": "CLE",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 26,
+        "opponent": 8
+      }
+    },
+    {
+      "gameId": "2025_15_TEN_SF",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 15,
+      "gameday": "2025-12-14",
+      "kickoff": "2025-12-14T21:25:00.000Z",
+      "opponent": "TEN",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 37,
+        "opponent": 24
+      }
+    },
+    {
+      "gameId": "2025_16_SF_IND",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 16,
+      "gameday": "2025-12-22",
+      "kickoff": "2025-12-23T01:15:00.000Z",
+      "opponent": "IND",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 48,
+        "opponent": 27
+      }
+    },
+    {
+      "gameId": "2025_17_CHI_SF",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 17,
+      "gameday": "2025-12-28",
+      "kickoff": "2025-12-29T01:20:00.000Z",
+      "opponent": "CHI",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 42,
+        "opponent": 38
+      }
+    },
+    {
+      "gameId": "2025_18_SEA_SF",
+      "season": 2025,
+      "gameType": "REG",
+      "week": 18,
+      "gameday": "2026-01-03",
+      "kickoff": "2026-01-04T01:00:00.000Z",
+      "opponent": "SEA",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 3,
+        "opponent": 13
+      }
+    },
+    {
+      "gameId": "2025_19_SF_PHI",
+      "season": 2025,
+      "gameType": "WC",
+      "week": 19,
+      "gameday": "2026-01-11",
+      "kickoff": "2026-01-11T21:30:00.000Z",
+      "opponent": "PHI",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 23,
+        "opponent": 19
+      }
+    },
+    {
+      "gameId": "2025_20_SF_SEA",
+      "season": 2025,
+      "gameType": "DIV",
+      "week": 20,
+      "gameday": "2026-01-17",
+      "kickoff": "2026-01-18T01:00:00.000Z",
+      "opponent": "SEA",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 6,
+        "opponent": 41
+      }
+    },
+    {
+      "gameId": "2026_01_SF_LA",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 1,
+      "gameday": "2026-09-10",
+      "kickoff": "2026-09-11T00:35:00.000Z",
+      "opponent": "LA",
+      "home": false,
+      "neutralSite": true,
+      "result": {
+        "sf": 27,
+        "opponent": 7
+      }
+    },
+    {
+      "gameId": "2026_02_MIA_SF",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 2,
+      "gameday": "2026-09-20",
+      "kickoff": "2026-09-20T20:25:00.000Z",
+      "opponent": "MIA",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 35,
+        "opponent": 13
+      }
+    },
+    {
+      "gameId": "2026_03_ARI_SF",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 3,
+      "gameday": "2026-09-27",
+      "kickoff": "2026-09-27T20:05:00.000Z",
+      "opponent": "ARI",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 36,
+        "opponent": 30
+      }
+    },
+    {
+      "gameId": "2026_04_DEN_SF",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 4,
+      "gameday": "2026-10-04",
+      "kickoff": "2026-10-04T20:25:00.000Z",
+      "opponent": "DEN",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 24,
+        "opponent": 14
+      }
+    },
+    {
+      "gameId": "2026_05_SF_SEA",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 5,
+      "gameday": "2026-10-11",
+      "kickoff": "2026-10-11T20:25:00.000Z",
+      "opponent": "SEA",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 32,
+        "opponent": 29
+      }
+    },
+    {
+      "gameId": "2026_06_WAS_SF",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 6,
+      "gameday": "2026-10-19",
+      "kickoff": "2026-10-20T00:15:00.000Z",
+      "opponent": "WAS",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 23,
+        "opponent": 17
+      }
+    },
+    {
+      "gameId": "2026_07_SF_ATL",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 7,
+      "gameday": "2026-10-25",
+      "kickoff": "2026-10-25T17:00:00.000Z",
+      "opponent": "ATL",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 20,
+        "opponent": 29
+      }
+    },
+    {
+      "gameId": "2026_09_LV_SF",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 9,
+      "gameday": "2026-11-08",
+      "kickoff": "2026-11-08T21:25:00.000Z",
+      "opponent": "LV",
+      "home": true,
+      "neutralSite": false,
+      "result": {
+        "sf": 38,
+        "opponent": 17
+      }
+    },
+    {
+      "gameId": "2026_10_SF_DAL",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 10,
+      "gameday": "2026-11-15",
+      "kickoff": "2026-11-15T21:25:00.000Z",
+      "opponent": "DAL",
+      "home": false,
+      "neutralSite": false,
+      "result": {
+        "sf": 46,
+        "opponent": 40
+      }
+    },
+    {
+      "gameId": "2026_11_MIN_SF",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 11,
+      "gameday": "2026-11-22",
+      "kickoff": "2026-11-23T01:20:00.000Z",
+      "opponent": "MIN",
+      "home": true,
+      "neutralSite": true,
+      "result": {
+        "sf": 35,
+        "opponent": 10
+      }
+    },
+    {
+      "gameId": "2026_12_SEA_SF",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 12,
+      "gameday": "2026-11-29",
+      "kickoff": "2026-11-29T21:25:00.000Z",
+      "opponent": "SEA",
+      "home": true,
+      "neutralSite": false
+    },
+    {
+      "gameId": "2026_13_SF_NYG",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 13,
+      "gameday": "2026-12-06",
+      "kickoff": "2026-12-06T18:00:00.000Z",
+      "opponent": "NYG",
+      "home": false,
+      "neutralSite": false
+    },
+    {
+      "gameId": "2026_14_LA_SF",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 14,
+      "gameday": "2026-12-13",
+      "kickoff": "2026-12-13T21:25:00.000Z",
+      "opponent": "LA",
+      "home": true,
+      "neutralSite": false
+    },
+    {
+      "gameId": "2026_15_SF_LAC",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 15,
+      "gameday": "2026-12-17",
+      "kickoff": "2026-12-18T01:15:00.000Z",
+      "opponent": "LAC",
+      "home": false,
+      "neutralSite": false
+    },
+    {
+      "gameId": "2026_16_SF_KC",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 16,
+      "gameday": "2026-12-27",
+      "kickoff": "2026-12-27T21:25:00.000Z",
+      "opponent": "KC",
+      "home": false,
+      "neutralSite": false
+    },
+    {
+      "gameId": "2026_17_PHI_SF",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 17,
+      "gameday": "2027-01-03",
+      "kickoff": "2027-01-04T01:20:00.000Z",
+      "opponent": "PHI",
+      "home": true,
+      "neutralSite": false
+    },
+    {
+      "gameId": "2026_18_SF_ARI",
+      "season": 2026,
+      "gameType": "REG",
+      "week": 18,
+      "gameday": "2027-01-10",
+      "kickoff": "2027-01-10T18:00:00.000Z",
+      "opponent": "ARI",
+      "home": false,
+      "neutralSite": false
+    }
+  ]
+}
