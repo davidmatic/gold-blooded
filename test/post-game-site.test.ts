@@ -41,7 +41,7 @@ const highlights: DraftEntry = {
   data: {
     title: "Purdy and Kittle carve up Minnesota",
     standouts: [
-      { player: "Brock Purdy", team: "SF", writeUp: "Three touchdowns on 26 throws." },
+      { player: "Brock Purdy", team: "SF", writeUp: "Three touchdowns and 255 yards." },
       { player: "George Kittle", team: "SF", writeUp: "Two scores, both in the red zone." },
     ],
     stats: [
@@ -105,7 +105,7 @@ describe("built site (post-game content)", () => {
   it("names each standout with his stat line and write-up", async () => {
     const section = text((await site.html("/gold-blooded/game-weeks/2026-week-11/")).match(/class="highlights"[\s\S]*?<\/article>/)?.[0] ?? "");
 
-    expect(section).toContain("Brock Purdy (SF) 255 passing yards, 3 passing TDs Three touchdowns on 26 throws.");
+    expect(section).toContain("Brock Purdy (SF) 255 passing yards, 3 passing TDs Three touchdowns and 255 yards.");
     expect(section).toContain("George Kittle (SF) 2 receiving TDs Two scores, both in the red zone.");
   });
 

@@ -114,7 +114,7 @@ describe("Offseason job: a running update", () => {
   } as SourceSnapshot;
 
   it("adds the day's moves to the Free Agency Tracker, newest first, and keeps the earlier ones", async () => {
-    const correctedHale = { ...haleSigning, detail: "Three years, $30 million, from Tennessee." };
+    const correctedHale = { ...haleSigning, detail: "Three years, from the Tennessee Titans." };
     const { result } = runOffseason("2026-03-13", [trackerDraft([pikeResigning, correctedHale]), coverageDraft()], before);
     const published = await result;
 

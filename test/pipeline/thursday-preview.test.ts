@@ -30,7 +30,7 @@ const breakdownDraft: DraftEntry = {
       { team: "SF", stat: "rushing_yards", scope: { type: "last-games", season: 2026, games: 3 }, per: "game", value: 164.7, label: "Rushing yards" },
       { team: "SEA", stat: "passing_yards", scope: { type: "game", gameId: "2026_05_SF_SEA" }, value: 195, label: "Passing yards" },
     ],
-    trends: ["The run game has topped 160 yards a game over the last three."],
+    trends: ["The run game has averaged 164.7 yards a game over the last three."],
   },
   body: "The numbers favour the 49ers' offense.",
 };
@@ -47,7 +47,7 @@ const recapDraft: DraftEntry = {
     title: "Halfway home",
     sources: [{ url: INJURY_URL, outlet: "49ers.com" }],
   },
-  body: "The 49ers head into the bye at 5-2.",
+  body: "The 49ers head into the bye at 6-1.",
 };
 
 /** A writer that returns the drafts of the types the job asks for, and remembers the job. */

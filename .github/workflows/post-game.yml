@@ -1,16 +1,19 @@
 name: Post-game
 
 # Runs the post-game publish job every day. The job places the date on the 49ers' nflverse
-# schedule and does nothing (no commit, no deploy) unless a 49ers game was played the day before:
-# so it runs on Monday after a Sunday game, Tuesday after a Monday night game, and Friday after a
-# Thursday night game. That day it writes the game's Highlights onto its Game Week Page and
+# schedule and does nothing (no commit, no deploy) unless the most recent 49ers game was played in
+# the last three days and its Highlights aren't published yet: so it normally runs on Monday after
+# a Sunday game, Tuesday after a Monday night game, and Friday after a Thursday night game, and a
+# run that failed (nflverse late with the stats) is caught up by the next day's run, up to three
+# days after the game. That run writes the game's Highlights onto its Game Week Page and
 # rewrites the season's Season Stats, and scores the game's Game Preview into the season's Prediction
 # Record (no Claude call; skipped when no Game Preview was published). For the Purdy Shrine it
 # writes the Love Letter ("we miss you" when Purdy didn't play), adds a Reason We Love Brock, and
 # rebuilds his stat tracker from nflverse (no Claude call). On a published result it commits the content to main and
 # deploys the site. On a rejected result, or when nflverse doesn't have the game's stats yet, the
 # job fails (GitHub notifies the owner), nothing is committed, and the site keeps its previous
-# version; run it again by hand for that date (Run workflow, with the date) once the stats are out.
+# version; the next day's run tries again. More than three days on, run it by hand for a date
+# within three days of the game (Run workflow, with the date) once the stats are out.
 #
 # Uses the real adapters: it fetches the schedule, nflverse stats, the official 49ers and NFL
 # YouTube feeds, and the Preferred Sources, and writes with Claude. The API key is the
@@ -22,7 +25,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: Date to run for (YYYY-MM-DD, Pacific), the day after the game. Defaults to today.
+        description: Date to run for (YYYY-MM-DD, Pacific), one to three days after the game. Defaults to today.
         required: false
 
 permissions:
@@ -54,19 +57,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Commit new content
         id: commit
-        run: |
-          mkdir -p content && git add content
-          if git diff --cached --quiet; then
-            echo "No content changes."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Post-game content for ${DATE:-$(TZ=America/Los_Angeles date +%F)}"
-          git push origin HEAD:main
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-        env:
-          DATE: ${{ inputs.date }}
+        uses: ./.github/actions/commit-content
+        with:
+          message: Post-game content for
+          date: ${{ inputs.date }}
 
   deploy:
     needs: publish

@@ -9,9 +9,9 @@ import { z } from "zod";
 import { draftDates, FREE_AGENCY_MOVES, offseasonYear } from "../../../content/offseason";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
+import { NUMBERS_RULE, quotesField, quotesOutput, quotesRule, renderDocuments, sourceOutput, sourcesOutput } from "./writer-output";
 
-const source = z.object({ url: z.string(), outlet: z.string() });
-const quotes = z.array(z.object({ text: z.string(), speaker: z.string(), source: z.string() }));
+const source = sourceOutput;
 const prospect = { player: z.string(), position: z.string(), school: z.string(), source };
 
 const offseasonOutputSchema = z.object({
@@ -20,8 +20,8 @@ const offseasonOutputSchema = z.object({
     newMoves: z.array(
       z.object({ player: z.string(), position: z.string(), kind: z.enum(FREE_AGENCY_MOVES), date: z.string(), detail: z.string().nullable(), source }),
     ),
-    sources: z.array(source),
-    quotes,
+    sources: sourcesOutput,
+    quotes: quotesOutput,
   }),
   draftCoverage: z.object({
     body: z.string(),
@@ -29,8 +29,8 @@ const offseasonOutputSchema = z.object({
     newMockDrafts: z.array(z.object({ ...prospect, pick: z.number().int() })),
     newPicks: z.array(z.object({ ...prospect, round: z.number().int(), overall: z.number().int() })),
     newProfiles: z.array(z.object({ ...prospect, profile: z.string() })),
-    sources: z.array(source),
-    quotes,
+    sources: sourcesOutput,
+    quotes: quotesOutput,
   }),
 });
 export type OffseasonOutput = z.infer<typeof offseasonOutputSchema>;
@@ -55,7 +55,8 @@ draftCoverage:
 
 For both:
 - source and sources: each document's exact "url" and "outlet" as given in the snapshot. Never invent or alter a URL. Every item's source must be a document that names the player. sources lists any other documents the body relies on.
-- quotes: every quotation in the body, with the quoted words in "text", the "speaker", and in "source" the url of the document where those exact words appear. Copy quotes word for word; if you cannot, paraphrase without quotation marks.
+${quotesRule()}
+${NUMBERS_RULE}
 - If there is nothing new, return empty lists and keep the body as it was.`;
 
 /** The user turn: the job, the draft's dates, each running document as it stands, and the documents. */
@@ -72,10 +73,7 @@ export function renderOffseasonBrief(job: Job, snapshot: SourceSnapshot): string
     `${year} NFL Draft: ${draft.start} to ${draft.end} (${phase}).`,
     current("Free Agency Tracker", snapshot.current?.["free-agency-tracker"]),
     current("Draft Coverage", snapshot.current?.["draft-coverage"]),
-    `Documents (${snapshot.documents.length}):`,
-    ...snapshot.documents.map((doc, i) =>
-      [`<document index="${i + 1}">`, `url: ${doc.url}`, `outlet: ${doc.outlet}`, `title: ${doc.title}`, `published: ${doc.publishedAt}`, "text:", doc.text, "</document>"].join("\n"),
-    ),
+    ...renderDocuments(snapshot.documents),
   ].join("\n\n");
 }
 
@@ -88,7 +86,7 @@ export function toOffseasonDrafts(output: OffseasonOutput): DraftEntry[] {
       data: {
         moves: tracker.newMoves.map(({ detail, ...move }) => ({ ...move, ...(detail && { detail }) })),
         sources: tracker.sources,
-        ...(tracker.quotes.length > 0 && { quotes: tracker.quotes }),
+        ...quotesField(tracker.quotes),
       },
       body: tracker.body,
     },
@@ -100,16 +98,14 @@ export function toOffseasonDrafts(output: OffseasonOutput): DraftEntry[] {
         picks: coverage.newPicks,
         profiles: coverage.newProfiles,
         sources: coverage.sources,
-        ...(coverage.quotes.length > 0 && { quotes: coverage.quotes }),
+        ...quotesField(coverage.quotes),
       },
       body: coverage.body,
     },
   ];
 }
 
-export type ClaudeOffseasonWriterOptions = ClaudeOptions;
-
-export function claudeOffseasonWriter(options: ClaudeOffseasonWriterOptions = {}): ContentWriter {
+export function claudeOffseasonWriter(options: ClaudeOptions = {}): ContentWriter {
   const ask = claudeAsker(options);
   return {
     write: async (job, snapshot) => toOffseasonDrafts(await ask(OFFSEASON_VOICE, offseasonOutputSchema, renderOffseasonBrief(job, snapshot))),

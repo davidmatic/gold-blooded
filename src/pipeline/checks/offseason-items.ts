@@ -4,7 +4,7 @@
 // rechecked: their sources were checked when they were added. Pure: it reads only the entries
 // and the snapshot.
 import type { CheckFailure, ContentEntry, SourceSnapshot } from "../types";
-import type { PublishCheck } from "./check";
+import { canonical, type PublishCheck } from "./check";
 
 interface SourcedItem {
   player: string;
@@ -36,13 +36,6 @@ function newItems(entry: ContentEntry, list: string, snapshot: SourceSnapshot): 
   const before = new Set(((current?.[list] as unknown[] | undefined) ?? []).map(canonical));
   const items = (entry.data as unknown as Record<string, SourcedItem[]>)[list] ?? [];
   return items.filter((item) => !before.has(canonical(item)));
-}
-
-/** The same item whatever order its keys are in (a hand-edited file may reorder them). */
-function canonical(value: unknown): string {
-  return JSON.stringify(value, (_key, field: unknown) =>
-    field && typeof field === "object" && !Array.isArray(field) ? Object.fromEntries(Object.entries(field).sort(([a], [b]) => a.localeCompare(b))) : field,
-  );
 }
 
 function comparable(text: string): string {

@@ -48,19 +48,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Commit new content
         id: commit
-        run: |
-          mkdir -p content && git add content
-          if git diff --cached --quiet; then
-            echo "No content changes."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Thursday preview for ${DATE:-$(TZ=America/Los_Angeles date +%F)}"
-          git push origin HEAD:main
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-        env:
-          DATE: ${{ inputs.date }}
+        uses: ./.github/actions/commit-content
+        with:
+          message: Thursday preview for
+          date: ${{ inputs.date }}
 
   deploy:
     needs: publish

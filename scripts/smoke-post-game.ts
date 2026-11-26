@@ -4,15 +4,15 @@
 //   npx tsx scripts/smoke-post-game.ts [--date YYYY-MM-DD]            # sources only, no API key
 //   npx tsx scripts/smoke-post-game.ts --claude [--date YYYY-MM-DD]   # + Claude writer and publish checks
 //
-// Pick a date the day after a 49ers game (default: today, Pacific). Sources only: fetches the
-// nflverse schedule, and the day after a game the day's news, the season's nflverse stats, and
+// Pick a date one to three days after a 49ers game (default: today, Pacific). Sources only: fetches the
+// nflverse schedule, and when a game is due its post-game run the day's news, the season's nflverse stats, and
 // the official YouTube clips, and prints what it found. With --claude: runs publish() end to end
 // and prints the Highlights and Season Stats or the failed checks. It never writes to the content
 // folder; pass --out <dir> to have the published entries written there for a look.
 import { parseArgs } from "node:util";
 import { publish } from "../src/pipeline";
 import { claudePostGameWriter, postGameSources } from "../src/pipeline/adapters/real";
-import { gameJustPlayed, resolveCalendar } from "../src/pipeline/calendar";
+import { gameToCover, resolveCalendar } from "../src/pipeline/calendar";
 import { writeEntries } from "../src/pipeline/content-store";
 import { contentDir } from "../src/site/content-dir";
 
@@ -29,9 +29,9 @@ const sources = postGameSources({ contentDir: contentDir(), log: (message) => co
 
 if (!values.claude) {
   const snapshot = await sources.collect(job);
-  const game = gameJustPlayed(resolveCalendar(job.date, snapshot.schedule ?? []), job.date);
+  const game = gameToCover(resolveCalendar(job.date, snapshot.schedule ?? []), job.date);
   console.log(`Schedule: ${snapshot.schedule?.length ?? 0} 49ers games`);
-  console.log(`Game the day before ${job.date}: ${game ? `${game.gameId}, ${game.result ? `${game.result.sf}-${game.result.opponent}` : "no final score yet"}` : "none (the job writes nothing)"}`);
+  console.log(`Game to cover on ${job.date}: ${game ? `${game.gameId}, ${game.result ? `${game.result.sf}-${game.result.opponent}` : "no final score yet"}` : "none (the job writes nothing)"}${snapshot.highlightsPublished ? " (its Highlights are already published, so the job writes nothing)" : ""}`);
   console.log(`Documents: ${snapshot.documents.length}`);
   console.log(`nflverse stats: ${snapshot.stats ? `${snapshot.stats.players.length} player lines, ${snapshot.stats.teams.length} team lines` : "none"}`);
   console.log(`Official clips: ${snapshot.videos?.map((v) => `\n  ${v.videoId}  ${v.channel}: ${v.title}`).join("") || "none"}`);

@@ -29,8 +29,8 @@ npm run build    # static output in dist/
   `calendar.ts` is calendar resolution, shared by every job that depends on the calendar (see
   Calendar below). `content-types.ts` says, per content type, which schema validates a draft, which
   fields the pipeline fills in, and where the entry is filed. The Thursday preview job's real adapters
-  are `adapters/real/preview-sources.ts` (the news snapshot plus the nflverse schedule, parsed in
-  `schedule.ts`) and `adapters/real/claude-preview-writer.ts`. The post-game job's are
+  are `adapters/real/thursday-preview-sources.ts` (the news snapshot plus the nflverse schedule, parsed in
+  `schedule.ts`) and `adapters/real/claude-game-preview-writer.ts`. The post-game job's are
   `adapters/real/post-game-sources.ts` (with the official YouTube feeds in `youtube.ts`) and
   `adapters/real/claude-post-game-writer.ts`. Every Claude writer makes its request through
   `adapters/real/claude.ts` (see Claude writer).
@@ -109,11 +109,48 @@ transcript.
 
 `adapters/real/claude-writer.ts` sends the snapshot to `claude-opus-5-5` through `@anthropic-ai/sdk`,
 with a neutral news voice prompt and structured output matching the News Summary schema (including
-the `injuries` and `quotes` the publish checks verify). Every writer (news, preview, Offseason,
+the `injuries` and `quotes` the publish checks verify). Every writer (news, Game Preview, Offseason,
 post-game) makes its requests through `claudeAsker()` in `adapters/real/claude.ts`: a voice prompt
 (cached), a brief, and a Zod schema for the structured output, at effort `medium`, with the API's
 server-side refusal fallback (`fallbacks: "default"`). Transient errors are retried twice; reaching
 the spend limit fails the run at once with a "spend limit reached" error, and is never retried.
+What the writers share is defined once, in `adapters/real/writer-output.ts`: the structured-output
+shapes of sources, quotes, and injury statuses (and turning them into draft fields), the
+`<document>` rendering of the snapshot's documents, and the prompt rules every voice states the
+same way (`SHARED_RULES` and its parts).
+
+## Publish checks
+
+Every job runs the checks in `src/pipeline/checks/`; any failure rejects the whole run. Besides
+the ones described with their jobs below:
+
+- **Quotes** (`quotes.ts`). Every listed quote must be word for word in the document it cites. So
+  that no quotation skips that, every quotation in the prose of a type that carries `quotes` (the
+  title, body, and free-text fields) must be listed: any span in double quotes, curly (“…”) or
+  straight ("…"), of two words or more. Single quotes are ignored (they are mostly apostrophes),
+  and so is a scare-quoted single word (the “juice” package). A span counts as listed when it is
+  part of a listed quote's text, ignoring case and the punctuation around it.
+- **Injury mentions** (`injury-mentions.ts`, News Summaries and Love Letters). A body that uses
+  injury words (injury, hurt, questionable, injured reserve, ...) must state at least one status
+  in `injuries`, which the `injury-status` check holds to the official report. So a summary can't
+  report an injury the official report doesn't give. (A roster move to injured reserve for a
+  player the week's report doesn't list is rejected too, by design: it can't be checked.)
+- **Numbers** (`numbers.ts`, every job). Cited stats are checked against nflverse, but prose
+  can state numbers too, so every number in an entry's prose (title, body, storylines, keys,
+  trends, write-ups, an Offseason update's new details, notes, and profiles) must be grounded:
+  - one of the entry's cited stats, rounded to the decimal places the prose uses (164.7 may read
+    as 165, never as 160);
+  - in the text of a source document the entry cites (its `sources`, a Film Room entry's link);
+    this is how draft rounds and picks, jersey numbers, ages, and contract terms pass;
+  - a score or record the pipeline fills in: the entry's final score, a Game Preview's predicted
+    score, the entry's record; or, written as a pair (35-10, 9-1), any final score on the schedule
+    or the 49ers' record in a season so far.
+
+  Not stats, so left out: years (1920 to 2099), dates (Nov. 25, 11/25, 2026-11-25), clock times
+  (1:25), Week numbers (Week 13, Weeks 14-15), quarters and downs (4th quarter, 3rd-and-2, Q4), the
+  "49ers" in the team's name, and Markdown list numbering. Numbers spelled out in words aren't
+  read. Every writer's voice prompt states the rule (`NUMBERS_RULE` in
+  `adapters/real/writer-output.ts`).
 
 ## Secrets and cost
 
@@ -203,12 +240,17 @@ nothing in the Offseason; News Summaries carry on in the daily news job.
 
 ## Post-game
 
-The `post-game` job (`.github/workflows/post-game.yml`, daily) writes only when a 49ers game was
-played the day before (`gameJustPlayed()` in `calendar.ts`: the calendar's previous game has
-yesterday's nflverse gameday). That is Monday after a Sunday game, Tuesday after a Monday night
-game, Friday after a Thursday night game, and the day after the season's last game, though that
-day is already the Offseason. Every other day it fetches only the schedule and writes nothing.
-If the schedule has no final score for the game yet, the run fails before asking Claude.
+The `post-game` job (`.github/workflows/post-game.yml`, daily) writes when the most recent 49ers
+game was played in the last three days and its Highlights aren't in the content store yet
+(`gameToCover()` and `POST_GAME_DAYS` in `calendar.ts`; the sources set
+`snapshot.highlightsPublished` when the Highlights file exists). Normally that is Monday after a
+Sunday game, Tuesday after a Monday night game, Friday after a Thursday night game, and the day
+after the season's last game, though that day is already the Offseason. A run that failed
+(nflverse late with the game's stats) is caught up by the next day's run, up to three days after
+the game; once the Highlights are published, later runs write nothing, so a game is never written
+twice (a re-run's Prediction Record replaces the game's earlier score, as before). Every other day
+it fetches only the schedule and writes nothing. If the schedule has no final score for the game
+yet, the run fails before asking Claude.
 
 - **Highlights** (`content/game-weeks/<slug>/highlights.md`, on the game's own Game Week Page):
   3 to 5 standouts, each with a write-up and a stat line, plus the final score and up to three
@@ -218,10 +260,11 @@ If the schedule has no final score for the game yet, the run fails before asking
 - **Season Stats** (`content/season-stats/<season>.md`, at `/season-stats/`): rewritten after every
   game. The 49ers' season totals as cited stats (`team: SF`, `scope` the season); the pipeline fills
   in the record and the game the numbers run through.
-- **Sources** (`adapters/real/post-game-sources.ts`): the day after a game, the day's news snapshot
+- **Sources** (`adapters/real/post-game-sources.ts`): when a game is due, the day's news snapshot
   (game recaps, postgame press conferences), the season's nflverse stats, and the official clips.
   The stats must already include the game; if nflverse hasn't posted them yet the run fails, and
-  can be run again by hand for that date (Actions → Post-game → Run workflow, with the date).
+  the next day's run tries again. Past three days, run it by hand for a date within three days of
+  the game (Actions → Post-game → Run workflow, with the date).
 - **Official clips.** `adapters/real/youtube.ts` reads the RSS feeds of the official
   [San Francisco 49ers](https://www.youtube.com/channel/UCeIOarQkwmGhimim9cDUTng) and
   [NFL](https://www.youtube.com/channel/UCDVYQ4Zhbm3S2dlz7P1GBDg) YouTube channels (15 newest
@@ -312,8 +355,8 @@ prints where the date falls on the calendar; `--claude` writes the Game Preview 
 `scripts/smoke-offseason.ts` does the same for the Offseason job (`--claude` writes both running
 documents' updates; it reads the current ones from `content/` or `--content-dir`).
 `scripts/smoke-post-game.ts` does the same for the post-game job (sources only, it prints the game
-the day before, the stats it found, and the official clips; `--claude` writes the Highlights and
-Season Stats). Give it the day after a game, e.g. `--date 2026-11-23`.
+it covers, the stats it found, and the official clips; `--claude` writes the Highlights and
+Season Stats). Give it a date one to three days after a game, e.g. `--date 2026-11-23`.
 
 They all take `--date YYYY-MM-DD` (default: today, Pacific). Add `--podcasts` to
 `smoke-daily-news.ts` to transcribe the news window's podcast episodes too (needs Python 3.12 with `pip install -r scripts/requirements-whisper.txt`).
@@ -337,6 +380,12 @@ committed to `main`, and appear on the live site's News page.
 Pull requests run the tests and build only. Content workflows call it via `workflow_call` after
 they commit, because pushes made with `GITHUB_TOKEN` don't trigger the push event.
 
+The content workflows share two composite actions in `.github/actions/`: `setup-whisper` (Python
+3.12, faster-whisper, and the cached Whisper model, for the jobs that transcribe podcasts) and
+`commit-content` (commits the content folder when the run was published, and with
+`transcripts: true` the transcript cache whatever the outcome; it outputs the commit's sha only
+when content changed, which is what starts the deploy).
+
 `.github/workflows/daily-news.yml` runs the daily news job every morning. A published result is
 committed to `main` and deployed; a rejected one fails the run (GitHub emails the owner) and commits
 nothing. It uses the real adapters and the `ANTHROPIC_API_KEY` secret.
@@ -349,6 +398,7 @@ the Wednesday injury report: a Game Preview and Stat Breakdown in a Game Week, a
 updates the Free Agency Tracker and Draft Coverage in the Offseason, and does nothing (no commit,
 no deploy) in the season. Same commit, deploy, and failure behaviour as daily news.
 
-`.github/workflows/post-game.yml` runs the post-game job every day at 10am/11am Pacific: the day
-after a game it writes the Highlights and Season Stats, and otherwise does nothing (no commit, no
+`.github/workflows/post-game.yml` runs the post-game job every day at 10am/11am Pacific: after a
+game (up to three days after, until its Highlights are published) it writes the Highlights, Season
+Stats, and the Purdy Shrine's share, and otherwise does nothing (no commit, no
 deploy). Same commit, deploy, and failure behaviour as daily news.

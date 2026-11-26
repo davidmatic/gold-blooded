@@ -113,6 +113,19 @@ describe("post-game job: the Prediction Record", () => {
     expect(again?.data.games).toEqual([{ ...WEEK_11, predicted: { winner: "SF", score: { sf: 31, opponent: 10 } }, correctWinner: true, pointsOff: 4 }]);
   });
 
+  it("a catch-up run days later scores the game once, like any re-run", async () => {
+    const scored = await recordAfter({ ...base, gamePreview: preview({ winner: "SF", score: { sf: 24, opponent: 17 } }) });
+    const result = await publish({
+      job: "post-game",
+      date: "2026-11-25",
+      sources: fakeSources({ ...base, gamePreview: preview({ winner: "SF", score: { sf: 24, opponent: 17 } }), current: { "prediction-record": { data: scored!.data, body: "" } } }),
+      writer,
+    });
+    const record = result.status === "published" ? result.entries.find((entry) => entry.type === "prediction-record") : undefined;
+
+    expect(record?.data).toMatchObject({ updated: "2026-11-25", games: [{ ...WEEK_11, correctWinner: true, pointsOff: 18 }] });
+  });
+
   it("never asks the writer for the Prediction Record", async () => {
     const asked: string[][] = [];
     const recording: ContentWriter = { write: async (job, snapshot) => (asked.push(job.contentTypes ?? []), writer.write(job, snapshot)) };

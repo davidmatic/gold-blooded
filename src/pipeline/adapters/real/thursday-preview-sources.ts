@@ -9,14 +9,14 @@ import { fetchNflverseStats } from "./nflverse-stats";
 import { fetchSchedule } from "./schedule";
 import { fetchWithBotUserAgent, realSources, type FetchPage } from "./sources";
 
-export interface PreviewSourcesOptions {
+export interface ThursdayPreviewSourcesOptions {
   fetchPage?: FetchPage;
   /** Collects the day's news and injury report. Defaults to the real news sources. */
   news?: SourceAdapter;
   log?: (message: string) => void;
 }
 
-export function previewSources(options: PreviewSourcesOptions = {}): SourceAdapter {
+export function thursdayPreviewSources(options: ThursdayPreviewSourcesOptions = {}): SourceAdapter {
   const fetchPage = options.fetchPage ?? fetchWithBotUserAgent;
   const news = options.news ?? realSources({ fetchPage, ...(options.log && { log: options.log }) });
 

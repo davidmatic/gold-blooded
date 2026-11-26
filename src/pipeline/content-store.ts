@@ -1,6 +1,8 @@
-// Writes content entries into the content folder as Markdown files with YAML frontmatter.
+// The content store: content entries as Markdown files with YAML frontmatter in the content folder.
+// Writes entries, reads one back, and reads one back held to its content schema.
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import type { z } from "astro/zod";
 import { parse as parseYaml } from "yaml";
 import type { ContentEntry } from "./types";
 
@@ -25,6 +27,24 @@ export async function readEntry(contentDir: string, entryPath: string): Promise<
   const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (!match) throw new Error(`${entryPath} has no frontmatter`);
   return { data: parseYaml(match[1]!), body: match[2]! };
+}
+
+/**
+ * Reads one entry back and holds its frontmatter to its schema. Undefined when the file doesn't
+ * exist. A file that doesn't match (a broken hand edit) fails the run, saying what that stops,
+ * rather than being overwritten by an update that would lose what it held.
+ */
+export async function readValid<T>(contentDir: string, file: string, schema: z.ZodType<T>, consequence: string): Promise<{ data: T; body: string } | undefined> {
+  const entry = await readEntry(contentDir, file);
+  if (!entry) return undefined;
+  const parsed = schema.safeParse(entry.data);
+  if (!parsed.success) throw new Error(`${file} doesn't match its schema, so ${consequence} (fix the file): ${schemaIssues(parsed.error, "frontmatter")}`);
+  return { data: parsed.data, body: entry.body };
+}
+
+/** A schema failure's issues as one line: "quotes.0.source: ...; title: ...". `root` names an issue with no path. */
+export function schemaIssues(error: z.ZodError, root: string): string {
+  return error.issues.map((issue) => `${issue.path.join(".") || root}: ${issue.message}`).join("; ");
 }
 
 function toMarkdown(entry: ContentEntry): string {

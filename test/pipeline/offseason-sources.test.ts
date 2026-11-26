@@ -40,7 +40,7 @@ describe("real sources: the Offseason snapshot", () => {
         data: { moves: [{ player: "Marcus Hale", position: "CB", kind: "signing", date: "2026-03-11", source: HALE }], sources: [] },
         body: "A splash.",
       },
-      { type: "draft-coverage", data: { teamNeeds: [{ position: "OT", note: "Depth." }], mockDrafts: [], picks: [], profiles: [], sources: [HALE] }, body: "Pick 27." },
+      { type: "draft-coverage", data: { teamNeeds: [{ position: "OT", note: "Depth." }], mockDrafts: [], picks: [], profiles: [], sources: [HALE] }, body: "Tackle depth first." },
     ];
     const first = await runJob({ job: "offseason", date: "2026-03-12", sources: fakeSources(offseason), writer: fakeWriter(drafts), contentDir });
     expect(first.status).toBe("published");

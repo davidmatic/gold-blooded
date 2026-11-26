@@ -6,51 +6,35 @@
 // in the game itself (opponent, kickoff, week) and the record from the schedule, so Claude
 // writes only the take: storylines, keys, a prediction, and the narrative.
 import { z } from "zod";
-import { GAME_STATUSES, PRACTICE_STATUSES } from "../../../content/news-summary";
 import { formatRecord } from "../../../site/game-weeks";
 import type { StatScope } from "../../../content/cited-stat";
 import { seasonRecord, TEAM } from "../../calendar";
 import { scopeText } from "../../stats";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
-import { BRIEF_COLUMNS, columns, describeGame, lookup, NOTABLE, renderDocuments, statOutput, toCitedStat } from "./stats-brief";
+import { BRIEF_COLUMNS, columns, describeGame, lookup, NOTABLE, statOutput, toCitedStat } from "./stats-brief";
+import { injuriesField, injuriesOutput, NUMBERS_RULE, quotesField, quotesOutput, renderDocuments, SHARED_RULES, sourcesOutput } from "./writer-output";
 
 /** The Stat Breakdown's recent trends are over this many games. */
 const RECENT_GAMES = 3;
 
-const sources = z.array(z.object({ url: z.string(), outlet: z.string() }));
-const injuries = z.array(
-  z.object({
-    player: z.string(),
-    practiceStatus: z.enum(PRACTICE_STATUSES).nullable(),
-    gameStatus: z.enum(GAME_STATUSES).nullable(),
-  }),
-);
-const quotes = z.array(z.object({ text: z.string(), speaker: z.string(), source: z.string() }));
-
-const previewOutputSchema = z.object({
+const gamePreviewOutputSchema = z.object({
   title: z.string(),
   body: z.string(),
   storylines: z.array(z.string()),
   keys: z.array(z.string()),
   prediction: z.object({ winner: z.string(), sfScore: z.number().int(), opponentScore: z.number().int() }),
-  sources,
-  injuries,
-  quotes,
+  sources: sourcesOutput,
+  injuries: injuriesOutput,
+  quotes: quotesOutput,
 });
-export type PreviewOutput = z.infer<typeof previewOutputSchema>;
+export type GamePreviewOutput = z.infer<typeof gamePreviewOutputSchema>;
 
-const recapOutputSchema = z.object({ title: z.string(), body: z.string(), sources, injuries, quotes });
+const recapOutputSchema = z.object({ title: z.string(), body: z.string(), sources: sourcesOutput, injuries: injuriesOutput, quotes: quotesOutput });
 export type RecapOutput = z.infer<typeof recapOutputSchema>;
 
 const statBreakdownOutputSchema = z.object({ title: z.string(), body: z.string(), trends: z.array(z.string()), stats: z.array(statOutput) });
 export type StatBreakdownOutput = z.infer<typeof statBreakdownOutputSchema>;
-
-const SHARED_RULES = `Use only what the source snapshot says: the 49ers' schedule and results, the official injury report, and the documents. Never invent a stat, a result, an injury, or a quote.
-- sources: every document you rely on, each with its exact "url" and its "outlet" as given in the snapshot. Never invent or alter a URL. At least one source.
-- injuries: for every player whose practice participation or game status you state, one entry with the player's name exactly as it appears in the official injury report, and practiceStatus (DNP, LP, FP) and/or gameStatus (Out, Doubtful, Questionable) exactly as the official report gives them; null for any status you don't state. Only state statuses the official report gives.
-- quotes: every quotation in the body. Each has the quoted words in "text", the "speaker", and in "source" the url of the document where those exact words appear (one of your sources). Copy quotes word for word, character for character: no paraphrase, no ellipses. If you cannot quote exactly, paraphrase without quotation marks.
-- body: Markdown paragraphs. No headings, no links in the body.`;
 
 /** The Game Preview voice. Stable text, so it is cached across runs. */
 export const GAME_PREVIEW_VOICE = `You write the weekly Game Preview for Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site.
@@ -80,9 +64,9 @@ export const STAT_BREAKDOWN_VOICE = `You write the weekly Stat Breakdown for Gol
 
 Voice: a sharp, numbers-first 49ers fan. Plain about what the numbers say, including where the opponent is better.
 
-It is Thursday of the Game Week. Break down the upcoming game in numbers: the 49ers' and the opponent's team stats in the context of this matchup, the key players on both sides, and recent trends (the last ${RECENT_GAMES} games against the season).
+It is Thursday of the Game Week. Break down the upcoming game in numbers: the 49ers' and the opponent's team stats in the context of this game, the key players on both sides, and recent trends (the last ${RECENT_GAMES} games against the season).
 - title: a short, plain headline in sentence case.
-- body: 2 to 4 short Markdown paragraphs on what the numbers say about this matchup. No headings, no links, no tables.
+- body: 2 to 4 short Markdown paragraphs on what the numbers say about this game. No headings, no links, no tables.
 - trends: 2 to 4 one-sentence trends, each comparing recent games with the season, or one team with the other.
 - stats: every number the body or trends state, and the 8 to 16 stats the page's tables should show, each as a cited stat:
   - player: the player's name exactly as the brief gives it, or null for a team stat.
@@ -92,10 +76,11 @@ It is Thursday of the Game Week. Break down the upcoming game in numbers: the 49
   - perGame: true for a per-game average over the scope (total divided by the games in it), false for a total.
   - value: the number, worked out from the brief's numbers. Round averages and rates to one decimal place.
   - label: how the stat reads in a table, e.g. "Passing yards", "Yards per carry".
-Use only the brief's nflverse numbers. Never invent a stat. Every stat is checked against nflverse, and a single wrong number stops the whole page from publishing, so prefer the totals the brief gives you over working out new ones.`;
+Use only the brief's nflverse numbers. Never invent a stat. Every stat is checked against nflverse, and a single wrong number stops the whole page from publishing, so prefer the totals the brief gives you over working out new ones.
+${NUMBERS_RULE}`;
 
 /** The user turn: the job, where it falls on the calendar, the season's results, and the snapshot. */
-export function renderPreviewBrief(job: Job, snapshot: SourceSnapshot): string {
+export function renderGamePreviewBrief(job: Job, snapshot: SourceSnapshot): string {
   const calendar = job.calendar;
   const what = calendar?.period === "game-week" ? "Game Preview" : "Bye Week season recap";
   return [
@@ -107,7 +92,7 @@ export function renderPreviewBrief(job: Job, snapshot: SourceSnapshot): string {
 /** The job, where it falls on the calendar, the season's results, and the injury report. */
 function situation(job: Job, snapshot: SourceSnapshot, what: string): string[] {
   const calendar = job.calendar;
-  if (!calendar || calendar.period === "offseason") throw new Error("the preview writer writes only in a Game Week or a Bye Week");
+  if (!calendar || calendar.period === "offseason") throw new Error("the Game Preview writer writes only in a Game Week or a Bye Week");
   const schedule = snapshot.schedule ?? [];
   const season = schedule.filter((game) => game.season === calendar.season && game.gameday < job.date);
   const games =
@@ -169,17 +154,8 @@ export function renderStatBreakdownBrief(job: Job, snapshot: SourceSnapshot): st
   return [...situation(job, snapshot, "Stat Breakdown"), `nflverse stats, ${calendar.season} season:`, ...sections].join("\n\n");
 }
 
-function cleanInjuries(list: z.infer<typeof injuries>) {
-  return list.map(({ player, practiceStatus, gameStatus }) => ({
-    player,
-    ...(practiceStatus && { practiceStatus }),
-    ...(gameStatus && { gameStatus }),
-  }));
-}
-
 /** Claude's Game Preview as a pipeline draft: empty lists and null statuses dropped. */
-export function toPreviewDraft(output: PreviewOutput): DraftEntry {
-  const injuryList = cleanInjuries(output.injuries);
+export function toGamePreviewDraft(output: GamePreviewOutput): DraftEntry {
   return {
     type: "game-preview",
     data: {
@@ -188,8 +164,8 @@ export function toPreviewDraft(output: PreviewOutput): DraftEntry {
       keys: output.keys,
       prediction: { winner: output.prediction.winner, score: { sf: output.prediction.sfScore, opponent: output.prediction.opponentScore } },
       sources: output.sources,
-      ...(injuryList.length > 0 && { injuries: injuryList }),
-      ...(output.quotes.length > 0 && { quotes: output.quotes }),
+      ...injuriesField(output.injuries),
+      ...quotesField(output.quotes),
     },
     body: output.body,
   };
@@ -210,38 +186,35 @@ export function toStatBreakdownDraft(output: StatBreakdownOutput): DraftEntry {
 
 /** Claude's season recap as a pipeline draft. */
 export function toRecapDraft(output: RecapOutput): DraftEntry {
-  const injuryList = cleanInjuries(output.injuries);
   return {
     type: "season-recap",
     data: {
       title: output.title,
       sources: output.sources,
-      ...(injuryList.length > 0 && { injuries: injuryList }),
-      ...(output.quotes.length > 0 && { quotes: output.quotes }),
+      ...injuriesField(output.injuries),
+      ...quotesField(output.quotes),
     },
     body: output.body,
   };
 }
 
-export type ClaudePreviewWriterOptions = ClaudeOptions;
-
-export function claudePreviewWriter(options: ClaudePreviewWriterOptions = {}): ContentWriter {
+export function claudeGamePreviewWriter(options: ClaudeOptions = {}): ContentWriter {
   const ask = claudeAsker(options);
 
   return {
     async write(job, snapshot) {
-      const brief = renderPreviewBrief(job, snapshot);
+      const brief = renderGamePreviewBrief(job, snapshot);
       if (job.contentTypes?.includes("game-preview")) {
-        const [preview, breakdown] = await Promise.all([
-          ask(GAME_PREVIEW_VOICE, previewOutputSchema, brief),
+        const [gamePreview, breakdown] = await Promise.all([
+          ask(GAME_PREVIEW_VOICE, gamePreviewOutputSchema, brief),
           job.contentTypes.includes("stat-breakdown")
             ? ask(STAT_BREAKDOWN_VOICE, statBreakdownOutputSchema, renderStatBreakdownBrief(job, snapshot))
             : undefined,
         ]);
-        return [toPreviewDraft(preview), ...(breakdown ? [toStatBreakdownDraft(breakdown)] : [])];
+        return [toGamePreviewDraft(gamePreview), ...(breakdown ? [toStatBreakdownDraft(breakdown)] : [])];
       }
       if (job.contentTypes?.includes("season-recap")) return [toRecapDraft(await ask(SEASON_RECAP_VOICE, recapOutputSchema, brief))];
-      throw new Error(`the preview writer doesn't write ${job.contentTypes?.join(", ") || "nothing"}`);
+      throw new Error(`the Game Preview writer doesn't write ${job.contentTypes?.join(", ") || "nothing"}`);
     },
   };
 }

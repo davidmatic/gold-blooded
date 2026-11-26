@@ -645,6 +645,20 @@
         ]
       },
       "body": "Sample Season Stats from the post-game pipeline fixture. Not real."
+    },
+    {
+      "type": "love-letter",
+      "data": {
+        "title": "Sample Love Letter"
+      },
+      "body": "A sample Love Letter from the post-game pipeline fixture. Not real."
+    },
+    {
+      "type": "reasons-we-love-brock",
+      "data": {
+        "reason": "A sample reason from the post-game pipeline fixture."
+      },
+      "body": ""
     }
   ]
 }

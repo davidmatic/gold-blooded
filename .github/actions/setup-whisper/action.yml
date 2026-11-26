@@ -1,0 +1,26 @@
+name: Set up Whisper
+description: >
+  Python 3.12 with faster-whisper (scripts/requirements-whisper.txt, pip cached), and the Whisper
+  model kept in actions/cache, for transcribing podcast episodes on the runner.
+
+inputs:
+  model:
+    description: The faster-whisper model the job uses (the WHISPER_MODEL it runs with).
+    required: false
+    default: small.en
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v6
+      with:
+        python-version: "3.12"
+        cache: pip
+        cache-dependency-path: scripts/requirements-whisper.txt
+    - run: pip install -r scripts/requirements-whisper.txt
+      shell: bash
+    - name: Cache the Whisper model
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/huggingface
+        key: whisper-${{ inputs.model }}-${{ hashFiles('scripts/requirements-whisper.txt') }}

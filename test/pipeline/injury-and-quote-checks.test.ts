@@ -179,3 +179,73 @@ describe("quote publish check", () => {
     });
   });
 });
+
+describe("injury mentions in a News Summary", () => {
+  const practiceDraft = (body: string, injuries?: unknown[]): DraftEntry => ({
+    type: "news-summary",
+    data: { title: "Warner watches from the side", category: "Practice Report", sources: [{ url: INJURY_URL, outlet: "49ers.com" }], ...(injuries && { injuries }) },
+    body,
+  });
+  const PATH = "news/2026-11-25-warner-watches-from-the-side.md";
+
+  it("rejects a body that talks about an injury without stating a status in injuries", async () => {
+    const result = await run([practiceDraft("Fred Warner sat out with an ankle injury and looks doubtful for Sunday.")]);
+
+    expect(result).toEqual({
+      status: "rejected",
+      failures: [
+        {
+          check: "injury-mentions",
+          entry: PATH,
+          reason: 'the News Summary mentions an injury ("injury") but states no injury status from the official report in injuries',
+        },
+      ],
+    });
+  });
+
+  it("publishes it once the status is stated, so the injury-status check holds it to the official report", async () => {
+    const result = await run([practiceDraft("Fred Warner sat out with an ankle injury.", [{ player: "Fred Warner", practiceStatus: "DNP" }])]);
+
+    expect(result.status).toBe("published");
+  });
+});
+
+describe("quote publish check: quotations in the body", () => {
+  const withBody = (body: string, quotes: unknown[] = []): DraftEntry => ({ ...coachDraft(quotes), body });
+
+  it("rejects a quotation in the body that isn't listed in quotes, so it can't skip the verbatim check", async () => {
+    const result = await run([withBody("Kyle Shanahan said “we need to be better on third down.”")]);
+
+    expect(result).toEqual({
+      status: "rejected",
+      failures: [
+        {
+          check: "quotes",
+          entry: COACH_PATH,
+          reason: 'the body quotes "we need to be better on third down." but quotes doesn\'t list it, so it isn\'t checked word for word',
+        },
+      ],
+    });
+  });
+
+  it("rejects an unlisted quotation in straight double quotes too", async () => {
+    const result = await run([withBody('Shanahan said "we need to be better on third down."')]);
+
+    expect(result.status).toBe("rejected");
+    expect(result.status === "rejected" && result.failures.map((failure) => failure.check)).toEqual(["quotes"]);
+  });
+
+  it("publishes a body quotation that is listed, curly or straight, whole or in part", async () => {
+    const quotes = [{ text: "That’s on all of us, starting with me.", speaker: "Kyle Shanahan", source: SHANAHAN_URL }];
+    const body = 'Shanahan said "That\'s on all of us, starting with me." He added that it was “on all of us.”';
+    const result = await run([withBody(body, quotes)]);
+
+    expect(result.status).toBe("published");
+  });
+
+  it("doesn't count apostrophes or a scare-quoted single word as quotations", async () => {
+    const result = await run([withBody("The 49ers’ offense calls it the “juice” package, and it’s Shanahan’s favourite.")]);
+
+    expect(result.status).toBe("published");
+  });
+});

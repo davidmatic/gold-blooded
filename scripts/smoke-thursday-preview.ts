@@ -10,7 +10,7 @@
 // --out <dir> to have the published entries written there for a look.
 import { parseArgs } from "node:util";
 import { publish } from "../src/pipeline";
-import { claudePreviewWriter, previewSources } from "../src/pipeline/adapters/real";
+import { claudeGamePreviewWriter, thursdayPreviewSources } from "../src/pipeline/adapters/real";
 import { resolveCalendar } from "../src/pipeline/calendar";
 import { writeEntries } from "../src/pipeline/content-store";
 
@@ -23,7 +23,7 @@ const { values } = parseArgs({
 });
 
 const job = { type: "thursday-preview" as const, date: values.date };
-const sources = previewSources({ log: (message) => console.log(`  [sources] ${message}`) });
+const sources = thursdayPreviewSources({ log: (message) => console.log(`  [sources] ${message}`) });
 
 if (!values.claude) {
   const snapshot = await sources.collect(job);
@@ -38,7 +38,7 @@ if (!values.claude) {
   console.log(`nflverse stats: ${snapshot.stats ? `${snapshot.stats.players.length} player lines, ${snapshot.stats.teams.length} team lines` : "none (Offseason)"}`);
   console.log(`Skipped:${snapshot.skipped?.map((s) => `${s.outlet} (${s.reason})`).join(", ") || "none"}`);
 } else {
-  const result = await publish({ job: job.type, date: job.date, sources, writer: claudePreviewWriter() });
+  const result = await publish({ job: job.type, date: job.date, sources, writer: claudeGamePreviewWriter() });
   if (result.status === "published") {
     console.log(`PUBLISHED: ${result.entries.length} entries pass every check.`);
     for (const entry of result.entries) {

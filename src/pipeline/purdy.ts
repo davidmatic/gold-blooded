@@ -8,7 +8,7 @@
 // and he must have lines in every earlier season (the sources fetch only his, for those).
 import type { CitedStat, StatScope } from "../content/cited-stat";
 import { PURDY, TRACKER_COLUMNS, TRACKER_RATES } from "../content/purdy-shrine";
-import { gameWeekSlug, TEAM, type ScheduledGame } from "./calendar";
+import { gameFields, TEAM, type ScheduledGame } from "./calendar";
 import { round } from "./checks/nflverse-stats";
 import { statValue, type NflverseStats } from "./stats";
 
@@ -45,16 +45,7 @@ export function purdyStatTracker(game: ScheduledGame, schedule: readonly Schedul
 
   const gameLog = final
     .filter((g) => g.season === game.season)
-    .map((g) => ({
-      gameId: g.gameId,
-      gameWeek: gameWeekSlug(g.season, g.week, g.gameType),
-      week: g.week,
-      gameType: g.gameType,
-      opponent: g.opponent,
-      venue: g.neutralSite ? ("neutral" as const) : g.home ? ("home" as const) : ("away" as const),
-      result: g.result!,
-      played: purdyPlayed(stats, g.gameId),
-    }));
+    .map((g) => ({ ...gameFields(g), result: g.result!, played: purdyPlayed(stats, g.gameId) }));
 
   const cite = (scope: StatScope, rates: boolean): CitedStat[] =>
     TRACKER_COLUMNS.filter(([column]) => rates || !TRACKER_RATES.includes(column)).flatMap(([stat, label]) => {
