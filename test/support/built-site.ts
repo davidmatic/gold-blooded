@@ -34,18 +34,23 @@ function buildEnv(): NodeJS.ProcessEnv {
   );
 }
 
+export interface BuildOptions {
+  /** The build's clock, as an ISO datetime, handed to the build through `GOLD_BLOODED_NOW`. */
+  now?: string;
+}
+
 /**
  * Build the site against `test/fixtures/<fixture>` (or an absolute content folder path).
  * The content folder is handed to the build through `GOLD_BLOODED_CONTENT_DIR`.
  */
-export async function buildSite(fixture: string): Promise<BuiltSite> {
+export async function buildSite(fixture: string, options: BuildOptions = {}): Promise<BuiltSite> {
   const contentDir = path.isAbsolute(fixture) ? fixture : path.join(fixturesRoot, fixture);
   const outDir = await mkdtemp(path.join(tmpdir(), "gold-blooded-build-"));
   const astro = path.join(projectRoot, "node_modules", ".bin", "astro");
 
   await run(astro, ["build", "--outDir", outDir, "--silent"], {
     cwd: projectRoot,
-    env: { ...buildEnv(), GOLD_BLOODED_CONTENT_DIR: contentDir },
+    env: { ...buildEnv(), GOLD_BLOODED_CONTENT_DIR: contentDir, ...(options.now && { GOLD_BLOODED_NOW: options.now }) },
   });
 
   const files = async () =>
