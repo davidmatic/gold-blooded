@@ -4,6 +4,7 @@ import type { SeasonStatsData } from "../content/season-stats";
 import type { PredictionRecordData } from "../content/prediction-record";
 import type { GameStatus, NewsSummaryData, PracticeStatus } from "../content/news-summary";
 import type { DraftCoverageData, FreeAgencyTrackerData } from "../content/offseason";
+import type { LoveLetterData, PurdyStatTrackerData, ReasonsWeLoveBrockData } from "../content/purdy-shrine";
 import type { CalendarPosition, ScheduledGame } from "./calendar";
 import type { NflverseStats } from "./stats";
 
@@ -80,8 +81,8 @@ export interface SourceSnapshot {
   skipped?: SkippedSource[];
   /**
    * The running documents as they stand before this run, read from the content store: the
-   * Offseason's, and the season's Prediction Record. Absent (or missing one) before a
-   * document's first update.
+   * Offseason's, the season's Prediction Record, and the Purdy Shrine's Reasons We Love Brock.
+   * Absent (or missing one) before a document's first update.
    */
   current?: Partial<{ [T in RunningContentType]: { data: ContentTypes[T]; body: string } }>;
   /**
@@ -89,10 +90,15 @@ export interface SourceSnapshot {
    * store, which the Prediction Record scores. Absent when none was published for the game.
    */
   gamePreview?: GamePreviewData;
+  /**
+   * For the post-game job: set when `stats` also carries Brock Purdy's nflverse lines from every
+   * season since his first (2022), for his stat tracker. Unset, the tracker is left as it stands.
+   */
+  purdyCareer?: boolean;
 }
 
-/** Content types that are one running document per Offseason or season, updated run after run. */
-export type RunningContentType = "free-agency-tracker" | "draft-coverage" | "prediction-record";
+/** Content types that are one running document (per Offseason, per season, or for good), updated run after run. */
+export type RunningContentType = "free-agency-tracker" | "draft-coverage" | "prediction-record" | "reasons-we-love-brock";
 
 /** One video from an official channel's YouTube RSS feed. */
 export interface OfficialVideo {
@@ -132,6 +138,9 @@ export interface ContentTypes {
   "draft-coverage": DraftCoverageData;
   highlights: HighlightsData;
   "season-stats": SeasonStatsData;
+  "love-letter": LoveLetterData;
+  "reasons-we-love-brock": ReasonsWeLoveBrockData;
+  "purdy-stat-tracker": PurdyStatTrackerData;
   "prediction-record": PredictionRecordData;
 }
 export type ContentType = keyof ContentTypes;

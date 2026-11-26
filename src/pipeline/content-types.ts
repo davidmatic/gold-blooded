@@ -5,8 +5,10 @@ import { GAME_WEEK_FILES, gamePreviewSchema, highlightsSchema, seasonRecapSchema
 import { newsSummarySchema } from "../content/news-summary";
 import { draftCoverageSchema, draftDates, freeAgencyTrackerSchema, OFFSEASON_FILES, offseasonYear } from "../content/offseason";
 import { seasonStatsPath, seasonStatsSchema } from "../content/season-stats";
+import { LOVE_LETTER_VARIANTS, loveLetterSchema, PURDY_SHRINE_FILES, purdyStatTrackerSchema, reasonsWeLoveBrockSchema } from "../content/purdy-shrine";
+import { purdyPlayed, purdyStatTracker } from "./purdy";
+import { appendReason, mergeDraftCoverage, mergeFreeAgencyTracker } from "./running-documents";
 import { predictionRecordPath, predictionRecordSchema, scorePrediction } from "../content/prediction-record";
-import { mergeDraftCoverage, mergeFreeAgencyTracker } from "./running-documents";
 import { gameJustPlayed, gameWeekSlug, seasonRecord, type ScheduledGame } from "./calendar";
 import type { ContentType, Job, SourceSnapshot } from "./types";
 
@@ -22,7 +24,9 @@ interface ContentTypeDefinition {
    * For a running document: folds the writer's update into the document as it stood (from the
    * snapshot), before the owned fields are filled in. Without it the draft is the whole entry.
    */
-  merge?(draft: Record<string, unknown>, snapshot: SourceSnapshot): Record<string, unknown>;
+  merge?(draft: Record<string, unknown>, snapshot: SourceSnapshot, job: Job): Record<string, unknown>;
+  /** The entry's Markdown body, when it isn't the draft's (a running document's kept introduction). */
+  body?(draft: { body: string }, snapshot: SourceSnapshot): string;
   /**
    * For content the pipeline works out itself, with no writer: the draft it makes from the
    * snapshot, or undefined when there is nothing to write this run.
@@ -158,6 +162,59 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
     merge: (draft, snapshot) => mergeDraftCoverage(draft, snapshot.current?.["draft-coverage"]?.data),
     owned: (job) => ({ ...offseasonOwned(job, "Draft Coverage"), draft: draftDates(offseasonYear(job.date)) }),
     path: (data) => `offseason/${data.offseason}/${OFFSEASON_FILES["draft-coverage"]}`,
+  },
+  "love-letter": {
+    schema: loveLetterSchema,
+    single: true,
+    owned: (job, snapshot) => {
+      const game = playedGame(job, "Love Letters");
+      return {
+        date: job.date,
+        // Set from the DNP determination, so the writer can't pick the variant.
+        variant: purdyPlayed(snapshot.stats, game.gameId) ? LOVE_LETTER_VARIANTS[0] : LOVE_LETTER_VARIANTS[1],
+        gameWeek: gameWeekSlug(game.season, game.week, game.gameType),
+        gameId: game.gameId,
+        season: game.season,
+        week: game.week,
+        gameType: game.gameType,
+        opponent: game.opponent,
+        venue: venue(game),
+        result: game.result,
+      };
+    },
+    path: (data) => PURDY_SHRINE_FILES["love-letter"](data.gameWeek as string),
+  },
+  "reasons-we-love-brock": {
+    schema: reasonsWeLoveBrockSchema,
+    single: true,
+    merge: (draft, snapshot, job) => {
+      const game = playedGame(job, "Reasons We Love Brock");
+      return appendReason(draft, snapshot.current?.["reasons-we-love-brock"]?.data, { added: job.date, gameWeek: gameWeekSlug(game.season, game.week, game.gameType) });
+    },
+    body: (_, snapshot) => snapshot.current?.["reasons-we-love-brock"]?.body ?? "",
+    owned: (job) => ({ title: "Reasons We Love Brock", updated: job.date }),
+    path: () => PURDY_SHRINE_FILES["reasons-we-love-brock"],
+  },
+  "purdy-stat-tracker": {
+    schema: purdyStatTrackerSchema,
+    // Rebuilt from nflverse after every game. Without his career lines (the sources didn't
+    // collect them) it is left as it stands.
+    derive: (job, snapshot) => {
+      if (!snapshot.purdyCareer) return undefined;
+      const game = playedGame(job, "The Purdy stat tracker");
+      if (!snapshot.stats) throw new Error("the Purdy stat tracker needs nflverse stats, and the source snapshot has none");
+      return { data: purdyStatTracker(game, snapshot.schedule ?? [], snapshot.stats, job.date), body: "" };
+    },
+    owned: (job) => {
+      const game = playedGame(job, "The Purdy stat tracker");
+      return {
+        title: "Brock Purdy Stat Tracker",
+        updated: job.date,
+        season: game.season,
+        throughGame: { gameId: game.gameId, gameWeek: gameWeekSlug(game.season, game.week, game.gameType) },
+      };
+    },
+    path: () => PURDY_SHRINE_FILES["purdy-stat-tracker"],
   },
 };
 

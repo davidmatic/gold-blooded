@@ -14,6 +14,7 @@ import { podcastsAttributed } from "./checks/podcast-attribution";
 import { statsMatchNflverse } from "./checks/nflverse-stats";
 import { sourceLinksResolve } from "./checks/source-links";
 import { offseasonItemsSourced } from "./checks/offseason-items";
+import { injuryMentionsStated } from "./checks/injury-mentions";
 import { CONTENT_TYPES } from "./content-types";
 import type {
   CheckFailure,
@@ -45,16 +46,25 @@ const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, 
 
 /**
  * What the post-game job writes the day after a game, all about the game just played. Later
- * post-game content (the Love Letter, the Purdy stat tracker) joins this
- * list, with its content type and its share of the post-game writer.
+ * post-game content joins this list, with its content type and its share of the post-game writer.
  */
-export const POST_GAME_CONTENT: ContentType[] = ["highlights", "season-stats"];
+export const POST_GAME_CONTENT: ContentType[] = [
+  "highlights",
+  "season-stats",
+  // The Purdy Shrine (#10).
+  "love-letter",
+  "reasons-we-love-brock",
+];
 
 /**
  * What the post-game job works out itself the day after a game, with no writer: the Prediction
  * Record, scored from the game's Game Preview and the final score.
  */
-export const POST_GAME_DERIVED: ContentType[] = ["prediction-record"];
+export const POST_GAME_DERIVED: ContentType[] = [
+  "prediction-record",
+  // The Purdy Shrine (#10): his season and career numbers, with DNP games, from nflverse.
+  "purdy-stat-tracker",
+];
 
 // Later tickets add the other job types and more checks.
 const JOBS: Partial<Record<JobType, JobDefinition>> = {
@@ -75,7 +85,7 @@ const JOBS: Partial<Record<JobType, JobDefinition>> = {
   // day after the season's last game is already the Offseason). Without the final score it fails
   // before asking the writer.
   "post-game": {
-    checks: ALL_CHECKS,
+    checks: [...ALL_CHECKS, injuryMentionsStated],
     writes: (calendar, date) => {
       const game = gameJustPlayed(calendar, date);
       if (!game) return [];
@@ -133,14 +143,15 @@ function notAsked(draft: DraftEntry, job: Job): { failure: CheckFailure } {
 /** A draft becomes an entry only if it fits the type's schema. */
 function toEntry(draft: DraftEntry, job: Job, snapshot: SourceSnapshot): { entry: ContentEntry } | { failure: CheckFailure } {
   const definition = CONTENT_TYPES[draft.type];
-  const data = { ...(definition.merge ? definition.merge(draft.data, snapshot) : draft.data), ...definition.owned(job, snapshot) };
+  const data = { ...(definition.merge ? definition.merge(draft.data, snapshot, job) : draft.data), ...definition.owned(job, snapshot) };
   const path = definition.path(data, job);
   const parsed = definition.schema.safeParse(data);
   if (!parsed.success) {
     const reason = parsed.error.issues.map((issue) => `${issue.path.join(".") || "draft"}: ${issue.message}`).join("; ");
     return { failure: { check: "schema", entry: path, reason } };
   }
-  return { entry: { type: draft.type, path, data: parsed.data, body: draft.body } as ContentEntry };
+  const body = definition.body ? definition.body(draft, snapshot) : draft.body;
+  return { entry: { type: draft.type, path, data: parsed.data, body } as ContentEntry };
 }
 
 /** A content type a run writes exactly one of must be there exactly once. */

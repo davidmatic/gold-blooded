@@ -1,0 +1,24 @@
+---
+// One Love Letter in full: which letter it is (adoring, or "we miss you" when Purdy didn't play),
+// the game it is about, and the letter.
+import { render, type CollectionEntry } from "astro:content";
+import { letterGameLine, variantLabel } from "../site/purdy-shrine";
+import { sitePath } from "../site/sections";
+
+interface Props {
+  entry: CollectionEntry<"loveLetters">;
+  /** The heading level: h1 on the letter's own page, h2 elsewhere. */
+  heading?: "h1" | "h2";
+}
+
+const { entry, heading = "h2" } = Astro.props;
+const { Content } = await render(entry);
+const { data } = entry;
+const Heading = heading;
+---
+<article class:list={["love-letter", data.variant]}>
+  <p class="love-letter-kind">{variantLabel(data.variant)}</p>
+  <Heading>{data.title}</Heading>
+  <p class="news-meta"><a href={sitePath(`game-weeks/${data.gameWeek}`)}>{letterGameLine(data)}</a></p>
+  <Content />
+</article>

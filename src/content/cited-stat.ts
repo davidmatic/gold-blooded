@@ -10,7 +10,8 @@
 // - stat: an nflverse stats column (`passing_yards`, `rushing_tds`, `def_sacks`), or one of the
 //   derived rates in DERIVED_STATS (`completion_pct`, `yards_per_carry`, ...).
 // - scope: one game (by nflverse game id), a season (optionally just its regular season or
-//   postseason), or the last N games of a season that the player or team played.
+//   postseason), the last N games of a season that the player or team played, or a run of
+//   seasons (`{ type: "seasons", from: 2022, to: 2026 }`, a career).
 // - per: "game" for a per-game average over the scope instead of a total.
 // - value: the number as the piece states it. It matches when nflverse's value, rounded to as
 //   many decimal places as `value` has, is the same number.
@@ -26,6 +27,8 @@ export const statScope = z.discriminatedUnion("type", [
   z.object({ type: z.literal("game"), gameId: z.string().regex(/^\d{4}_\d{2}_[A-Z]+_[A-Z]+$/, "expected an nflverse game id such as 2026_12_SEA_SF") }),
   z.object({ type: z.literal("season"), season: z.number().int(), seasonType: z.enum(SEASON_TYPES).optional() }),
   z.object({ type: z.literal("last-games"), season: z.number().int(), games: z.number().int().min(1) }),
+  // Several seasons together, regular season and postseason: a career, such as Purdy's since 2022.
+  z.object({ type: z.literal("seasons"), from: z.number().int(), to: z.number().int() }),
 ]);
 
 export type StatScope = z.infer<typeof statScope>;

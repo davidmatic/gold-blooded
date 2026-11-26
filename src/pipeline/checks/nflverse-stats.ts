@@ -29,7 +29,7 @@ function matches(cited: number, actual: number): boolean {
   return Math.abs(round(actual, places) - cited) < 1e-9;
 }
 
-function round(value: number, places: number): number {
+export function round(value: number, places: number): number {
   const factor = 10 ** places;
   return Math.round(value * factor + Number.EPSILON * Math.sign(value)) / factor;
 }

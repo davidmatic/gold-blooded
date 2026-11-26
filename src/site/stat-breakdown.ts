@@ -42,6 +42,7 @@ export function statName(stat: CitedStat): string {
 export function scopeName(scope: StatScope): string {
   if (scope.type === "last-games") return `last ${scope.games} games`;
   if (scope.type === "season") return `${scope.season} ${scope.seasonType === "REG" ? "regular season" : scope.seasonType === "POST" ? "postseason" : "season"}`;
+  if (scope.type === "seasons") return `${scope.from} to ${scope.to} seasons`;
   const [, week, away, home] = scope.gameId.split("_");
   return `Week ${Number(week)} (${away} at ${home})`;
 }

@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import type { GamePreviewData } from "../../src/content/game-week";
 import { publish, type ContentWriter, type DraftEntry, type SourceSnapshot } from "../../src/pipeline";
-import { fakeSources, recordedSnapshot } from "../support/fakes";
+import { fakeSources, purdyShrineDrafts, recordedSnapshot } from "../support/fakes";
 
 const GAME = "2026_11_MIN_SF";
 const base = recordedSnapshot("thursday-preview-2026-11-26");
@@ -25,6 +25,7 @@ const drafts: DraftEntry[] = [
     data: { stats: [{ team: "SF", stat: "rushing_yards", scope: { type: "season", season: 2026 }, value: 1386, label: "Rushing yards" }] },
     body: "Nine wins in ten.",
   },
+  ...purdyShrineDrafts,
 ];
 const writer: ContentWriter = { write: async (job) => drafts.filter((draft) => job.contentTypes?.includes(draft.type)) };
 
@@ -117,6 +118,6 @@ describe("post-game job: the Prediction Record", () => {
     const recording: ContentWriter = { write: async (job, snapshot) => (asked.push(job.contentTypes ?? []), writer.write(job, snapshot)) };
     await publish({ job: "post-game", date: "2026-11-23", sources: fakeSources({ ...base, gamePreview: preview({ winner: "SF", score: { sf: 24, opponent: 17 } }) }), writer: recording });
 
-    expect(asked).toEqual([["highlights", "season-stats"]]);
+    expect(asked).toEqual([["highlights", "season-stats", "love-letter", "reasons-we-love-brock"]]);
   });
 });

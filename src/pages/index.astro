@@ -3,6 +3,8 @@ import { getCollection } from "astro:content";
 import GamePreviewLead from "../components/GamePreviewLead.astro";
 import NewsSummaryCard from "../components/NewsSummaryCard.astro";
 import OffseasonLead from "../components/OffseasonLead.astro";
+import LoveLetterLead from "../components/LoveLetterLead.astro";
+import { newestLoveLetter } from "../site/purdy-shrine";
 import { offseasonLead } from "../site/offseason";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { currentPreview } from "../site/game-weeks";
@@ -13,6 +15,7 @@ const latestNews = homepageNews(await getCollection("news"));
 const previews = await getCollection("gamePreviews");
 const preview = currentPreview(previews);
 // In the Offseason the Game Preview slot shows the Free Agency Tracker, or Draft Coverage around the draft.
+const loveLetter = newestLoveLetter(await getCollection("loveLetters"));
 const offseason = offseasonLead(await getCollection("freeAgencyTrackers"), await getCollection("draftCoverage"), previews);
 ---
 <BaseLayout>
@@ -32,6 +35,8 @@ const offseason = offseasonLead(await getCollection("freeAgencyTrackers"), await
       <p><a href={sitePath("news")}>All News Summaries</a></p>
     </section>
   )}
+
+  {loveLetter && <LoveLetterLead entry={loveLetter} />}
 
   <ul class="section-cards">
     {sections.map((section) => (

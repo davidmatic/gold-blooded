@@ -1,0 +1,54 @@
+---
+// The Purdy stat tracker: his numbers for each season since 2022 and his career, then this
+// season's game log, with DNP for the games he didn't play. All from nflverse, every number a
+// cited stat the stat check compared with nflverse when it was published.
+import type { CollectionEntry } from "astro:content";
+import { gameLogRows, TRACKER_HEADINGS, trackerSeasonRows } from "../site/purdy-shrine";
+import { sitePath } from "../site/sections";
+
+interface Props {
+  entry: CollectionEntry<"purdyStatTracker">;
+}
+
+const { data } = Astro.props.entry;
+const { seasons, career } = trackerSeasonRows(data);
+const log = gameLogRows(data);
+---
+<section class="stat-tracker" aria-labelledby="stat-tracker-heading">
+  <h2 id="stat-tracker-heading">{data.title}</h2>
+  <p class="news-meta">Regular season and playoffs. DNP: a game he didn't play.</p>
+  <div class="stat-table-wrap">
+    <table class="stat-table">
+      <caption>By season</caption>
+      <thead>
+        <tr><th scope="col">Season</th><th scope="col">Games</th><th scope="col">Played</th><th scope="col">DNP</th>{TRACKER_HEADINGS.map((h) => <th scope="col">{h}</th>)}</tr>
+      </thead>
+      <tbody>
+        {[...seasons, career].map((row) => (
+          <tr><th scope="row">{row.label}</th><td>{row.games}</td><td>{row.played}</td><td>{row.dnp}</td>{row.values.map((v) => <td>{v}</td>)}</tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  {log.length > 0 && (
+    <div class="stat-table-wrap">
+      <table class="stat-table game-log">
+        <caption>{data.season} game log</caption>
+        <thead>
+          <tr><th scope="col">Game</th><th scope="col">Opponent</th><th scope="col">Result</th>{TRACKER_HEADINGS.map((h) => <th scope="col">{h}</th>)}</tr>
+        </thead>
+        <tbody>
+          {log.map((game) => (
+            <tr class:list={{ dnp: !game.played }}>
+              <th scope="row"><a href={sitePath(`game-weeks/${game.gameWeek}`)}>{game.name}</a></th>
+              <td>{game.matchup}</td>
+              <td>{game.result}</td>
+              {game.played ? game.values.map((v) => <td>{v}</td>) : <td colspan={TRACKER_HEADINGS.length}>DNP</td>}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+  <p class="news-sources">Stats: <a href="https://github.com/nflverse/nflverse-data" rel="noopener">nflverse</a></p>
+</section>

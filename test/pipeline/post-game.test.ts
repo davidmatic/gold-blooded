@@ -4,7 +4,7 @@
 // clips the post-game sources add.
 import { describe, expect, it } from "vitest";
 import { publish, type ContentWriter, type DraftEntry, type Job, type SourceSnapshot } from "../../src/pipeline";
-import { fakeSources, recordedSnapshot } from "../support/fakes";
+import { fakeSources, purdyShrineDrafts, recordedSnapshot } from "../support/fakes";
 
 const snapshot: SourceSnapshot = {
   ...recordedSnapshot("thursday-preview-2026-11-26"),
@@ -51,14 +51,17 @@ const seasonStatsDraft: DraftEntry = {
   body: "Nine wins in ten, and the offense keeps humming.",
 };
 
-/** A writer that returns the drafts of the types the job asks for, and remembers the job. */
+/**
+ * A writer that returns the drafts of the types the job asks for (with the Purdy Shrine's, which
+ * test/pipeline/purdy-shrine.test.ts covers), and remembers the job. Given no drafts, it writes none.
+ */
 function recordingWriter(drafts: DraftEntry[] = [highlightsDraft, seasonStatsDraft]): ContentWriter & { jobs: Job[] } {
   const jobs: Job[] = [];
   return {
     jobs,
     write: async (job) => {
       jobs.push(job);
-      return drafts.filter((draft) => job.contentTypes?.includes(draft.type));
+      return [...drafts, ...(drafts.length > 0 ? purdyShrineDrafts : [])].filter((draft) => job.contentTypes?.includes(draft.type));
     },
   };
 }
@@ -70,6 +73,7 @@ function runPostGame(date: string, writer: ContentWriter = recordingWriter(), so
 describe("post-game job: the day after a game", () => {
   it("writes Highlights onto the Game Week Page of the game just played, and updates Season Stats", async () => {
     const result = await runPostGame("2026-11-23");
+    if (result.status === "published") result.entries = result.entries.filter((entry) => entry.type === "highlights" || entry.type === "season-stats");
 
     expect(result).toEqual({
       status: "published",
@@ -113,7 +117,7 @@ describe("post-game job: the day after a game", () => {
     const writer = recordingWriter([]);
     await runPostGame("2026-10-20", writer);
 
-    expect(writer.jobs[0]?.contentTypes).toEqual(["highlights", "season-stats"]);
+    expect(writer.jobs[0]?.contentTypes).toEqual(["highlights", "season-stats", "love-letter", "reasons-we-love-brock"]);
     expect(writer.jobs[0]?.calendar?.previous?.gameId).toBe("2026_06_WAS_SF");
   });
 
@@ -122,7 +126,7 @@ describe("post-game job: the day after a game", () => {
     const writer = recordingWriter([]);
     await runPostGame("2026-12-18", writer, played);
 
-    expect(writer.jobs[0]?.contentTypes).toEqual(["highlights", "season-stats"]);
+    expect(writer.jobs[0]?.contentTypes).toEqual(["highlights", "season-stats", "love-letter", "reasons-we-love-brock"]);
     expect(writer.jobs[0]?.calendar?.previous?.gameId).toBe("2026_15_SF_LAC");
   });
 
@@ -133,7 +137,7 @@ describe("post-game job: the day after a game", () => {
 
     expect(writer.jobs[0]?.calendar?.period).toBe("offseason");
     expect(writer.jobs[0]?.calendar?.previous?.gameId).toBe("2025_20_SF_SEA");
-    expect(writer.jobs[0]?.contentTypes).toEqual(["highlights", "season-stats"]);
+    expect(writer.jobs[0]?.contentTypes).toEqual(["highlights", "season-stats", "love-letter", "reasons-we-love-brock"]);
   });
 
   it("fails the run, before asking the writer, when the schedule has no final score for the game yet", async () => {

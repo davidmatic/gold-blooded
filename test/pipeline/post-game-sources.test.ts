@@ -18,10 +18,23 @@ import { fakeSources, recordedSnapshot } from "../support/fakes";
 
 const fixture = (name: string) => readFileSync(new URL(`../fixtures/sources/${name}`, import.meta.url), "utf8");
 const ninersFeed = fixture("youtube-49ers-feed.xml");
+const players2026 = fixture("nflverse-stats-player-week-2026-excerpt.csv");
+/**
+ * An earlier season's player stats, made from the 2026 excerpt's header, Purdy's Week 1 line, and
+ * one other player's: enough to see that only Purdy's lines are kept from earlier seasons.
+ */
+function earlierSeason(season: number): string {
+  const [header, ...rows] = players2026.trim().split("\n");
+  const purdy = rows.find((row) => row.includes(",Brock Purdy,"))!;
+  const other = rows.find((row) => !row.includes(",Brock Purdy,"))!;
+  return [header, purdy, other].map((row) => row.replaceAll("2026", String(season))).join("\n");
+}
 const NFLVERSE = {
   [SCHEDULE_URL]: { status: 200, body: fixture("nflverse-games-excerpt.csv") },
-  [statsUrls(2026).players]: { status: 200, body: fixture("nflverse-stats-player-week-2026-excerpt.csv") },
+  [statsUrls(2026).players]: { status: 200, body: players2026 },
   [statsUrls(2026).teams]: { status: 200, body: fixture("nflverse-stats-team-week-2026-excerpt.csv") },
+  // Purdy's career lines, for his stat tracker.
+  ...Object.fromEntries([2022, 2023, 2024, 2025].map((season) => [statsUrls(season).players, { status: 200, body: earlierSeason(season) }])),
 };
 const YOUTUBE = {
   [youtubeFeedUrl(OFFICIAL_CHANNELS.niners.id)]: { status: 200, body: ninersFeed },
@@ -66,6 +79,27 @@ describe("real sources: the post-game snapshot", () => {
       // The NFL's channel posts every team's clips: only the ones about the 49ers are kept.
       expect.objectContaining({ videoId: "Nf1Wk11SFmn", channel: "NFL" }),
     ]);
+  });
+
+  it("adds Purdy's nflverse lines from every earlier season since 2022 (only his), for his stat tracker", async () => {
+    const fetchPage = serving({ ...NFLVERSE, ...YOUTUBE });
+    const snapshot = await postGameSources({ fetchPage, news: fakeSources(news) }).collect(job);
+    const earlier = snapshot.stats!.players.filter((line) => line.season < 2026);
+
+    expect(snapshot.purdyCareer).toBe(true);
+    expect(earlier.map((line) => [line.season, line.player, line.gameId])).toEqual([
+      [2022, "Brock Purdy", "2022_01_SF_LA"],
+      [2023, "Brock Purdy", "2023_01_SF_LA"],
+      [2024, "Brock Purdy", "2024_01_SF_LA"],
+      [2025, "Brock Purdy", "2025_01_SF_LA"],
+    ]);
+    expect(fetchPage.asked).not.toContain(statsUrls(2025).teams);
+  });
+
+  it("fails the run when an earlier season's nflverse player stats won't load", async () => {
+    const fetchPage = serving({ ...NFLVERSE, ...YOUTUBE, [statsUrls(2023).players]: { status: 404, body: "" } });
+
+    await expect(postGameSources({ fetchPage, news: fakeSources(news) }).collect(job)).rejects.toThrow(/nflverse 2023 player stats.*HTTP 404/);
   });
 
   it("leaves out videos posted before the game kicked off", async () => {
@@ -161,6 +195,21 @@ describe("real sources: what the post-game snapshot reads from the content folde
 
     expect(snapshot.gamePreview).toEqual(preview);
     expect(snapshot.current).toEqual({ "prediction-record": { data: record, body: "\n" } });
+  });
+
+  it("adds the Reasons We Love Brock list as it stands", async () => {
+    const reasons = { title: "Reasons We Love Brock", updated: "2026-11-16", reasons: [{ reason: "He thanks his offensive line.", added: "2026-11-16" }] };
+    await writeEntries(contentDir, [{ type: "reasons-we-love-brock", path: "purdy-shrine/reasons.md", data: reasons, body: "Where do we start?" }]);
+    const snapshot = await collect();
+
+    expect(snapshot.current).toEqual({ "reasons-we-love-brock": { data: reasons, body: "Where do we start?\n" } });
+  });
+
+  it("fails the run when the Reasons We Love Brock list doesn't match its schema, rather than overwrite it", async () => {
+    await mkdir(path.join(contentDir, "purdy-shrine"), { recursive: true });
+    await writeFile(path.join(contentDir, "purdy-shrine", "reasons.md"), "---\ntitle: Reasons We Love Brock\n---\n");
+
+    await expect(collect()).rejects.toThrow(/purdy-shrine\/reasons.md doesn't match its schema/);
   });
 
   it("has neither when no Game Preview was published and no game has been scored", async () => {

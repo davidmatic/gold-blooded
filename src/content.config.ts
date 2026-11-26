@@ -5,6 +5,7 @@ import { newsSummarySchema } from "./content/news-summary";
 import { draftCoverageSchema, freeAgencyTrackerSchema, OFFSEASON_FILES } from "./content/offseason";
 import { seasonStatsSchema } from "./content/season-stats";
 import { predictionRecordSchema } from "./content/prediction-record";
+import { loveLetterSchema, originStorySchema, purdyStatTrackerSchema, reasonsWeLoveBrockSchema } from "./content/purdy-shrine";
 import { contentPath } from "./site/content-dir";
 
 const news = defineCollection({
@@ -56,4 +57,40 @@ const predictionRecords = defineCollection({
   schema: predictionRecordSchema,
 });
 
-export const collections = { news, gamePreviews, seasonRecaps, statBreakdowns, highlights, seasonStats, predictionRecords, freeAgencyTrackers, draftCoverage };
+// The Purdy Shrine: content/purdy-shrine/, a Love Letter per game under love-letters/, and one
+// file each for the reasons list, the stat tracker, and the origin story.
+const loveLetters = defineCollection({
+  loader: glob({ base: contentPath("purdy-shrine", "love-letters"), pattern: "*.md" }),
+  schema: loveLetterSchema,
+});
+
+const reasonsWeLoveBrock = defineCollection({
+  loader: glob({ base: contentPath("purdy-shrine"), pattern: "reasons.md" }),
+  schema: reasonsWeLoveBrockSchema,
+});
+
+const purdyStatTracker = defineCollection({
+  loader: glob({ base: contentPath("purdy-shrine"), pattern: "stat-tracker.md" }),
+  schema: purdyStatTrackerSchema,
+});
+
+const originStory = defineCollection({
+  loader: glob({ base: contentPath("purdy-shrine"), pattern: "origin-story.md" }),
+  schema: originStorySchema,
+});
+
+export const collections = {
+  news,
+  gamePreviews,
+  seasonRecaps,
+  statBreakdowns,
+  highlights,
+  seasonStats,
+  predictionRecords,
+  freeAgencyTrackers,
+  draftCoverage,
+  loveLetters,
+  reasonsWeLoveBrock,
+  purdyStatTracker,
+  originStory,
+};

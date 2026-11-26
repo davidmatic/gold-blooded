@@ -52,6 +52,17 @@ export async function fetchNflverseStats(fetchPage: FetchPage, season: number): 
   return { stats: { players: parsePlayerStats(players), teams: parseTeamStats(teams) } };
 }
 
+/**
+ * One player's lines from an earlier season's stats (the whole file is fetched; only his lines
+ * are kept). The season is over, so its file must be there: a miss fails the run.
+ */
+export async function fetchPlayerSeason(fetchPage: FetchPage, season: number, playerId: string): Promise<PlayerStatLine[]> {
+  const url = statsUrls(season).players;
+  const csv = await fetchCsv(fetchPage, url, `${season} player`);
+  if (csv === undefined) throw new Error(`could not fetch the nflverse ${season} player stats (${url}): HTTP 404`);
+  return parsePlayerStats(csv).filter((line) => line.playerId === playerId);
+}
+
 async function fetchCsv(fetchPage: FetchPage, url: string, kind: string): Promise<string | undefined> {
   const page = await fetchPage(url).catch((error: unknown) => {
     throw new Error(`could not fetch the nflverse ${kind} stats (${url}): ${error instanceof Error ? error.message : error}`);
