@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <link rel="self" href="http://www.youtube.com/feeds/videos.xml?channel_id=UCGfxHp2yuimtLsFaq1r7aIQ"/>
+ <id>yt:channel:GfxHp2yuimtLsFaq1r7aIQ</id>
+ <yt:channelId>GfxHp2yuimtLsFaq1r7aIQ</yt:channelId>
+ <title>The QB School</title>
+ <link rel="alternate" href="https://www.youtube.com/channel/UCGfxHp2yuimtLsFaq1r7aIQ"/>
+ <author>
+  <name>The QB School</name>
+  <uri>https://www.youtube.com/channel/UCGfxHp2yuimtLsFaq1r7aIQ</uri>
+ </author>
+ <published>2016-02-11T03:12:44+00:00</published>
+ <entry>
+  <id>yt:video:qbStroud011</id>
+  <yt:videoId>qbStroud011</yt:videoId>
+  <yt:channelId>UCGfxHp2yuimtLsFaq1r7aIQ</yt:channelId>
+  <title>CJ Stroud vs the Colts Week 12, 2026 Analysis</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=qbStroud011"/>
+  <author>
+   <name>The QB School</name>
+   <uri>https://www.youtube.com/channel/UCGfxHp2yuimtLsFaq1r7aIQ</uri>
+  </author>
+  <published>2026-11-25T15:00:00+00:00</published>
+  <updated>2026-11-25T15:10:00+00:00</updated>
+  <media:group>
+   <media:title>CJ Stroud vs the Colts Week 12, 2026 Analysis</media:title>
+   <media:description>JT breaks down CJ Stroud's game against Indianapolis.</media:description>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:qbPurdy0001</id>
+  <yt:videoId>qbPurdy0001</yt:videoId>
+  <yt:channelId>UCGfxHp2yuimtLsFaq1r7aIQ</yt:channelId>
+  <title>Brock Purdy vs the Vikings Week 11, 2026 Analysis</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=qbPurdy0001"/>
+  <author>
+   <name>The QB School</name>
+   <uri>https://www.youtube.com/channel/UCGfxHp2yuimtLsFaq1r7aIQ</uri>
+  </author>
+  <published>2026-11-24T17:00:00+00:00</published>
+  <updated>2026-11-24T17:30:00+00:00</updated>
+  <media:group>
+   <media:title>Brock Purdy vs the Vikings Week 11, 2026 Analysis</media:title>
+   <media:description>Breaking down Brock Purdy&apos;s three touchdowns against Minnesota in Mexico City.
+
+Support the channel: https://www.patreon.com/theqbschool</media:description>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:qbNiners002</id>
+  <yt:videoId>qbNiners002</yt:videoId>
+  <yt:channelId>UCGfxHp2yuimtLsFaq1r7aIQ</yt:channelId>
+  <title>How Kyle Shanahan Schemes Receivers Open</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=qbNiners002"/>
+  <author>
+   <name>The QB School</name>
+   <uri>https://www.youtube.com/channel/UCGfxHp2yuimtLsFaq1r7aIQ</uri>
+  </author>
+  <published>2026-11-21T17:00:00+00:00</published>
+  <updated>2026-11-21T17:30:00+00:00</updated>
+  <media:group>
+   <media:title>How Kyle Shanahan Schemes Receivers Open</media:title>
+   <media:description>The 49ers' play-action game, frame by frame.</media:description>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:qbOldPurdy0</id>
+  <yt:videoId>qbOldPurdy0</yt:videoId>
+  <yt:channelId>UCGfxHp2yuimtLsFaq1r7aIQ</yt:channelId>
+  <title>Brock Purdy vs the Cowboys Week 10, 2026 Analysis</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=qbOldPurdy0"/>
+  <author>
+   <name>The QB School</name>
+   <uri>https://www.youtube.com/channel/UCGfxHp2yuimtLsFaq1r7aIQ</uri>
+  </author>
+  <published>2026-11-10T17:00:00+00:00</published>
+  <updated>2026-11-10T17:30:00+00:00</updated>
+  <media:group>
+   <media:title>Brock Purdy vs the Cowboys Week 10, 2026 Analysis</media:title>
+   <media:description>Purdy in Dallas.</media:description>
+  </media:group>
+ </entry>
+</feed>
