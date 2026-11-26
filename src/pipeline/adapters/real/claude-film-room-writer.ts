@@ -74,7 +74,6 @@ export function claudeFilmRoomWriter(options: ClaudeOptions = {}): ContentWriter
   const ask = claudeAsker(options);
   return {
     async write(job, snapshot) {
-      if (job.type !== "film-room") throw new Error(`the Claude Film Room writer doesn't write "${job.type}"`);
       if (!snapshot.documents.some((doc) => doc.film)) return [];
       return toFilmRoomDrafts(await ask(FILM_ROOM_VOICE, filmRoomOutputSchema, renderFilmRoomBrief(job, snapshot)));
     },

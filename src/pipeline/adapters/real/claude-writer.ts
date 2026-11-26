@@ -71,13 +71,10 @@ export function toDraftEntries(output: WriterOutput): DraftEntry[] {
   }));
 }
 
-export type ClaudeWriterOptions = ClaudeOptions;
-
-export function claudeWriter(options: ClaudeWriterOptions = {}): ContentWriter {
+export function claudeWriter(options: ClaudeOptions = {}): ContentWriter {
   const ask = claudeAsker(options);
   return {
     async write(job, snapshot) {
-      if (job.type !== "daily-news") throw new Error(`the Claude writer doesn't write "${job.type}" yet`);
       return toDraftEntries(await ask(NEWS_VOICE, writerOutputSchema, renderSnapshot(job, snapshot)));
     },
   };

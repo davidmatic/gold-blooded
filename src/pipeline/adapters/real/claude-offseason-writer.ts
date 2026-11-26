@@ -105,9 +105,7 @@ export function toOffseasonDrafts(output: OffseasonOutput): DraftEntry[] {
   ];
 }
 
-export type ClaudeOffseasonWriterOptions = ClaudeOptions;
-
-export function claudeOffseasonWriter(options: ClaudeOffseasonWriterOptions = {}): ContentWriter {
+export function claudeOffseasonWriter(options: ClaudeOptions = {}): ContentWriter {
   const ask = claudeAsker(options);
   return {
     write: async (job, snapshot) => toOffseasonDrafts(await ask(OFFSEASON_VOICE, offseasonOutputSchema, renderOffseasonBrief(job, snapshot))),

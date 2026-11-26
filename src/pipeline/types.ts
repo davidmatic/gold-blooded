@@ -13,8 +13,9 @@ export type { GameStatus, PracticeStatus };
 export type { CalendarPeriod, CalendarPosition, GameType, ScheduledGame } from "./calendar";
 export type { NflverseStats, PlayerStatLine, TeamStatLine } from "./stats";
 
-/** The scheduled jobs. Each has its own workflow. */
-export type JobType = "daily-news" | "post-game" | "thursday-preview" | "film-room" | "offseason";
+/** The scheduled jobs. Each has its own workflow. The one list every job registry is keyed by. */
+export const JOB_TYPES = ["daily-news", "post-game", "thursday-preview", "film-room", "offseason"] as const;
+export type JobType = (typeof JOB_TYPES)[number];
 
 /** A job to run: its type and the date it runs for (YYYY-MM-DD, team-local). */
 export interface Job {

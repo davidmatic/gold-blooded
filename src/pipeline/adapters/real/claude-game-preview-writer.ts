@@ -198,9 +198,7 @@ export function toRecapDraft(output: RecapOutput): DraftEntry {
   };
 }
 
-export type ClaudeGamePreviewWriterOptions = ClaudeOptions;
-
-export function claudeGamePreviewWriter(options: ClaudeGamePreviewWriterOptions = {}): ContentWriter {
+export function claudeGamePreviewWriter(options: ClaudeOptions = {}): ContentWriter {
   const ask = claudeAsker(options);
 
   return {

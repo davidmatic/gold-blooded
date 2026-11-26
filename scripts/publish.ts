@@ -10,10 +10,9 @@
 import { parseArgs } from "node:util";
 import { fixtureAdapters } from "../src/pipeline/adapters/fixture";
 import { realAdapters, SpendLimitReachedError } from "../src/pipeline/adapters/real";
-import { runJob, type JobType } from "../src/pipeline";
+import { JOB_TYPES, runJob, type JobType } from "../src/pipeline";
 import { contentDir } from "../src/site/content-dir";
 
-const JOB_TYPES: readonly JobType[] = ["daily-news", "post-game", "thursday-preview", "film-room", "offseason"];
 const ADAPTERS = {
   fixture: (job: JobType) => fixtureAdapters(job),
   real: (job: JobType, dir: string) => realAdapters(job, dir),
@@ -34,7 +33,7 @@ const { positionals, values } = parseArgs({
 });
 
 const job = positionals[0] as JobType;
-if (!JOB_TYPES.includes(job)) throw new Error(`usage: publish.ts <${JOB_TYPES.join("|")}> [--date YYYY-MM-DD]`);
+if (!(JOB_TYPES as readonly string[]).includes(job)) throw new Error(`usage: publish.ts <${JOB_TYPES.join("|")}> [--date YYYY-MM-DD]`);
 if (!/^\d{4}-\d{2}-\d{2}$/.test(values.date)) throw new Error(`--date must be YYYY-MM-DD, got ${values.date}`);
 const makeAdapters = ADAPTERS[values.adapters as keyof typeof ADAPTERS];
 if (!makeAdapters) throw new Error(`unknown --adapters "${values.adapters}" (known: ${Object.keys(ADAPTERS).join(", ")})`);

@@ -13,7 +13,7 @@ interface Fixture {
   drafts: DraftEntry[];
 }
 
-const FIXTURES: Partial<Record<JobType, URL>> = {
+const FIXTURES: Record<JobType, URL> = {
   "daily-news": new URL("./fixtures/daily-news.json", import.meta.url),
   "thursday-preview": new URL("./fixtures/thursday-preview.json", import.meta.url),
   offseason: new URL("./fixtures/offseason.json", import.meta.url),
@@ -22,9 +22,7 @@ const FIXTURES: Partial<Record<JobType, URL>> = {
 };
 
 async function loadFixture(job: JobType): Promise<Fixture> {
-  const file = FIXTURES[job];
-  if (!file) throw new Error(`no fixture for job type "${job}"`);
-  return JSON.parse(await readFile(file, "utf8"));
+  return JSON.parse(await readFile(FIXTURES[job], "utf8"));
 }
 
 export async function fixtureAdapters(job: JobType): Promise<{ sources: SourceAdapter; writer: ContentWriter }> {

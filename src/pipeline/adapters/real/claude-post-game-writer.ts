@@ -286,9 +286,7 @@ const POST_GAME_WRITERS: Partial<Record<ContentType, PostGameWriter<z.ZodType>>>
   "reasons-we-love-brock": { voice: REASONS_VOICE, schema: reasonOutputSchema, brief: renderReasonBrief, toDraft: toReasonDraft } as PostGameWriter<z.ZodType>,
 };
 
-export type ClaudePostGameWriterOptions = ClaudeOptions;
-
-export function claudePostGameWriter(options: ClaudePostGameWriterOptions = {}): ContentWriter {
+export function claudePostGameWriter(options: ClaudeOptions = {}): ContentWriter {
   const ask = claudeAsker(options);
   return {
     async write(job, snapshot) {

@@ -28,24 +28,25 @@ export { filmRoomSources } from "./film-room-sources";
 export { claudeFilmRoomWriter } from "./claude-film-room-writer";
 export { ytDlpCaptions } from "./captions";
 
-export async function realAdapters(
-  job: JobType,
-  contentDir: string,
-): Promise<{ sources: SourceAdapter; writer: ContentWriter }> {
-  if (job === "thursday-preview") return { sources: thursdayPreviewSources(), writer: claudeGamePreviewWriter() };
-  if (job === "offseason") return { sources: offseasonSources({ contentDir }), writer: claudeOffseasonWriter() };
-  if (job === "post-game") return { sources: postGameSources({ contentDir }), writer: claudePostGameWriter() };
-  if (job === "film-room") {
-    return {
-      sources: filmRoomSources({ contentDir, podcasts: realPodcastTranscripts(), captions: ytDlpCaptions() }),
-      writer: claudeFilmRoomWriter(),
-    };
-  }
-  if (job !== "daily-news") throw new Error(`no real adapters for job type "${job}" yet`);
-  return {
+type Adapters = { sources: SourceAdapter; writer: ContentWriter };
+
+/** Each job's real sources and writer. */
+const REAL_ADAPTERS: Record<JobType, (contentDir: string) => Adapters | Promise<Adapters>> = {
+  "daily-news": async (contentDir) => ({
     sources: realSources({ alreadyCited: await citedSourceUrls(contentDir), podcasts: realPodcastTranscripts() }),
     writer: claudeWriter(),
-  };
+  }),
+  "thursday-preview": () => ({ sources: thursdayPreviewSources(), writer: claudeGamePreviewWriter() }),
+  offseason: (contentDir) => ({ sources: offseasonSources({ contentDir }), writer: claudeOffseasonWriter() }),
+  "post-game": (contentDir) => ({ sources: postGameSources({ contentDir }), writer: claudePostGameWriter() }),
+  "film-room": (contentDir) => ({
+    sources: filmRoomSources({ contentDir, podcasts: realPodcastTranscripts(), captions: ytDlpCaptions() }),
+    writer: claudeFilmRoomWriter(),
+  }),
+};
+
+export async function realAdapters(job: JobType, contentDir: string): Promise<Adapters> {
+  return REAL_ADAPTERS[job](contentDir);
 }
 
 /** Podcast transcripts from the real feeds, transcribed with Whisper and cached in the repo. */
