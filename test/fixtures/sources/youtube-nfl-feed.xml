@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <link rel="self" href="http://www.youtube.com/feeds/videos.xml?channel_id=UCDVYQ4Zhbm3S2dlz7P1GBDg"/>
+ <id>yt:channel:DVYQ4Zhbm3S2dlz7P1GBDg</id>
+ <yt:channelId>DVYQ4Zhbm3S2dlz7P1GBDg</yt:channelId>
+ <title>NFL</title>
+ <link rel="alternate" href="https://www.youtube.com/channel/UCDVYQ4Zhbm3S2dlz7P1GBDg"/>
+ <author>
+  <name>NFL</name>
+  <uri>https://www.youtube.com/channel/UCDVYQ4Zhbm3S2dlz7P1GBDg</uri>
+ </author>
+ <published>2014-12-14T02:07:35+00:00</published>
+ <!-- The second entry is the first one edited to be about the 49ers game: the real feed had already rolled past the NFL's Week 11 49ers clips when it was captured. -->
+ <entry>
+  <id>yt:video:__40m4hxmdA</id>
+  <yt:videoId>__40m4hxmdA</yt:videoId>
+  <yt:channelId>UCDVYQ4Zhbm3S2dlz7P1GBDg</yt:channelId>
+  <title>Green Bay Packers vs Los Angeles Rams Game Highlights | 2026 NFL Season Week 12</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=__40m4hxmdA"/>
+  <author>
+   <name>NFL</name>
+   <uri>https://www.youtube.com/channel/UCDVYQ4Zhbm3S2dlz7P1GBDg</uri>
+  </author>
+  <published>2026-11-26T04:48:07+00:00</published>
+  <updated>2026-11-26T05:42:10+00:00</updated>
+  <media:group>
+   <media:title>Green Bay Packers vs Los Angeles Rams Game Highlights | 2026 NFL Season Week 12</media:title>
+   <media:content url="https://www.youtube.com/v/__40m4hxmdA?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i4.ytimg.com/vi/__40m4hxmdA/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Watch live local and primetime games, NFL RedZone, and NFL Network on Plus.NFL.com
+
+Check out our other channels:
+NFL Mundo https://www.youtube.com/mundonfl
+NFL Brasil https://www.youtube.com/c/NFLBrasilOficial
+NFL UK https://www.youtube.com/channel/UCVe0dAja_vZCmvfHXjtdRQA 
+NFL Fantasy Football https://www.youtube.com/nflfantasyfootball
+NFL Play Football https://www.youtube.com/playfootball
+NFL Throwback http://www.youtube.com/nflvault
+NFL Films http://www.youtube.com/nflfilms
+NFL Network http://www.youtube.com/nflnetwork
+
+#NFL #Football #AmericanFootball #GameRecap</media:description>
+   <media:community>
+    <media:starRating count="5187" average="5.00" min="1" max="5"/>
+    <media:statistics views="271271"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:Nf1Wk11SFmn</id>
+  <yt:videoId>Nf1Wk11SFmn</yt:videoId>
+  <yt:channelId>UCDVYQ4Zhbm3S2dlz7P1GBDg</yt:channelId>
+  <title>Minnesota Vikings vs. San Francisco 49ers Game Highlights | 2026 NFL Season Week 11</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=Nf1Wk11SFmn"/>
+  <author>
+   <name>NFL</name>
+   <uri>https://www.youtube.com/channel/UCDVYQ4Zhbm3S2dlz7P1GBDg</uri>
+  </author>
+  <published>2026-11-23T05:10:00+00:00</published>
+  <updated>2026-11-26T05:42:10+00:00</updated>
+  <media:group>
+   <media:title>Minnesota Vikings vs. San Francisco 49ers Game Highlights | 2026 NFL Season Week 11</media:title>
+   <media:content url="https://www.youtube.com/v/Nf1Wk11SFmn?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i4.ytimg.com/vi/Nf1Wk11SFmn/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Watch live local and primetime games, NFL RedZone, and NFL Network on Plus.NFL.com
+
+Check out our other channels:
+NFL Mundo https://www.youtube.com/mundonfl
+NFL Brasil https://www.youtube.com/c/NFLBrasilOficial
+NFL UK https://www.youtube.com/channel/UCVe0dAja_vZCmvfHXjtdRQA 
+NFL Fantasy Football https://www.youtube.com/nflfantasyfootball
+NFL Play Football https://www.youtube.com/playfootball
+NFL Throwback http://www.youtube.com/nflvault
+NFL Films http://www.youtube.com/nflfilms
+NFL Network http://www.youtube.com/nflnetwork
+
+#NFL #Football #AmericanFootball #GameRecap</media:description>
+   <media:community>
+    <media:starRating count="5187" average="5.00" min="1" max="5"/>
+    <media:statistics views="271271"/>
+   </media:community>
+  </media:group>
+ </entry>
+</feed>

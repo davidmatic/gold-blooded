@@ -6,7 +6,7 @@
 import { resolveCalendar } from "../../calendar";
 import type { Job, SourceAdapter, SourceSnapshot } from "../../types";
 import { fetchNflverseStats } from "./nflverse-stats";
-import { parseSchedule, SCHEDULE_URL } from "./schedule";
+import { fetchSchedule } from "./schedule";
 import { fetchWithBotUserAgent, realSources, type FetchPage } from "./sources";
 
 export interface PreviewSourcesOptions {
@@ -22,7 +22,7 @@ export function previewSources(options: PreviewSourcesOptions = {}): SourceAdapt
 
   return {
     async collect(job: Job): Promise<SourceSnapshot> {
-      const [snapshot, schedule] = await Promise.all([news.collect({ type: "daily-news", date: job.date }), fetchSchedule()]);
+      const [snapshot, schedule] = await Promise.all([news.collect({ type: "daily-news", date: job.date }), fetchSchedule(fetchPage)]);
       const calendar = resolveCalendar(job.date, schedule);
       if (calendar.period === "offseason") return { ...snapshot, date: job.date, schedule };
       const { stats, skipped } = await fetchNflverseStats(fetchPage, calendar.season);
@@ -30,12 +30,4 @@ export function previewSources(options: PreviewSourcesOptions = {}): SourceAdapt
     },
     linkResolves: (url) => news.linkResolves(url),
   };
-
-  async function fetchSchedule() {
-    const page = await fetchPage(SCHEDULE_URL).catch((error: unknown) => {
-      throw new Error(`could not fetch the nflverse schedule (${SCHEDULE_URL}): ${error instanceof Error ? error.message : error}`);
-    });
-    if (page.status < 200 || page.status > 299) throw new Error(`could not fetch the nflverse schedule (${SCHEDULE_URL}): HTTP ${page.status}`);
-    return parseSchedule(page.body);
-  }
 }
