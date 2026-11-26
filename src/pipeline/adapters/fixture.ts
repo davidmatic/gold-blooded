@@ -18,6 +18,7 @@ const FIXTURES: Partial<Record<JobType, URL>> = {
   "thursday-preview": new URL("./fixtures/thursday-preview.json", import.meta.url),
   offseason: new URL("./fixtures/offseason.json", import.meta.url),
   "post-game": new URL("./fixtures/post-game.json", import.meta.url),
+  "film-room": new URL("./fixtures/film-room.json", import.meta.url),
 };
 
 async function loadFixture(job: JobType): Promise<Fixture> {
