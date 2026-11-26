@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title>News</title>
+    <description>Latest News</description>
+    <atom:link href="https://www.49ers.com/rss/news" rel="self" type="application/rss+xml" />
+    <link>https://www.49ers.com</link>
+    <language>en-US</language>
+    <image>
+      <title>News</title>
+      <url>https://static.nfl.com/static/content/public/static/wildcat/assets/img/logos/teams/SF.svg</url>
+      <link>https://www.49ers.com</link>
+    </image>
+      <item>
+        <title><![CDATA[Brock Purdy Named NFC Offensive Player of the Week Following Mexico City Win]]></title>
+          <description><![CDATA[San Francisco 49ers quarterback Brock Purdy was named NFC Offensive Player of the Week after the team's Week 11 win over the Minnesota Vikings in Mexico City.]]></description>
+        <link>https://www.49ers.com/news/brock-purdy-named-nfc-offensive-player-of-the-week-following-mexico-city-win</link>
+        <pubDate>Wed, 25 Nov 2026 20:13:10 GMT</pubDate>
+        <guid isPermaLink="false">4cfdff56-8845-48a6-a9d0-a0a09cd340d9</guid>
+        <source url="https://www.49ers.com/rss/news">News</source>
+          <media:content url="https://static.clubs.nfl.com/image/upload/t_editorial_landscape_12_desktop/49ers/wctuhotjcukvsq2zktpv.png" />
+          <enclosure url="https://static.clubs.nfl.com/image/upload/t_editorial_landscape_12_desktop/49ers/wctuhotjcukvsq2zktpv.jpg" length="0" type="image/jpeg"></enclosure>
+            <media:keywords>
+              <![CDATA[Player Siders, Latest App, English, English Articles, News, Brooke Evans, Brock Purdy, George Kittle, Mike Evans, Christian McCaffrey]]>
+            </media:keywords>
+      </item>
+<item>
+        <title><![CDATA[49ers Activate CB Nate Hobbs, Place OL Colton McKivitz on the Injured Reserve List]]></title>
+          <description><![CDATA[The 49ers announced they have activated CB Nate Hobbs from the Injured Reserve List and signed WR Brandin Cooks to the practice squad. In order to make room on the roster, the team placed OL Colton McKivitz on the Injured Reserve List.]]></description>
+        <link>https://www.49ers.com/news/49ers-activate-cb-nate-hobbs-place-ol-colton-mckivitz-on-the-injured-reserve-list</link>
+        <pubDate>Wed, 25 Nov 2026 19:00:00 GMT</pubDate>
+        <guid isPermaLink="false">f36fc308-9b3a-4a6f-9e28-853cb75108b6</guid>
+        <source url="https://www.49ers.com/rss/news">News</source>
+          <media:content url="https://static.clubs.nfl.com/image/upload/t_editorial_landscape_12_desktop/49ers/cziqdoyjolwo2bbmazub.png" />
+          <enclosure url="https://static.clubs.nfl.com/image/upload/t_editorial_landscape_12_desktop/49ers/cziqdoyjolwo2bbmazub.jpg" length="0" type="image/jpeg"></enclosure>
+            <media:keywords>
+              <![CDATA[Roster Moves, Latest App, News - Roster, English, English Articles, News]]>
+            </media:keywords>
+      </item>
+<item>
+        <title><![CDATA[Morning Report: 49ers Top Power Rankings Ahead of Seahawks Matchup 🗞️]]></title>
+          <description><![CDATA[Catch up on the latest San Francisco 49ers headlines, powered by Cisco.]]></description>
+        <link>https://www.49ers.com/news/morning-reports/morning-report-49ers-top-power-rankings-ahead-of-seahawks-matchup</link>
+        <pubDate>Wed, 25 Nov 2026 15:08:12 GMT</pubDate>
+        <guid isPermaLink="false">9224b8b8-0feb-429a-a899-e8b64682632e</guid>
+        <source url="https://www.49ers.com/rss/news">News</source>
+          <media:content url="https://static.clubs.nfl.com/image/upload/t_editorial_landscape_12_desktop/49ers/g8m1lppddas3ebh7hktv.jpg" />
+          <enclosure url="https://static.clubs.nfl.com/image/upload/t_editorial_landscape_12_desktop/49ers/g8m1lppddas3ebh7hktv.jpg" length="0" type="image/jpeg"></enclosure>
+            <media:keywords>
+              <![CDATA[Morning Report, 49ers Morning Report, News, Latest App, English, English Articles, Cisco]]>
+            </media:keywords>
+      </item>
+<item>
+        <title><![CDATA[Power Rankings: Where the 49ers Stand Entering Week 12]]></title>
+          <description><![CDATA[Find out where the San Francisco 49ers landed in the latest set of NFL power rankings according to several national outlets following their 35-10 win over the Minnesota Vikings.]]></description>
+        <link>https://www.49ers.com/news/power-rankings-where-the-49ers-stand-entering-week-12</link>
+        <pubDate>Wed, 25 Nov 2026 01:14:26 GMT</pubDate>
+        <guid isPermaLink="false">2a3f7da1-8dd7-4d3a-b888-9143f3e66147</guid>
+        <source url="https://www.49ers.com/rss/news">News</source>
+          <media:content url="https://static.clubs.nfl.com/image/upload/t_editorial_landscape_12_desktop/49ers/ls1ubshvhdhippsaqdkr.png" />
+          <enclosure url="https://static.clubs.nfl.com/image/upload/t_editorial_landscape_12_desktop/49ers/ls1ubshvhdhippsaqdkr.jpg" length="0" type="image/jpeg"></enclosure>
+            <media:keywords>
+              <![CDATA[Rankings and Grades, Latest App, English, English Articles, News, SAP, Brooke Evans, Power Rankings, Brock Purdy, Mike Evans, Minnesota Vikings at San Francisco 49ers (2026-REG-11)]]>
+            </media:keywords>
+      </item>
+</channel>
+</rss>

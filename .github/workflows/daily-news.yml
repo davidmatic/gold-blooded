@@ -4,7 +4,8 @@ name: Daily news
 # to main and deploys the site. On a rejected result the job fails (GitHub notifies the
 # owner), nothing is committed, and the site keeps its previous version.
 #
-# Uses the fixture adapters until the real source fetchers and Claude writer land (#4).
+# Uses the real adapters: it fetches the Preferred Sources and writes with Claude. The API key
+# is the ANTHROPIC_API_KEY repository secret (see README: Secrets and cost).
 
 on:
   schedule:
@@ -38,9 +39,10 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Run the daily news job
-        run: npx tsx scripts/publish.ts daily-news --adapters fixture ${DATE:+--date "$DATE"}
+        run: npx tsx scripts/publish.ts daily-news --adapters real ${DATE:+--date "$DATE"}
         env:
           DATE: ${{ inputs.date }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Commit new content
         id: commit
         run: |
