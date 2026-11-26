@@ -16,7 +16,7 @@ npm run build    # static output in dist/
 
 ## Layout
 
-- `src/pages/`: Astro routes. `[section].astro` renders placeholders for sections that don't have a page yet.
+- `src/pages/`: Astro routes, one per section (every section has a real page).
 - `src/layouts/`, `src/components/`: shared layout, header nav, and the disclaimer footer.
 - `src/site/`: plain TypeScript site config (sections, base-path links, content folder).
 - `src/content/`: content type schemas (e.g. `news-summary.ts`), shared by the site's content
@@ -264,9 +264,33 @@ so). The post-game job writes three of its four parts:
   the run. Without `purdyCareer` the tracker is left as it stands.
 - **Origin story** (`origin-story.md`, "Mr. Irrelevant to Mr. Everything"). Written by hand.
   Edit the file to change it.
-- **Purdy in the Film Room.** A slot for ticket #12. `src/pages/purdy-shrine/index.astro` passes
-  `filmRoom` (a `ShrineFilmRoomEntry[]` from `src/site/purdy-shrine.ts`, empty for now) to
-  `PurdyFilmRoom.astro`, which shows nothing until there are entries.
+- **Purdy in the Film Room.** The Purdy-tagged Film Room entries, newest first
+  (`shrineFilmRoom()` in `src/site/film-room.ts`), shown by `PurdyFilmRoom.astro`, each linking to
+  its place on the Film Room page and to the original. Hidden when there are none (see Film Room).
+
+## Film Room
+
+The Film Room job (`.github/workflows/film-room.yml`, daily) writes one short, credited entry per
+new breakdown to `content/film-room/<date>-<slug>.md` (`src/content/film-room.ts`), shown at
+`/film-room/`, with the newest on the homepage.
+
+- **Sources** (`adapters/real/film-room-sources.ts`), looking back 7 days and leaving out any
+  breakdown an entry already links to: The QB School's YouTube feed (videos about the 49ers only,
+  up to 3) and Jonnydel's Football Academy's newest episodes (up to 2), transcribed through
+  `src/podcasts/` with the shared transcript cache. A feed that won't load is skipped.
+- **QB School captions are best effort** (`adapters/real/captions.ts`, yt-dlp, 120 s timeout, no
+  cookies). When YouTube blocks the runner, the entry is written from the video's title and
+  description (`transcribed: false`, and the page says so), and the run goes on. A JFA episode
+  Whisper can't transcribe falls back to its show notes the same way.
+- **The writer** (`claude-film-room-writer.ts`) gives the title, body, `link`, `purdy`, and any
+  quotes. The pipeline fills in `show`, `medium`, `sourceTitle`, `publishedAt`, and `transcribed`
+  from the source, so a link that isn't one of the run's breakdowns fails its schema. With no new
+  breakdowns there is no Claude call.
+- **Checks**, besides source links, quotes, and podcast attribution (a JFA entry must name the
+  show and Jonnydel): `film-room-coverage` (every breakdown gets exactly one entry) and
+  `film-room-purdy` (a `purdy: true` tag needs both the source, by its title, description, or
+  transcript, and the entry to name Purdy; only tagged entries appear in the Shrine).
+- `scripts/smoke-film-room.ts` checks the real sources (and with `--claude`, the writer) by hand.
 
 ## Smoke test
 

@@ -1,0 +1,17 @@
+---
+// The newest Film Room entry on the homepage, linking to the original and to the Film Room.
+import type { CollectionEntry } from "astro:content";
+import FilmRoomEntry from "./FilmRoomEntry.astro";
+import { sitePath } from "../site/sections";
+
+interface Props {
+  entry: CollectionEntry<"filmRoom">;
+}
+
+const { entry } = Astro.props;
+---
+<section class="film-room-lead" aria-labelledby="film-room-lead-heading">
+  <h2 id="film-room-lead-heading">The newest from the Film Room</h2>
+  <FilmRoomEntry entry={entry} />
+  <p><a href={sitePath("film-room")}>All Film Room entries</a></p>
+</section>

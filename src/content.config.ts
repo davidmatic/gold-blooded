@@ -6,7 +6,14 @@ import { draftCoverageSchema, freeAgencyTrackerSchema, OFFSEASON_FILES } from ".
 import { seasonStatsSchema } from "./content/season-stats";
 import { predictionRecordSchema } from "./content/prediction-record";
 import { loveLetterSchema, originStorySchema, purdyStatTrackerSchema, reasonsWeLoveBrockSchema } from "./content/purdy-shrine";
+import { filmRoomSchema } from "./content/film-room";
 import { contentPath } from "./site/content-dir";
+
+// Film Room entries: one file per breakdown under content/film-room/.
+const filmRoom = defineCollection({
+  loader: glob({ base: contentPath("film-room"), pattern: "*.md" }),
+  schema: filmRoomSchema,
+});
 
 const news = defineCollection({
   loader: glob({ base: contentPath("news"), pattern: "**/*.md" }),
@@ -93,4 +100,5 @@ export const collections = {
   reasonsWeLoveBrock,
   purdyStatTracker,
   originStory,
+  filmRoom,
 };

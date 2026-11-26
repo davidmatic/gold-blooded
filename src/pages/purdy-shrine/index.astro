@@ -7,7 +7,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import LoveLetter from "../../components/LoveLetter.astro";
 import PurdyFilmRoom from "../../components/PurdyFilmRoom.astro";
 import PurdyStatTracker from "../../components/PurdyStatTracker.astro";
-import { letterGameLine, loveLettersNewestFirst, variantLabel, type ShrineFilmRoomEntry } from "../../site/purdy-shrine";
+import { letterGameLine, loveLettersNewestFirst, variantLabel } from "../../site/purdy-shrine";
+import { shrineFilmRoom } from "../../site/film-room";
 import { sections, sitePath } from "../../site/sections";
 
 const section = sections.find((s) => s.slug === "purdy-shrine")!;
@@ -18,8 +19,8 @@ const OriginStory = origin ? (await render(origin)).Content : undefined;
 const reasonsList = (await getCollection("reasonsWeLoveBrock"))[0];
 const ReasonsIntro = reasonsList ? (await render(reasonsList)).Content : undefined;
 const tracker = (await getCollection("purdyStatTracker"))[0];
-// Ticket #12: Purdy-tagged Film Room entries, newest first, mapped to ShrineFilmRoomEntry.
-const filmRoom: ShrineFilmRoomEntry[] = [];
+// The Purdy-tagged Film Room entries, newest first.
+const filmRoom = shrineFilmRoom(await getCollection("filmRoom"));
 ---
 <BaseLayout title={section.name}>
   <h1>{section.name}</h1>

@@ -84,10 +84,10 @@ function values(stats: readonly CitedStat[], scope: StatScope): string[] {
 }
 
 /**
- * A Purdy-related Film Room entry, as the Shrine lists it. The slot for ticket #12: the Film Room
- * maps its Purdy-tagged entries to these, newest first, and the Shrine shows them under "Purdy
- * in the Film Room" (src/components/PurdyFilmRoom.astro). Until then the list is empty and the
- * section isn't shown.
+ * A Purdy-related Film Room entry, as the Shrine lists it. The Film Room maps its Purdy-tagged
+ * entries to these, newest first (shrineFilmRoom in ./film-room.ts), and the Shrine shows them
+ * under "Purdy in the Film Room" (src/components/PurdyFilmRoom.astro). With none, the section
+ * isn't shown.
  */
 export interface ShrineFilmRoomEntry {
   title: string;

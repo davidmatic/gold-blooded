@@ -1,0 +1,27 @@
+---
+// One Film Room entry: credited to its show, linking to the original, and saying so when it was
+// written from the title and description alone.
+import { render, type CollectionEntry } from "astro:content";
+import { filmRoomAnchor, originalLabel, untranscribedNote } from "../site/film-room";
+import { formatDay } from "../site/offseason";
+
+interface Props {
+  entry: CollectionEntry<"filmRoom">;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { data } = entry;
+const note = untranscribedNote(data);
+---
+<article class="film-room-entry" id={filmRoomAnchor(entry)} data-purdy={data.purdy ? "true" : undefined}>
+  <p class="news-meta">
+    <span class="news-category">{data.show}</span>
+    <time datetime={data.date}>{formatDay(data.date)}</time>
+    {data.purdy && <span class="film-room-purdy">Purdy</span>}
+  </p>
+  <h3>{data.title}</h3>
+  <Content />
+  {note && <p class="film-room-note">{note}</p>}
+  <p class="news-sources">{originalLabel(data)}: <a href={data.link} rel="noopener">{data.sourceTitle}</a></p>
+</article>
