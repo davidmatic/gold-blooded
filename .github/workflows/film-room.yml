@@ -54,18 +54,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - uses: actions/setup-python@v6
+      - uses: ./.github/actions/setup-whisper
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: scripts/requirements-whisper.txt
-      - run: pip install -r scripts/requirements-whisper.txt
+          model: ${{ env.WHISPER_MODEL }}
       - run: pip install -U yt-dlp
-      - name: Cache the Whisper model
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/huggingface
-          key: whisper-${{ env.WHISPER_MODEL }}-${{ hashFiles('scripts/requirements-whisper.txt') }}
       - name: Run the Film Room job
         id: publish
         run: npx tsx scripts/publish.ts film-room --adapters real ${DATE:+--date "$DATE"}
@@ -76,28 +68,12 @@ jobs:
       - name: Commit new content and transcripts
         id: commit
         if: ${{ !cancelled() }}
-        env:
-          PUBLISHED: ${{ steps.publish.outcome == 'success' }}
-          DATE: ${{ inputs.date }}
-        run: |
-          git add data/transcripts 2>/dev/null || true
-          if [ "$PUBLISHED" = true ]; then mkdir -p content && git add content; fi
-          if git diff --cached --quiet; then
-            echo "No content or transcript changes."
-            exit 0
-          fi
-          content_changed=false
-          if ! git diff --cached --quiet -- content; then content_changed=true; fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          day="${DATE:-$(TZ=America/Los_Angeles date +%F)}"
-          if [ "$content_changed" = true ]; then
-            git commit -m "Film Room for $day"
-          else
-            git commit -m "Podcast transcripts for $day"
-          fi
-          git push origin HEAD:main
-          if [ "$content_changed" = true ]; then echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"; fi
+        uses: ./.github/actions/commit-content
+        with:
+          message: Film Room for
+          date: ${{ inputs.date }}
+          published: ${{ steps.publish.outcome == 'success' }}
+          transcripts: true
 
   deploy:
     needs: publish

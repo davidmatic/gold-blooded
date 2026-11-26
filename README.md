@@ -380,6 +380,12 @@ committed to `main`, and appear on the live site's News page.
 Pull requests run the tests and build only. Content workflows call it via `workflow_call` after
 they commit, because pushes made with `GITHUB_TOKEN` don't trigger the push event.
 
+The content workflows share two composite actions in `.github/actions/`: `setup-whisper` (Python
+3.12, faster-whisper, and the cached Whisper model, for the jobs that transcribe podcasts) and
+`commit-content` (commits the content folder when the run was published, and with
+`transcripts: true` the transcript cache whatever the outcome; it outputs the commit's sha only
+when content changed, which is what starts the deploy).
+
 `.github/workflows/daily-news.yml` runs the daily news job every morning. A published result is
 committed to `main` and deployed; a rejected one fails the run (GitHub emails the owner) and commits
 nothing. It uses the real adapters and the `ANTHROPIC_API_KEY` secret.

@@ -1,0 +1,58 @@
+name: Commit content
+description: >
+  Commits what a publish job wrote to main and pushes it: the content folder when the run was
+  published, and with `transcripts`, the podcast transcript cache whatever the run's outcome (so an
+  episode is transcribed only once). Outputs the commit's sha only when content changed, which is
+  what the deploy job waits for. Does nothing when there is nothing to commit.
+
+inputs:
+  message:
+    description: The commit message for new content, before the date (e.g. "Daily news for").
+    required: true
+  date:
+    description: The date the job ran for (YYYY-MM-DD). Defaults to today, Pacific.
+    required: false
+    default: ""
+  published:
+    description: Whether the publish run was published, so its content is committed.
+    required: false
+    default: "true"
+  transcripts:
+    description: Whether to commit new podcast transcripts in data/transcripts too.
+    required: false
+    default: "false"
+
+outputs:
+  sha:
+    description: The pushed commit, when it has content changes (empty otherwise).
+    value: ${{ steps.commit.outputs.sha }}
+
+runs:
+  using: composite
+  steps:
+    - id: commit
+      shell: bash
+      env:
+        MESSAGE: ${{ inputs.message }}
+        DATE: ${{ inputs.date }}
+        PUBLISHED: ${{ inputs.published }}
+        TRANSCRIPTS: ${{ inputs.transcripts }}
+      run: |
+        if [ "$TRANSCRIPTS" = true ]; then git add data/transcripts 2>/dev/null || true; fi
+        if [ "$PUBLISHED" = true ]; then mkdir -p content && git add content; fi
+        if git diff --cached --quiet; then
+          echo "No changes to commit."
+          exit 0
+        fi
+        content_changed=false
+        if ! git diff --cached --quiet -- content; then content_changed=true; fi
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        day="${DATE:-$(TZ=America/Los_Angeles date +%F)}"
+        if [ "$content_changed" = true ]; then
+          git commit -m "$MESSAGE $day"
+        else
+          git commit -m "Podcast transcripts for $day"
+        fi
+        git push origin HEAD:main
+        if [ "$content_changed" = true ]; then echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"; fi
