@@ -1,6 +1,7 @@
 // Types at the publish pipeline's seam (Seam 1 in spec #1).
 import type { GamePreviewData, HighlightsData, SeasonRecapData, StatBreakdownData } from "../content/game-week";
 import type { SeasonStatsData } from "../content/season-stats";
+import type { PredictionRecordData } from "../content/prediction-record";
 import type { GameStatus, NewsSummaryData, PracticeStatus } from "../content/news-summary";
 import type { DraftCoverageData, FreeAgencyTrackerData } from "../content/offseason";
 import type { CalendarPosition, ScheduledGame } from "./calendar";
@@ -78,14 +79,20 @@ export interface SourceSnapshot {
   /** Best-effort outlets the sources couldn't collect this run (blocked, down), and why. */
   skipped?: SkippedSource[];
   /**
-   * The Offseason's running documents as they stand before this run, read from the content
-   * store. Absent (or missing one) before the Offseason's first update.
+   * The running documents as they stand before this run, read from the content store: the
+   * Offseason's, and the season's Prediction Record. Absent (or missing one) before a
+   * document's first update.
    */
   current?: Partial<{ [T in RunningContentType]: { data: ContentTypes[T]; body: string } }>;
+  /**
+   * For the post-game job: the Game Preview of the game just played, read from the content
+   * store, which the Prediction Record scores. Absent when none was published for the game.
+   */
+  gamePreview?: GamePreviewData;
 }
 
-/** Content types that are one running document per Offseason, updated run after run. */
-export type RunningContentType = "free-agency-tracker" | "draft-coverage";
+/** Content types that are one running document per Offseason or season, updated run after run. */
+export type RunningContentType = "free-agency-tracker" | "draft-coverage" | "prediction-record";
 
 /** One video from an official channel's YouTube RSS feed. */
 export interface OfficialVideo {
@@ -125,6 +132,7 @@ export interface ContentTypes {
   "draft-coverage": DraftCoverageData;
   highlights: HighlightsData;
   "season-stats": SeasonStatsData;
+  "prediction-record": PredictionRecordData;
 }
 export type ContentType = keyof ContentTypes;
 

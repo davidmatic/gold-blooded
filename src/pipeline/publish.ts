@@ -34,16 +34,27 @@ interface JobDefinition {
    * falls on the calendar. An empty choice means the job has nothing to do that day.
    */
   writes: ContentType[] | ((calendar: CalendarPosition, date: string) => ContentType[]);
+  /**
+   * Content the pipeline works out itself (each type's `derive`), never asked of the writer.
+   * Made only on a run that writes something; a type with nothing to derive is left as it stands.
+   */
+  derives?: ContentType[];
 }
 
 const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, podcastsAttributed, statsMatchNflverse, clipsAreOfficial];
 
 /**
  * What the post-game job writes the day after a game, all about the game just played. Later
- * post-game content (the Prediction Record, the Love Letter, the Purdy stat tracker) joins this
+ * post-game content (the Love Letter, the Purdy stat tracker) joins this
  * list, with its content type and its share of the post-game writer.
  */
 export const POST_GAME_CONTENT: ContentType[] = ["highlights", "season-stats"];
+
+/**
+ * What the post-game job works out itself the day after a game, with no writer: the Prediction
+ * Record, scored from the game's Game Preview and the final score.
+ */
+export const POST_GAME_DERIVED: ContentType[] = ["prediction-record"];
 
 // Later tickets add the other job types and more checks.
 const JOBS: Partial<Record<JobType, JobDefinition>> = {
@@ -71,6 +82,7 @@ const JOBS: Partial<Record<JobType, JobDefinition>> = {
       if (!game.result) throw new Error(`the schedule has no final score for ${game.gameId} yet`);
       return POST_GAME_CONTENT;
     },
+    derives: POST_GAME_DERIVED,
   },
 };
 
@@ -86,11 +98,18 @@ export async function publish(request: PublishRequest): Promise<PublishResult> {
   const entries: ContentEntry[] = [];
   const failures: CheckFailure[] = [];
   for (const draft of drafts) {
-    const result = toEntry(draft, job, snapshot);
+    const result = job.contentTypes!.includes(draft.type) ? toEntry(draft, job, snapshot) : notAsked(draft, job);
     if ("entry" in result) entries.push(result.entry);
     else failures.push(result.failure);
   }
   failures.push(...missingContent(job, drafts));
+  for (const type of definition.derives ?? []) {
+    const derived = CONTENT_TYPES[type].derive!(job, snapshot);
+    if (!derived) continue;
+    const result = toEntry({ type, ...derived }, job, snapshot);
+    if ("entry" in result) entries.push(result.entry);
+    else failures.push(result.failure);
+  }
 
   const input = { job, entries, snapshot, sources: request.sources };
   failures.push(...(await Promise.all(definition.checks.map((check) => check(input)))).flat());
@@ -106,11 +125,13 @@ function assign(request: PublishRequest, definition: JobDefinition, snapshot: So
   return { ...job, calendar, contentTypes: definition.writes(calendar, request.date) };
 }
 
-/** A draft becomes an entry only if the job asked for its type and it fits the type's schema. */
+/** A writer's draft of a type the job didn't ask it for (or works out itself) is refused. */
+function notAsked(draft: DraftEntry, job: Job): { failure: CheckFailure } {
+  return { failure: { check: "schema", entry: draft.type, reason: `the ${job.type} job doesn't write a ${draft.type} on ${job.date}` } };
+}
+
+/** A draft becomes an entry only if it fits the type's schema. */
 function toEntry(draft: DraftEntry, job: Job, snapshot: SourceSnapshot): { entry: ContentEntry } | { failure: CheckFailure } {
-  if (!job.contentTypes!.includes(draft.type)) {
-    return { failure: { check: "schema", entry: draft.type, reason: `the ${job.type} job doesn't write a ${draft.type} on ${job.date}` } };
-  }
   const definition = CONTENT_TYPES[draft.type];
   const data = { ...(definition.merge ? definition.merge(draft.data, snapshot) : draft.data), ...definition.owned(job, snapshot) };
   const path = definition.path(data, job);
