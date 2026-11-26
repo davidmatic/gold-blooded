@@ -1,6 +1,7 @@
 // Types at the publish pipeline's seam (Seam 1 in spec #1).
 import type { GamePreviewData, SeasonRecapData, StatBreakdownData } from "../content/game-week";
 import type { GameStatus, NewsSummaryData, PracticeStatus } from "../content/news-summary";
+import type { DraftCoverageData, FreeAgencyTrackerData } from "../content/offseason";
 import type { CalendarPosition, ScheduledGame } from "./calendar";
 import type { NflverseStats } from "./stats";
 
@@ -9,7 +10,7 @@ export type { CalendarPeriod, CalendarPosition, GameType, ScheduledGame } from "
 export type { NflverseStats, PlayerStatLine, TeamStatLine } from "./stats";
 
 /** The scheduled jobs. Each has its own workflow. */
-export type JobType = "daily-news" | "post-game" | "thursday-preview" | "film-room";
+export type JobType = "daily-news" | "post-game" | "thursday-preview" | "film-room" | "offseason";
 
 /** A job to run: its type and the date it runs for (YYYY-MM-DD, team-local). */
 export interface Job {
@@ -70,7 +71,15 @@ export interface SourceSnapshot {
   stats?: NflverseStats;
   /** Best-effort outlets the sources couldn't collect this run (blocked, down), and why. */
   skipped?: SkippedSource[];
+  /**
+   * The Offseason's running documents as they stand before this run, read from the content
+   * store. Absent (or missing one) before the Offseason's first update.
+   */
+  current?: Partial<{ [T in RunningContentType]: { data: ContentTypes[T]; body: string } }>;
 }
+
+/** Content types that are one running document per Offseason, updated run after run. */
+export type RunningContentType = "free-agency-tracker" | "draft-coverage";
 
 export interface SkippedSource {
   outlet: string;
@@ -95,6 +104,8 @@ export interface ContentTypes {
   "game-preview": GamePreviewData;
   "season-recap": SeasonRecapData;
   "stat-breakdown": StatBreakdownData;
+  "free-agency-tracker": FreeAgencyTrackerData;
+  "draft-coverage": DraftCoverageData;
 }
 export type ContentType = keyof ContentTypes;
 

@@ -33,6 +33,24 @@ export function gameWeekPages<
   return [...pages.values()].sort((a, b) => b.slug.localeCompare(a.slug));
 }
 
+/**
+ * The Archive: past Game Week Pages, newest first. A Game Week is past once its game has
+ * kicked off, or once a newer Game Week Page exists (which also covers Bye Weeks, which have
+ * no game). The current or upcoming week stays out.
+ */
+export function pastGameWeekPages<P extends HasData<GamePreviewData>, R extends HasData<SeasonRecapData>>(
+  pages: readonly GameWeekPage<P, R>[],
+  now: Date,
+): GameWeekPage<P, R>[] {
+  // Season, then week: slugs don't sort in calendar order once the playoffs start.
+  const order = (page: GameWeekPage<P, R>) => {
+    const data = page.preview?.data ?? page.recap?.data;
+    return data ? data.season * 100 + data.week : 0;
+  };
+  const newestFirst = [...pages].sort((a, b) => order(b) - order(a));
+  return newestFirst.filter((page, i) => i > 0 || (page.preview !== undefined && new Date(page.preview.data.kickoff) <= now));
+}
+
 const ROUNDS: Record<string, string> = { WC: "Wild Card", DIV: "Divisional Round", CON: "Conference Championship", SB: "Super Bowl" };
 
 /** "2026 Week 12", "2025 Wild Card". */
