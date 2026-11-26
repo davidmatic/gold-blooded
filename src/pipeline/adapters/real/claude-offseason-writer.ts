@@ -9,6 +9,7 @@ import { z } from "zod";
 import { draftDates, FREE_AGENCY_MOVES, offseasonYear } from "../../../content/offseason";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
+import { NUMBERS_RULE } from "./writer-output";
 
 const source = z.object({ url: z.string(), outlet: z.string() });
 const quotes = z.array(z.object({ text: z.string(), speaker: z.string(), source: z.string() }));
@@ -56,6 +57,7 @@ draftCoverage:
 For both:
 - source and sources: each document's exact "url" and "outlet" as given in the snapshot. Never invent or alter a URL. Every item's source must be a document that names the player. sources lists any other documents the body relies on.
 - quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them), with the quoted words in "text", the "speaker", and in "source" the url of the document where those exact words appear. Copy quotes word for word; if you cannot, paraphrase without quotation marks.
+${NUMBERS_RULE}
 - If there is nothing new, return empty lists and keep the body as it was.`;
 
 /** The user turn: the job, the draft's dates, each running document as it stands, and the documents. */

@@ -131,6 +131,22 @@ the ones described with their jobs below:
   in `injuries`, which the `injury-status` check holds to the official report. So a summary can't
   report an injury the official report doesn't give. (A roster move to injured reserve for a
   player the week's report doesn't list is rejected too, by design: it can't be checked.)
+- **Numbers** (`numbers.ts`, every job). Cited stats are checked against nflverse, but prose
+  can state numbers too, so every number in an entry's prose (title, body, storylines, keys,
+  trends, write-ups, an Offseason update's new details, notes, and profiles) must be grounded:
+  - one of the entry's cited stats, rounded to the decimal places the prose uses (164.7 may read
+    as 165, never as 160);
+  - in the text of a source document the entry cites (its `sources`, a Film Room entry's link);
+    this is how draft rounds and picks, jersey numbers, ages, and contract terms pass;
+  - a score or record the pipeline fills in: the entry's final score, a Game Preview's predicted
+    score, the entry's record; or, written as a pair (35-10, 9-1), any final score on the schedule
+    or the 49ers' record in a season so far.
+
+  Not stats, so left out: years (1920 to 2099), dates (Nov. 25, 11/25, 2026-11-25), clock times
+  (1:25), Week numbers (Week 13, Weeks 14-15), quarters and downs (4th quarter, 3rd-and-2, Q4), the
+  "49ers" in the team's name, and Markdown list numbering. Numbers spelled out in words aren't
+  read. Every writer's voice prompt states the rule (`NUMBERS_RULE` in
+  `adapters/real/writer-output.ts`).
 
 ## Secrets and cost
 

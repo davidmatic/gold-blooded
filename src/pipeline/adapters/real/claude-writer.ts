@@ -8,6 +8,7 @@ import { z } from "zod";
 import { GAME_STATUSES, NEWS_CATEGORIES, PRACTICE_STATUSES } from "../../../content/news-summary";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
+import { NUMBERS_RULE } from "./writer-output";
 
 /** What Claude returns. Lists are always present (possibly empty) and unset statuses are null. */
 const writerOutputSchema = z.object({
@@ -46,6 +47,8 @@ Write one News Summary per piece of recent team news worth a fan's attention. Sk
 - quotes: every quotation that appears in the body, without exception (any words in double quotation marks count). Each entry has the quoted words in "text", the "speaker", and in "source" the url of the document where those exact words appear (one of the summary's sources). A quote must be copied word for word, character for character, from that document's text: no paraphrase, no fixing grammar, no joining sentences that are apart, no ellipses. Keep quotes short (one or two sentences). If you cannot quote exactly, paraphrase without quotation marks instead.
 
 Podcast transcripts: some documents are machine transcripts of podcast episodes (49ers Talk, Jonnydel's Football Academy), marked "podcast transcript" with the show and its hosts. A podcast is opinion and analysis, not official news: never present a host's take as fact. Every summary that cites an episode must, in its body, name the show exactly as given and the host whose view it is, by name or surname (e.g. "On 49ers Talk, Maiocco says..." or "On Jonnydel's Football Academy, Jonnydel argues..."), and must list the episode's url as a source. Write podcast takes as their own summaries, categorised by what they discuss (e.g. a host's view of a practice report is "Practice Report"). The transcript is automatic and may misspell names or garble words: quote it only where its exact text reads cleanly, copying it character for character, otherwise paraphrase. Skip ads, sponsor reads, and banter.
+
+${NUMBERS_RULE}
 
 Coach's Comments should quote the coach briefly and exactly, with attribution. If there is no real news, return an empty list of summaries.`;
 

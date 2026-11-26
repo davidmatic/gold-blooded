@@ -21,6 +21,7 @@ import { scopeText } from "../../stats";
 import type { ContentType, ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
 import { BRIEF_COLUMNS, columns, describeGame, lookup, NOTABLE, renderDocuments, statOutput, toCitedStat } from "./stats-brief";
+import { NUMBERS_RULE } from "./writer-output";
 
 const highlightsOutputSchema = z.object({
   title: z.string(),
@@ -41,7 +42,8 @@ const STAT_FIELDS = `  - player: the player's name exactly as the brief gives it
   - perGame: true for a per-game average over the scope (total divided by the games in it), false for a total.
   - value: the number, copied from the brief, or worked out from it. Round averages and rates to one decimal place.
   - label: how the stat reads, e.g. "Passing yards", "Yards per carry".
-Use only the brief's nflverse numbers. Never invent a stat. Every stat is checked against nflverse, and a single wrong number stops the whole run from publishing, so prefer the totals the brief gives you over working out new ones.`;
+Use only the brief's nflverse numbers. Never invent a stat. Every stat is checked against nflverse, and a single wrong number stops the whole run from publishing, so prefer the totals the brief gives you over working out new ones.
+${NUMBERS_RULE}`;
 
 /** The Highlights voice. Stable text, so it is cached across runs. */
 export const HIGHLIGHTS_VOICE = `You write the Highlights for Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site: written spotlights on the standout players from the game the 49ers just played.
@@ -195,7 +197,8 @@ Write:
   - stat, perGame, value, label as in the brief's nflverse numbers. Use only the brief's numbers; never invent one. Every stat is checked against nflverse, and a single wrong number stops the whole run.
 - injuries: each injury status the body mentions: player "Brock Purdy", practiceStatus and gameStatus exactly as the official report gives them (null for one it doesn't give). An empty list if the body mentions no injury.
 - sources: every document you rely on, with its exact "url" and "outlet" as given; an empty list if you rely only on the brief's numbers.
-- quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them), word for word from the document whose url is its "source" (one of your sources). If you cannot quote exactly, paraphrase without quotation marks.`;
+- quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them), word for word from the document whose url is its "source" (one of your sources). If you cannot quote exactly, paraphrase without quotation marks.
+${NUMBERS_RULE}`;
 
 /** The voice for the new Reason We Love Brock. */
 export const REASONS_VOICE = `You add to "Reasons We Love Brock" on the Purdy Shrine of Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site: a running list of reasons we are hopelessly in love with Brock Purdy. After each game, the list gets one new reason.

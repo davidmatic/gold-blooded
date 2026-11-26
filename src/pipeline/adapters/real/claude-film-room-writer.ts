@@ -7,6 +7,7 @@
 import { z } from "zod";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
+import { NUMBERS_RULE } from "./writer-output";
 
 const filmRoomOutputSchema = z.object({
   entries: z.array(
@@ -34,6 +35,7 @@ Each entry:
 - body: one or two short paragraphs of Markdown: what the breakdown covers and its main points. No headings, no links. Name the show in the body. For a Jonnydel's Football Academy episode, also name Jonnydel.
 - purdy: true only when the breakdown is substantially about Brock Purdy (his play, his throws, his decisions), and then the title or body must name him. A passing mention is not enough.
 - quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them), with the quoted words in "text", the "speaker", and in "source" the entry's link. Quote only from a transcript, copied word for word, character for character, and only where it reads cleanly; otherwise paraphrase without quotation marks. Never quote a description.
+${NUMBERS_RULE}
 
 Skip ads, sponsor reads, and banter.`;
 

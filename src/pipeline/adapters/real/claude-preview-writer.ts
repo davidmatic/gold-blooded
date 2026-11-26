@@ -14,6 +14,7 @@ import { scopeText } from "../../stats";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
 import { BRIEF_COLUMNS, columns, describeGame, lookup, NOTABLE, renderDocuments, statOutput, toCitedStat } from "./stats-brief";
+import { NUMBERS_RULE } from "./writer-output";
 
 /** The Stat Breakdown's recent trends are over this many games. */
 const RECENT_GAMES = 3;
@@ -50,7 +51,8 @@ const SHARED_RULES = `Use only what the source snapshot says: the 49ers' schedul
 - sources: every document you rely on, each with its exact "url" and its "outlet" as given in the snapshot. Never invent or alter a URL. At least one source.
 - injuries: for every player whose practice participation or game status you state, one entry with the player's name exactly as it appears in the official injury report, and practiceStatus (DNP, LP, FP) and/or gameStatus (Out, Doubtful, Questionable) exactly as the official report gives them; null for any status you don't state. Only state statuses the official report gives.
 - quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them). Each has the quoted words in "text", the "speaker", and in "source" the url of the document where those exact words appear (one of your sources). Copy quotes word for word, character for character: no paraphrase, no ellipses. If you cannot quote exactly, paraphrase without quotation marks.
-- body: Markdown paragraphs. No headings, no links in the body.`;
+- body: Markdown paragraphs. No headings, no links in the body.
+${NUMBERS_RULE}`;
 
 /** The Game Preview voice. Stable text, so it is cached across runs. */
 export const GAME_PREVIEW_VOICE = `You write the weekly Game Preview for Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site.
@@ -92,7 +94,8 @@ It is Thursday of the Game Week. Break down the upcoming game in numbers: the 49
   - perGame: true for a per-game average over the scope (total divided by the games in it), false for a total.
   - value: the number, worked out from the brief's numbers. Round averages and rates to one decimal place.
   - label: how the stat reads in a table, e.g. "Passing yards", "Yards per carry".
-Use only the brief's nflverse numbers. Never invent a stat. Every stat is checked against nflverse, and a single wrong number stops the whole page from publishing, so prefer the totals the brief gives you over working out new ones.`;
+Use only the brief's nflverse numbers. Never invent a stat. Every stat is checked against nflverse, and a single wrong number stops the whole page from publishing, so prefer the totals the brief gives you over working out new ones.
+${NUMBERS_RULE}`;
 
 /** The user turn: the job, where it falls on the calendar, the season's results, and the snapshot. */
 export function renderPreviewBrief(job: Job, snapshot: SourceSnapshot): string {

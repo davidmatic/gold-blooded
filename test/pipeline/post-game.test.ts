@@ -27,7 +27,7 @@ const highlightsDraft: DraftEntry = {
   data: {
     title: "Purdy and Kittle carve up Minnesota",
     standouts: [
-      { player: "Brock Purdy", team: "SF", writeUp: "Three touchdowns on 26 throws." },
+      { player: "Brock Purdy", team: "SF", writeUp: "Three touchdowns and 255 yards." },
       { player: "George Kittle", team: "SF", writeUp: "Two scores, both in the red zone." },
     ],
     stats: [

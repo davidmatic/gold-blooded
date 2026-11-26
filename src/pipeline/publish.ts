@@ -15,6 +15,7 @@ import { statsMatchNflverse } from "./checks/nflverse-stats";
 import { sourceLinksResolve } from "./checks/source-links";
 import { offseasonItemsSourced } from "./checks/offseason-items";
 import { injuryMentionsStated } from "./checks/injury-mentions";
+import { numbersGrounded } from "./checks/numbers";
 import { filmRoomCovered, purdyTagGrounded } from "./checks/film-room";
 import { CONTENT_TYPES } from "./content-types";
 import type {
@@ -43,7 +44,7 @@ interface JobDefinition {
   derives?: ContentType[];
 }
 
-const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, podcastsAttributed, statsMatchNflverse, clipsAreOfficial];
+const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, podcastsAttributed, statsMatchNflverse, numbersGrounded, clipsAreOfficial];
 
 /**
  * What the post-game job writes the day after a game, all about the game just played. Later
