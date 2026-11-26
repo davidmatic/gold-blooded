@@ -98,12 +98,22 @@ export function resolveCalendar(date: string, schedule: readonly ScheduledGame[]
 }
 
 /**
- * The 49ers game played the day before the date, if there was one: the previous game, when its
- * gameday is yesterday. In any period, so the season's last game counts though the day after it
- * is the Offseason. (nflverse's gameday is US Eastern; a late Pacific kickoff still falls on it.)
+ * How many days after a game the post-game job still covers it. A run that fails (nflverse
+ * hasn't posted the game's stats yet) is caught up by the next day's runs, up to this many days on.
  */
-export function gameJustPlayed(calendar: CalendarPosition, date: string): ScheduledGame | undefined {
-  return calendar.previous?.gameday === addDays(date, -1) ? calendar.previous : undefined;
+export const POST_GAME_DAYS = 3;
+
+/**
+ * The game the post-game job covers on a date: the most recent 49ers game before it, if it was
+ * played within the last POST_GAME_DAYS days. In any period, so the season's last game counts
+ * though the days after it are the Offseason. (nflverse's gameday is US Eastern; a late Pacific
+ * kickoff still falls on it.) Whether its post-game content is already written is up to the caller.
+ */
+export function gameToCover(calendar: CalendarPosition, date: string): ScheduledGame | undefined {
+  const game = calendar.previous;
+  if (!game) return undefined;
+  const days = daysBetween(game.gameday, date);
+  return days >= 1 && days <= POST_GAME_DAYS ? game : undefined;
 }
 
 /** A Game Week Page's slug: `2026-week-08` in the regular season, `2025-wild-card` in the playoffs. */

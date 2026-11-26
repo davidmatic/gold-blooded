@@ -5,7 +5,7 @@
 // drafts, turns them into content entries, and runs the job's publish checks. It never writes
 // anything itself: a published result carries the entries for the caller to store, and a
 // rejected one carries only the failures, so a rejected run leaves the content store untouched.
-import { gameJustPlayed, resolveCalendar, type CalendarPosition } from "./calendar";
+import { gameToCover, resolveCalendar, type CalendarPosition } from "./calendar";
 import { clipsAreOfficial } from "./checks/official-clips";
 import type { PublishCheck } from "./checks/check";
 import { injuryStatusesMatch } from "./checks/injury-status";
@@ -36,7 +36,7 @@ interface JobDefinition {
    * What the job writes: always the same content types, or a choice made from where the date
    * falls on the calendar. An empty choice means the job has nothing to do that day.
    */
-  writes: ContentType[] | ((calendar: CalendarPosition, date: string) => ContentType[]);
+  writes: ContentType[] | ((calendar: CalendarPosition, date: string, snapshot: SourceSnapshot) => ContentType[]);
   /**
    * Content the pipeline works out itself (each type's `derive`), never asked of the writer.
    * Made only on a run that writes something; a type with nothing to derive is left as it stands.
@@ -85,15 +85,17 @@ const JOBS: Partial<Record<JobType, JobDefinition>> = {
     checks: [...ALL_CHECKS, offseasonItemsSourced],
     writes: (calendar) => (calendar.period === "offseason" ? ["free-agency-tracker", "draft-coverage"] : []),
   },
-  // Runs daily; writes only when a 49ers game was played the day before, in any period (the
-  // day after the season's last game is already the Offseason). Without the final score it fails
-  // before asking the writer.
+  // Runs daily; writes when a 49ers game was played in the last few days (in any period: the
+  // days after the season's last game are already the Offseason) and its Highlights aren't in the
+  // content store yet, so a run that failed is caught up by the next. Without the final score it
+  // fails before asking the writer.
   "post-game": {
     checks: [...ALL_CHECKS, injuryMentionsStated],
-    writes: (calendar, date) => {
-      const game = gameJustPlayed(calendar, date);
+    writes: (calendar, date, snapshot) => {
+      const game = gameToCover(calendar, date);
       if (!game) return [];
       if (!game.result) throw new Error(`the schedule has no final score for ${game.gameId} yet`);
+      if (snapshot.highlightsPublished?.includes(game.gameId)) return [];
       return POST_GAME_CONTENT;
     },
     derives: POST_GAME_DERIVED,
@@ -136,7 +138,7 @@ function assign(request: PublishRequest, definition: JobDefinition, snapshot: So
   if (Array.isArray(definition.writes)) return { ...job, contentTypes: definition.writes };
   if (!snapshot.schedule) throw new Error(`the ${request.job} job needs the 49ers schedule, and the source snapshot has none`);
   const calendar = resolveCalendar(request.date, snapshot.schedule);
-  return { ...job, calendar, contentTypes: definition.writes(calendar, request.date) };
+  return { ...job, calendar, contentTypes: definition.writes(calendar, request.date, snapshot) };
 }
 
 /** A writer's draft of a type the job didn't ask it for (or works out itself) is refused. */

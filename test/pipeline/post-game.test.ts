@@ -149,9 +149,37 @@ describe("post-game job: the day after a game", () => {
   });
 });
 
-describe("post-game job: no game in the previous day", () => {
+describe("post-game job: catching up a game a run missed", () => {
   it.each([
-    ["two days after a game", "2026-11-24"],
+    ["two days after the game", "2026-11-24"],
+    ["three days after the game", "2026-11-25"],
+  ])("still covers the game %s while its Highlights aren't published (nflverse was late)", async (_, date) => {
+    const writer = recordingWriter();
+    const result = await runPostGame(date, writer);
+
+    expect(writer.jobs[0]?.contentTypes).toEqual(["highlights", "season-stats", "love-letter", "reasons-we-love-brock"]);
+    expect(result.status === "published" && result.entries.map((entry) => entry.path)).toContain("game-weeks/2026-week-11/highlights.md");
+  });
+
+  it("writes nothing once the game's Highlights are published, so a later run doesn't write it again", async () => {
+    const writer = recordingWriter();
+    const result = await runPostGame("2026-11-24", writer, { ...snapshot, highlightsPublished: [GAME] });
+
+    expect(result).toEqual({ status: "published", entries: [] });
+    expect(writer.jobs).toEqual([]);
+  });
+
+  it("covers the game the day after too, whatever an earlier game's Highlights", async () => {
+    const writer = recordingWriter([]);
+    await runPostGame("2026-11-23", writer, { ...snapshot, highlightsPublished: ["2026_10_SF_DAL"] });
+
+    expect(writer.jobs[0]?.calendar?.previous?.gameId).toBe(GAME);
+  });
+});
+
+describe("post-game job: no game to cover", () => {
+  it.each([
+    ["four days after a game", "2026-11-26"],
     ["on game day itself", "2026-11-22"],
     ["in a Bye Week", "2026-10-29"],
     ["in the Offseason", "2026-07-01"],

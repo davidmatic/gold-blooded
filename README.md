@@ -236,12 +236,17 @@ nothing in the Offseason; News Summaries carry on in the daily news job.
 
 ## Post-game
 
-The `post-game` job (`.github/workflows/post-game.yml`, daily) writes only when a 49ers game was
-played the day before (`gameJustPlayed()` in `calendar.ts`: the calendar's previous game has
-yesterday's nflverse gameday). That is Monday after a Sunday game, Tuesday after a Monday night
-game, Friday after a Thursday night game, and the day after the season's last game, though that
-day is already the Offseason. Every other day it fetches only the schedule and writes nothing.
-If the schedule has no final score for the game yet, the run fails before asking Claude.
+The `post-game` job (`.github/workflows/post-game.yml`, daily) writes when the most recent 49ers
+game was played in the last three days and its Highlights aren't in the content store yet
+(`gameToCover()` and `POST_GAME_DAYS` in `calendar.ts`; the sources set
+`snapshot.highlightsPublished` when the Highlights file exists). Normally that is Monday after a
+Sunday game, Tuesday after a Monday night game, Friday after a Thursday night game, and the day
+after the season's last game, though that day is already the Offseason. A run that failed
+(nflverse late with the game's stats) is caught up by the next day's run, up to three days after
+the game; once the Highlights are published, later runs write nothing, so a game is never written
+twice (a re-run's Prediction Record replaces the game's earlier score, as before). Every other day
+it fetches only the schedule and writes nothing. If the schedule has no final score for the game
+yet, the run fails before asking Claude.
 
 - **Highlights** (`content/game-weeks/<slug>/highlights.md`, on the game's own Game Week Page):
   3 to 5 standouts, each with a write-up and a stat line, plus the final score and up to three
@@ -251,10 +256,11 @@ If the schedule has no final score for the game yet, the run fails before asking
 - **Season Stats** (`content/season-stats/<season>.md`, at `/season-stats/`): rewritten after every
   game. The 49ers' season totals as cited stats (`team: SF`, `scope` the season); the pipeline fills
   in the record and the game the numbers run through.
-- **Sources** (`adapters/real/post-game-sources.ts`): the day after a game, the day's news snapshot
+- **Sources** (`adapters/real/post-game-sources.ts`): when a game is due, the day's news snapshot
   (game recaps, postgame press conferences), the season's nflverse stats, and the official clips.
   The stats must already include the game; if nflverse hasn't posted them yet the run fails, and
-  can be run again by hand for that date (Actions → Post-game → Run workflow, with the date).
+  the next day's run tries again. Past three days, run it by hand for a date within three days of
+  the game (Actions → Post-game → Run workflow, with the date).
 - **Official clips.** `adapters/real/youtube.ts` reads the RSS feeds of the official
   [San Francisco 49ers](https://www.youtube.com/channel/UCeIOarQkwmGhimim9cDUTng) and
   [NFL](https://www.youtube.com/channel/UCDVYQ4Zhbm3S2dlz7P1GBDg) YouTube channels (15 newest
@@ -345,8 +351,8 @@ prints where the date falls on the calendar; `--claude` writes the Game Preview 
 `scripts/smoke-offseason.ts` does the same for the Offseason job (`--claude` writes both running
 documents' updates; it reads the current ones from `content/` or `--content-dir`).
 `scripts/smoke-post-game.ts` does the same for the post-game job (sources only, it prints the game
-the day before, the stats it found, and the official clips; `--claude` writes the Highlights and
-Season Stats). Give it the day after a game, e.g. `--date 2026-11-23`.
+it covers, the stats it found, and the official clips; `--claude` writes the Highlights and
+Season Stats). Give it a date one to three days after a game, e.g. `--date 2026-11-23`.
 
 They all take `--date YYYY-MM-DD` (default: today, Pacific). Add `--podcasts` to
 `smoke-daily-news.ts` to transcribe the news window's podcast episodes too (needs Python 3.12 with `pip install -r scripts/requirements-whisper.txt`).
@@ -382,6 +388,7 @@ the Wednesday injury report: a Game Preview and Stat Breakdown in a Game Week, a
 updates the Free Agency Tracker and Draft Coverage in the Offseason, and does nothing (no commit,
 no deploy) in the season. Same commit, deploy, and failure behaviour as daily news.
 
-`.github/workflows/post-game.yml` runs the post-game job every day at 10am/11am Pacific: the day
-after a game it writes the Highlights and Season Stats, and otherwise does nothing (no commit, no
+`.github/workflows/post-game.yml` runs the post-game job every day at 10am/11am Pacific: after a
+game (up to three days after, until its Highlights are published) it writes the Highlights, Season
+Stats, and the Purdy Shrine's share, and otherwise does nothing (no commit, no
 deploy). Same commit, deploy, and failure behaviour as daily news.

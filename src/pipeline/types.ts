@@ -109,6 +109,11 @@ export interface SourceSnapshot {
    * season since his first (2022), for his stat tracker. Unset, the tracker is left as it stands.
    */
   purdyCareer?: boolean;
+  /**
+   * For the post-game job: the games whose Highlights the content store already has. A game in
+   * it has had its post-game run, so a later run writes nothing for it.
+   */
+  highlightsPublished?: string[];
 }
 
 /** Content types that are one running document (per Offseason, per season, or for good), updated run after run. */

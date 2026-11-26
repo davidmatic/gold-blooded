@@ -24,7 +24,7 @@ import type { z } from "astro/zod";
 import { GAME_WEEK_FILES, gamePreviewSchema } from "../../../content/game-week";
 import { predictionRecordPath, predictionRecordSchema } from "../../../content/prediction-record";
 import { PURDY, PURDY_SHRINE_FILES, reasonsWeLoveBrockSchema } from "../../../content/purdy-shrine";
-import { gameJustPlayed, gameWeekSlug, resolveCalendar, TEAM, type ScheduledGame } from "../../calendar";
+import { gameToCover, gameWeekSlug, resolveCalendar, TEAM, type ScheduledGame } from "../../calendar";
 import { readEntry } from "../../content-store";
 import type { Job, SourceAdapter, SourceSnapshot } from "../../types";
 import { fetchNflverseStats, fetchPlayerSeason } from "./nflverse-stats";
@@ -49,8 +49,11 @@ export function postGameSources(options: PostGameSourcesOptions = {}): SourceAda
   return {
     async collect(job: Job): Promise<SourceSnapshot> {
       const schedule = await fetchSchedule(fetchPage);
-      const game = gameJustPlayed(resolveCalendar(job.date, schedule), job.date);
+      const game = gameToCover(resolveCalendar(job.date, schedule), job.date);
       if (!game?.result) return { date: job.date, documents: [], schedule };
+      if (options.contentDir && (await readEntry(options.contentDir, `game-weeks/${gameWeekSlug(game.season, game.week, game.gameType)}/${GAME_WEEK_FILES.highlights}`))) {
+        return { date: job.date, documents: [], schedule, highlightsPublished: [game.gameId] };
+      }
 
       const [snapshot, { stats, skipped: statsSkipped }, clips, predictions, career, reasons] = await Promise.all([
         news.collect({ type: "daily-news", date: job.date }),

@@ -130,13 +130,13 @@ describe("real sources: the post-game snapshot", () => {
     await expect(sources.collect({ type: "post-game", date: "2026-11-30" })).rejects.toThrow(/nflverse has no stats for 2026_12_SEA_SF yet/);
   });
 
-  it("on a day with no game the day before, fetches only the schedule", async () => {
+  it("on a day with no game in the last three days, fetches only the schedule", async () => {
     const fetchPage = serving({ ...NFLVERSE, ...YOUTUBE });
     let newsCollected = false;
     const sources = postGameSources({ fetchPage, news: { ...fakeSources(news), collect: async () => ((newsCollected = true), news) } });
-    const snapshot = await sources.collect({ type: "post-game", date: "2026-11-25" });
+    const snapshot = await sources.collect({ type: "post-game", date: "2026-11-26" });
 
-    expect(snapshot).toEqual({ date: "2026-11-25", documents: [], schedule: expect.any(Array) });
+    expect(snapshot).toEqual({ date: "2026-11-26", documents: [], schedule: expect.any(Array) });
     expect(fetchPage.asked).toEqual([SCHEDULE_URL]);
     expect(newsCollected).toBe(false);
   });
@@ -195,6 +195,15 @@ describe("real sources: what the post-game snapshot reads from the content folde
 
     expect(snapshot.gamePreview).toEqual(preview);
     expect(snapshot.current).toEqual({ "prediction-record": { data: record, body: "\n" } });
+  });
+
+  it("once the game's Highlights are in the content folder, fetches only the schedule and says so", async () => {
+    await writeEntries(contentDir, [{ type: "game-preview", path: "game-weeks/2026-week-11/highlights.md", data: preview, body: "" }]);
+    const fetchPage = serving({ ...NFLVERSE, ...YOUTUBE });
+    const snapshot = await postGameSources({ contentDir, fetchPage, news: fakeSources(news) }).collect({ type: "post-game", date: "2026-11-24" });
+
+    expect(snapshot).toEqual({ date: "2026-11-24", documents: [], schedule: expect.any(Array), highlightsPublished: ["2026_11_MIN_SF"] });
+    expect(fetchPage.asked).toEqual([SCHEDULE_URL]);
   });
 
   it("adds the Reasons We Love Brock list as it stands", async () => {

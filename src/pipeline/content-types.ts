@@ -10,7 +10,7 @@ import { LOVE_LETTER_VARIANTS, loveLetterSchema, PURDY_SHRINE_FILES, purdyStatTr
 import { purdyPlayed, purdyStatTracker } from "./purdy";
 import { appendReason, mergeDraftCoverage, mergeFreeAgencyTracker } from "./running-documents";
 import { predictionRecordPath, predictionRecordSchema, scorePrediction } from "../content/prediction-record";
-import { gameJustPlayed, gameWeekSlug, seasonRecord, type ScheduledGame } from "./calendar";
+import { gameToCover, gameWeekSlug, seasonRecord, type ScheduledGame } from "./calendar";
 import type { ContentType, Job, SourceSnapshot } from "./types";
 
 interface ContentTypeDefinition {
@@ -249,10 +249,10 @@ function upcomingGame(job: Job, what: string) {
   };
 }
 
-/** The game played the day before the job's date, with its final score: what post-game content is about. */
+/** The game the post-game job covers on the job's date, with its final score: what post-game content is about. */
 export function playedGame(job: Job, what: string): ScheduledGame & { result: NonNullable<ScheduledGame["result"]> } {
-  const game = job.calendar && gameJustPlayed(job.calendar, job.date);
-  if (!game) throw new Error(`${what} are written only the day after a game`);
+  const game = job.calendar && gameToCover(job.calendar, job.date);
+  if (!game) throw new Error(`${what} are written only in the days after a game`);
   if (!game.result) throw new Error(`the schedule has no final score for ${game.gameId} yet`);
   return { ...game, result: game.result };
 }
