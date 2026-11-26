@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-25",
+  "documents": [
+    {
+      "url": "https://www.49ers.com/news/injury-report-wednesday-week-13",
+      "outlet": "49ers.com",
+      "title": "49ers Wednesday Injury Report",
+      "publishedAt": "2026-11-25T20:00:00Z",
+      "text": "Did not participate: LB Fred Warner (ankle). Limited: WR Brandon Aiyuk (hamstring)."
+    },
+    {
+      "url": "https://www.nbcsportsbayarea.com/nfl/san-francisco-49ers/practice-squad-signing",
+      "outlet": "NBC Sports Bay Area",
+      "title": "49ers sign cornerback to practice squad",
+      "publishedAt": "2026-11-25T18:30:00Z",
+      "text": "The 49ers signed a cornerback to the practice squad on Wednesday."
+    },
+    {
+      "url": "https://www.49ers.com/news/shanahan-press-conference-wednesday",
+      "outlet": "49ers.com",
+      "title": "Kyle Shanahan Wednesday press conference",
+      "publishedAt": "2026-11-25T19:00:00Z",
+      "text": "Shanahan said, \"We have to be better on third down.\""
+    }
+  ]
+}

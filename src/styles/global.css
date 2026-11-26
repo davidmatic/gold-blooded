@@ -142,3 +142,70 @@ h2 {
   max-width: var(--max-width);
   margin: 0 auto;
 }
+
+/* News Summaries */
+.news-filter ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+}
+
+.news-filter a {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border: 2px solid var(--gold);
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.news-filter a[aria-current="page"] {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.news-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.news-summary {
+  padding: 1rem;
+  background: #fff;
+  border-left: 4px solid var(--gold);
+  border-radius: 0.25rem;
+}
+
+.news-summary[data-category="Injury"] {
+  border-left-color: var(--red);
+}
+
+.news-summary h3 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.news-meta {
+  display: flex;
+  gap: 0.75rem;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.news-category {
+  font-weight: 700;
+  color: var(--red-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.news-sources {
+  margin-bottom: 0;
+  font-size: 0.875rem;
+}
+
+.latest-news {
+  margin-bottom: 2rem;
+}

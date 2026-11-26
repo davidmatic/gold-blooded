@@ -1,0 +1,30 @@
+---
+import { render, type CollectionEntry } from "astro:content";
+
+interface Props {
+  entry: CollectionEntry<"news">;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const date = new Date(`${entry.data.date}T12:00:00Z`).toLocaleDateString("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+---
+<article class="news-summary" data-category={entry.data.category}>
+  <p class="news-meta">
+    <span class="news-category">{entry.data.category}</span>
+    <time datetime={entry.data.date}>{date}</time>
+  </p>
+  <h3>{entry.data.title}</h3>
+  <Content />
+  <p class="news-sources">
+    Source:
+    {entry.data.sources.map((source, i) => (
+      <>{i > 0 && ", "}<a href={source.url} rel="noopener">{source.outlet}</a></>
+    ))}
+  </p>
+</article>

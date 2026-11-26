@@ -6,7 +6,9 @@ import ComingSoon from "../components/ComingSoon.astro";
 import { sections } from "../site/sections";
 
 export function getStaticPaths() {
-  return sections.map((section) => ({ params: { section: section.slug }, props: { section } }));
+  // Sections that have their own pages now. (getStaticPaths can't see frontmatter variables.)
+  const realPages = new Set(["news"]);
+  return sections.filter((section) => !realPages.has(section.slug)).map((section) => ({ params: { section: section.slug }, props: { section } }));
 }
 
 const { section } = Astro.props;
