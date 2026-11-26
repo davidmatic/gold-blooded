@@ -97,6 +97,67 @@ describe("injury status publish check", () => {
       expect.objectContaining({ check: "schema", entry: INJURY_PATH, reason: expect.stringMatching(/injuries/) }),
     ]);
   });
+});
+
+describe("quote publish check", () => {
+  it("publishes quotes found word for word, even across a line break or with curly apostrophes", async () => {
+    const quotes = [
+      { text: "That’s on all of us, starting with me.", speaker: "Kyle Shanahan", source: SHANAHAN_URL },
+      { text: "We have to be better on third down.", speaker: "Kyle Shanahan", source: SHANAHAN_URL },
+    ];
+    const result = await run([coachDraft(quotes)]);
+
+    expect(result.status).toBe("published");
+    if (result.status !== "published") return;
+    expect(result.entries[0]!.data.quotes).toEqual(quotes);
+  });
+
+  it("rejects a quote whose source isn't in the source snapshot", async () => {
+    const elsewhere = "https://www.espn.com/nfl/story/shanahan-third-down";
+    const draft = coachDraft([{ text: "We have to be better on third down.", speaker: "Kyle Shanahan", source: elsewhere }]);
+    (draft.data.sources as unknown[]).push({ url: elsewhere, outlet: "ESPN" });
+    const result = await run([draft]);
+
+    expect(result).toEqual({
+      status: "rejected",
+      failures: [
+        {
+          check: "quotes",
+          entry: COACH_PATH,
+          reason: `quote from Kyle Shanahan not found word for word in ${elsewhere}: "We have to be better on third down."`,
+        },
+      ],
+    });
+  });
+
+  it("rejects a quote attributed to a source the summary doesn't link to", async () => {
+    const result = await run([
+      coachDraft([{ text: "Did not participate", speaker: "49ers", source: INJURY_URL }]),
+    ]);
+
+    expect(result.status).toBe("rejected");
+    if (result.status !== "rejected") return;
+    expect(result.failures).toEqual([
+      expect.objectContaining({ check: "schema", entry: COACH_PATH, reason: expect.stringMatching(/quotes\.0\.source/) }),
+    ]);
+  });
+
+  it("rejects the run when a quote isn't word for word in its source", async () => {
+    const result = await run([
+      coachDraft([{ text: "We need to be better on third down.", speaker: "Kyle Shanahan", source: SHANAHAN_URL }]),
+    ]);
+
+    expect(result).toEqual({
+      status: "rejected",
+      failures: [
+        {
+          check: "quotes",
+          entry: COACH_PATH,
+          reason: `quote from Kyle Shanahan not found word for word in ${SHANAHAN_URL}: "We need to be better on third down."`,
+        },
+      ],
+    });
+  });
 
   it("rejects the run when a stated practice status differs from the official report", async () => {
     const result = await run([

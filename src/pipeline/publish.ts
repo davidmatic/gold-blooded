@@ -7,6 +7,7 @@
 import { newsSummarySchema } from "../content/news-summary";
 import type { PublishCheck } from "./checks/check";
 import { injuryStatusesMatch } from "./checks/injury-status";
+import { quotesAreVerbatim } from "./checks/quotes";
 import { sourceLinksResolve } from "./checks/source-links";
 import type { CheckFailure, ContentEntry, DraftEntry, Job, JobType, PublishRequest, PublishResult } from "./types";
 
@@ -16,7 +17,7 @@ interface JobDefinition {
 
 // Later tickets add the other job types, more checks, and calendar resolution.
 const JOBS: Partial<Record<JobType, JobDefinition>> = {
-  "daily-news": { checks: [sourceLinksResolve, injuryStatusesMatch] },
+  "daily-news": { checks: [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim] },
 };
 
 export async function publish(request: PublishRequest): Promise<PublishResult> {

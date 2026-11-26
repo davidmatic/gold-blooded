@@ -33,6 +33,16 @@ const injuryStatus = z
   })
   .refine((injury) => injury.practiceStatus || injury.gameStatus, "state a practiceStatus, a gameStatus, or both");
 
+/**
+ * A quote the summary uses, exactly as it appears in the body. The quote publish check
+ * looks for `text` word for word in the source document at `source`.
+ */
+const quote = z.object({
+  text: z.string().min(1),
+  speaker: z.string().min(1),
+  source: z.url({ protocol: /^https?$/ }),
+});
+
 export const newsSummarySchema = z
   .object({
     title: z.string().min(1),
@@ -42,10 +52,19 @@ export const newsSummarySchema = z
       .array(z.object({ url: z.url({ protocol: /^https?$/ }), outlet: z.string().min(1) }))
       .min(1, "a News Summary must link to its source"),
     injuries: z.array(injuryStatus).optional(),
+    quotes: z.array(quote).optional(),
   })
   .refine((summary) => summary.category !== "Injury" || (summary.injuries?.length ?? 0) > 0, {
     path: ["injuries"],
     message: "an Injury summary must state the injury statuses it reports",
+  })
+  .superRefine((summary, ctx) => {
+    const linked = new Set(summary.sources.map((source) => source.url));
+    summary.quotes?.forEach((quote, i) => {
+      if (!linked.has(quote.source)) {
+        ctx.addIssue({ code: "custom", path: ["quotes", i, "source"], message: "a quote must come from one of the summary's sources" });
+      }
+    });
   });
 
 export type NewsSummaryData = z.infer<typeof newsSummarySchema>;

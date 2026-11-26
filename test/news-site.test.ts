@@ -13,7 +13,13 @@ const snapshot = recordedSnapshot("daily-news-2026-11-25");
 function draft(title: string, category: string, body = `${title}.`): DraftEntry {
   return {
     type: "news-summary",
-    data: { title, category, sources: [{ url: `https://www.49ers.com/news/${title.toLowerCase().replace(/\W+/g, "-")}`, outlet: "49ers.com" }] },
+    data: {
+      title,
+      category,
+      sources: [{ url: `https://www.49ers.com/news/${title.toLowerCase().replace(/\W+/g, "-")}`, outlet: "49ers.com" }],
+      // Injury summaries must state statuses, and these match the recorded report.
+      ...(category === "Injury" && { injuries: [{ player: "Fred Warner", practiceStatus: "DNP" }] }),
+    },
     body,
   };
 }
