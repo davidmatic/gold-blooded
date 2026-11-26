@@ -1,5 +1,6 @@
 // Types at the publish pipeline's seam (Seam 1 in spec #1).
-import type { GamePreviewData, SeasonRecapData, StatBreakdownData } from "../content/game-week";
+import type { GamePreviewData, HighlightsData, SeasonRecapData, StatBreakdownData } from "../content/game-week";
+import type { SeasonStatsData } from "../content/season-stats";
 import type { GameStatus, NewsSummaryData, PracticeStatus } from "../content/news-summary";
 import type { DraftCoverageData, FreeAgencyTrackerData } from "../content/offseason";
 import type { CalendarPosition, ScheduledGame } from "./calendar";
@@ -69,6 +70,11 @@ export interface SourceSnapshot {
    * compares every cited stat with these. Jobs that cite stats need them.
    */
   stats?: NflverseStats;
+  /**
+   * The newest videos on the official 49ers and NFL YouTube channels, from their RSS feeds. The
+   * only videos content may embed: the official-clips publish check holds every clip to these.
+   */
+  videos?: OfficialVideo[];
   /** Best-effort outlets the sources couldn't collect this run (blocked, down), and why. */
   skipped?: SkippedSource[];
   /**
@@ -80,6 +86,17 @@ export interface SourceSnapshot {
 
 /** Content types that are one running document per Offseason, updated run after run. */
 export type RunningContentType = "free-agency-tracker" | "draft-coverage";
+
+/** One video from an official channel's YouTube RSS feed. */
+export interface OfficialVideo {
+  videoId: string;
+  title: string;
+  /** The channel's name as its feed gives it, e.g. "San Francisco 49ers". */
+  channel: string;
+  url: string;
+  publishedAt: string;
+  description: string;
+}
 
 export interface SkippedSource {
   outlet: string;
@@ -106,6 +123,8 @@ export interface ContentTypes {
   "stat-breakdown": StatBreakdownData;
   "free-agency-tracker": FreeAgencyTrackerData;
   "draft-coverage": DraftCoverageData;
+  highlights: HighlightsData;
+  "season-stats": SeasonStatsData;
 }
 export type ContentType = keyof ContentTypes;
 

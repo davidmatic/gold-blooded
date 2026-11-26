@@ -9,7 +9,7 @@ export const podcastsAttributed: PublishCheck = async ({ entries, snapshot }) =>
   for (const doc of snapshot.documents) if (doc.podcast) podcasts.set(doc.url, doc.podcast);
 
   return entries.flatMap((entry) =>
-    ("sources" in entry.data ? entry.data.sources : []).flatMap((source): CheckFailure[] => {
+    (("sources" in entry.data && entry.data.sources) || []).flatMap((source): CheckFailure[] => {
       const credit = podcasts.get(source.url);
       if (!credit) return [];
       const body = comparable(entry.body);
