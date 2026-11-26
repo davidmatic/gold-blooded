@@ -3,6 +3,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { realSources, SOURCE_URLS, type FetchPage } from "../../src/pipeline/adapters/real/sources";
+import { PODCASTS, type LatestOptions, type Podcast, type PodcastEpisode, type PodcastTranscripts } from "../../src/podcasts";
 
 const fixture = (name: string) => readFileSync(new URL(`../fixtures/sources/${name}`, import.meta.url), "utf8");
 
@@ -132,6 +133,85 @@ describe("real sources: collecting the daily news snapshot", () => {
     const sources = realSources({ fetchPage: fakeFetch({ [SOURCE_URLS.injuryReport]: { status: 500, body: "" } }), log: quiet });
 
     await expect(sources.collect(job)).rejects.toThrow(/49ers.com injury report.*HTTP 500/);
+  });
+});
+
+const TALK_EPISODE = "https://podcasts.apple.com/us/podcast/brock-purdy-misses-practice/id1153457233?i=1000804108161";
+const JFA_EPISODE = "https://www.buzzsprout.com/2047939/episodes/20168779";
+
+function episode(podcast: Podcast, overrides: Partial<PodcastEpisode>): PodcastEpisode {
+  return {
+    podcastId: podcast.id,
+    show: podcast.show,
+    hosts: [...podcast.hosts],
+    guid: "guid",
+    title: "An episode",
+    publishedAt: "2026-11-26T02:32:18.000Z",
+    episodeUrl: "https://example.com/episode",
+    audioUrl: "https://example.com/episode.mp3",
+    description: "Show notes.",
+    ...overrides,
+  };
+}
+
+/** Stands in for the transcription unit: serves canned episodes per show, and records what it was asked. */
+function fakePodcasts(byShow: Record<string, PodcastEpisode[] | Error>): PodcastTranscripts & { asked: [string, LatestOptions][] } {
+  const asked: [string, LatestOptions][] = [];
+  return {
+    asked,
+    async latest(podcast, options) {
+      asked.push([podcast.id, options]);
+      const episodes = byShow[podcast.id] ?? [];
+      if (episodes instanceof Error) throw episodes;
+      return episodes;
+    },
+  };
+}
+
+describe("real sources: podcast transcripts", () => {
+  const talk = episode(PODCASTS.ninersTalk, {
+    title: "Brock Purdy misses practice as 49ers prepare to face desperate Seahawks",
+    episodeUrl: TALK_EPISODE,
+    transcript: "Maiocco: I think Purdy plays on Sunday.",
+  });
+
+  it("adds each transcribed episode as a document crediting its show and hosts", async () => {
+    const podcasts = fakePodcasts({ [PODCASTS.ninersTalk.id]: [talk] });
+    const { documents } = await realSources({ fetchPage: fakeFetch(), podcasts, log: quiet }).collect(job);
+
+    expect(documents.find((doc) => doc.url === TALK_EPISODE)).toEqual({
+      url: TALK_EPISODE,
+      outlet: "49ers Talk",
+      title: "Brock Purdy misses practice as 49ers prepare to face desperate Seahawks",
+      publishedAt: "2026-11-26T02:32:18.000Z",
+      text: "Maiocco: I think Purdy plays on Sunday.",
+      podcast: { show: "49ers Talk", hosts: ["Matt Maiocco", "Jennifer Lee Chan"] },
+    });
+  });
+
+  it("asks both shows for their newest two episodes from the job's day and the day before, leaving out cited ones", async () => {
+    const podcasts = fakePodcasts({});
+    await realSources({ fetchPage: fakeFetch(), podcasts, alreadyCited: [JFA_EPISODE], log: quiet }).collect(job);
+
+    expect(podcasts.asked.map(([id]) => id)).toEqual(["49ers-talk", "jfa"]);
+    for (const [, options] of podcasts.asked) {
+      expect(options).toMatchObject({ limit: 2, from: "2026-11-24T08:00:00.000Z", to: "2026-11-26T08:00:00.000Z" });
+      expect([...(options.exclude ?? [])]).toContain(JFA_EPISODE);
+    }
+  });
+
+  it("skips, without failing, an episode that couldn't be transcribed and a feed that couldn't be read", async () => {
+    const untranscribed = episode(PODCASTS.ninersTalk, { title: "Lynch extension", transcriptError: "whisper crashed" });
+    const podcasts = fakePodcasts({ [PODCASTS.ninersTalk.id]: [untranscribed], [PODCASTS.jfa.id]: new Error("HTTP 503") });
+    const snapshot = await realSources({ fetchPage: fakeFetch(), podcasts, log: quiet }).collect(job);
+
+    expect(snapshot.documents.some((doc) => doc.podcast)).toBe(false);
+    expect(snapshot.skipped).toEqual(
+      expect.arrayContaining([
+        { outlet: "49ers Talk", reason: 'could not transcribe "Lynch extension": whisper crashed' },
+        { outlet: "Jonnydel's Football Academy", reason: "HTTP 503" },
+      ]),
+    );
   });
 });
 

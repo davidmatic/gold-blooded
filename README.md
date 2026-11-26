@@ -34,7 +34,12 @@ npm run build    # static output in dist/
 - `scripts/publish.ts`: CLI the workflows run, e.g.
   `npx tsx scripts/publish.ts daily-news --adapters real --date 2026-11-25` (`--adapters fixture`, the
   default, needs no network or key). Exits non-zero, writing nothing, when any publish check fails.
+- `src/podcasts/`: podcast feeds, Whisper transcription, and the transcript cache (see Podcasts).
+  Independent of any job type, so the daily news sources and the Film Room share it.
 - `scripts/smoke-daily-news.ts`: manual smoke test for the real adapters (see below).
+- `scripts/smoke-podcasts.ts`: manual smoke test for podcast transcription.
+- `scripts/transcribe.py`: transcribes one audio file with faster-whisper (called from Node).
+- `data/transcripts/`: the transcript cache, committed (one JSON file per episode).
 - `content/`: the content store (Markdown + data files). Override with `GOLD_BLOODED_CONTENT_DIR`.
   To fix or remove a published piece, edit or delete its file. News Summaries live in `content/news/`.
   Each Game Week has a folder, `content/game-weeks/<slug>/` (slugs like `2026-week-12` or
@@ -61,6 +66,7 @@ Pacific time:
 | NBC Sports Bay Area feed | articles, full text | skipped, run goes on |
 | ESPN team news API (team 25) | 49ers stories, full text | skipped, run goes on |
 | San Francisco Chronicle 49ers section | articles, full text | best effort: skipped when bot-blocked, run goes on |
+| 49ers Talk, Jonnydel's Football Academy (RSS) | newest 2 episodes per show, transcribed with Whisper | skipped (feed or episode), run goes on |
 
 Skipped outlets are listed in `snapshot.skipped`. Pro Football Reference is never scraped. Articles
 already cited by a published News Summary are left out, so the same story isn't summarised twice.
@@ -68,6 +74,28 @@ Every fetch, and the source-link check, sends one honest User-Agent:
 `gold-blooded-bot/1.0 (+https://davidmatic.github.io/gold-blooded/)`. The link check counts a link as
 loading only on a 2xx with a body that isn't a bot-challenge page (ESPN answers some clients with an
 empty 202).
+
+## Podcasts
+
+`src/podcasts/` is the reusable unit. `podcastTranscripts({ fetchPage, transcriber, cacheDir })`
+returns an object whose `latest(podcast, { limit, from?, to?, exclude? })` reads the show's feed
+(`PODCASTS.ninersTalk`, `PODCASTS.jfa`), picks its newest episodes in the window, and returns each as
+a `PodcastEpisode` (show, hosts, title, date, episode page link, audio link, show notes) with its
+`transcript`, or a `transcriptError` when transcription failed. Episode links are the Buzzsprout
+episode page (JFA) or the Apple Podcasts episode page, matched by guid (49ers Talk, whose feed has no
+per-episode page).
+
+- **Transcriber**: `whisperTranscriber()` downloads the audio and runs `scripts/transcribe.py`
+  (faster-whisper `small.en`, int8 on CPU, VAD filter, the show's names as the initial prompt).
+  Set `WHISPER_PYTHON` and `WHISPER_MODEL` to override. Tests use a fake transcriber.
+- **Cache**: each transcript is saved as `data/transcripts/<show id>/<guid>.json` and committed, so an
+  episode is transcribed once, ever, by any workflow or local run. The daily workflow commits new
+  transcripts even when its publish is rejected.
+
+The daily news job adds each transcribed episode from the news window as a document marked with its
+show and hosts. Podcast News Summaries must name the show and a host (the `podcast-attribution`
+publish check) and cite the episode link, and their quotes are checked word for word against the
+transcript.
 
 ## Claude writer
 
@@ -127,7 +155,19 @@ ANTHROPIC_API_KEY=sk-ant-... npx tsx scripts/smoke-daily-news.ts --claude --out 
 `scripts/smoke-thursday-preview.ts` does the same for the Thursday preview job (sources only, it
 prints where the date falls on the calendar; `--claude` writes the Game Preview or season recap).
 
-Both take `--date YYYY-MM-DD` (default: today, Pacific). The full check is one real run of the daily
+Both take `--date YYYY-MM-DD` (default: today, Pacific). Add `--podcasts` to transcribe the news
+window's podcast episodes too (needs Python 3.12 with `pip install -r scripts/requirements-whisper.txt`).
+
+Podcast transcription alone (network and Whisper, no key). It transcribes the newest episode
+whatever its date and prints the time taken and the transcript's start:
+
+```sh
+python3.12 -m venv .venv-whisper && .venv-whisper/bin/pip install -r scripts/requirements-whisper.txt
+WHISPER_PYTHON=.venv-whisper/bin/python npx tsx scripts/smoke-podcasts.ts --show 49ers-talk
+WHISPER_PYTHON=.venv-whisper/bin/python npx tsx scripts/smoke-podcasts.ts --show jfa
+```
+
+The full check is one real run of the daily
 news workflow (Actions → Daily news → Run workflow): its News Summaries pass the checks, are
 committed to `main`, and appear on the live site's News page.
 

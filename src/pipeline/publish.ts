@@ -9,6 +9,7 @@ import { resolveCalendar, type CalendarPosition } from "./calendar";
 import type { PublishCheck } from "./checks/check";
 import { injuryStatusesMatch } from "./checks/injury-status";
 import { quotesAreVerbatim } from "./checks/quotes";
+import { podcastsAttributed } from "./checks/podcast-attribution";
 import { sourceLinksResolve } from "./checks/source-links";
 import { CONTENT_TYPES } from "./content-types";
 import type {
@@ -32,7 +33,7 @@ interface JobDefinition {
   writes: ContentType[] | ((calendar: CalendarPosition) => ContentType[]);
 }
 
-const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim];
+const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, podcastsAttributed];
 
 // Later tickets add the other job types and more checks.
 const JOBS: Partial<Record<JobType, JobDefinition>> = {

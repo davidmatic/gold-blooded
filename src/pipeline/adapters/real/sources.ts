@@ -6,8 +6,13 @@
 // one is blocked or down it is recorded in `snapshot.skipped` and the run goes on.
 // Pro Football Reference is never scraped.
 //
+// Podcasts (49ers Talk, Jonnydel's Football Academy) are best effort too: each show's newest
+// episodes from the news window are transcribed through `options.podcasts` (the transcription
+// unit in src/podcasts/) and added as documents; a feed or transcription that fails is skipped.
+//
 // All network access goes through `fetchPage`, which sends one honest bot User-Agent. Tests
 // pass a fake `fetchPage` that serves saved captures.
+import { PODCASTS, type PodcastTranscripts } from "../../../podcasts";
 import type { Job, SkippedSource, SourceAdapter, SourceDocument, SourceSnapshot } from "../../types";
 import {
   isBotChallenge,
@@ -50,7 +55,13 @@ export interface RealSourcesOptions {
   alreadyCited?: Iterable<string>;
   /** Where progress and fallbacks are reported. Defaults to console.log. */
   log?: (message: string) => void;
+  /** Podcast transcripts. Without it, the snapshot has no podcast episodes. */
+  podcasts?: PodcastTranscripts;
 }
+
+/** Shows transcribed for the daily news, and how many of each show's newest episodes. */
+const NEWS_PODCASTS = [PODCASTS.ninersTalk, PODCASTS.jfa];
+const MAX_EPISODES_PER_SHOW = 2;
 
 /** Most articles fetched per outlet per run, newest first. */
 const MAX_ARTICLES_PER_OUTLET = 8;
@@ -104,7 +115,7 @@ export function realSources(options: RealSourcesOptions = {}): SourceAdapter {
     );
   }
 
-  async function bestEffort(outlet: string, skipped: SkippedSource[], collect: () => Promise<SourceDocument[]>) {
+  async function bestEffort<T>(outlet: string, skipped: SkippedSource[], collect: () => Promise<T[]>): Promise<T[]> {
     try {
       return await collect();
     } catch (error) {
@@ -150,6 +161,7 @@ export function realSources(options: RealSourcesOptions = {}): SourceAdapter {
         bestEffort("San Francisco Chronicle", skipped, async () => sfChronicle(parseSfcSection(await index(SOURCE_URLS.sfc)), window)),
       ]);
       documents.push(...nbc, ...espn, ...sfc);
+      if (options.podcasts) documents.push(...(await podcastEpisodes(options.podcasts, window, skipped)));
       // Keep the order stable whatever finished first.
       skipped.sort((a, b) => OUTLET_ORDER.indexOf(a.outlet) - OUTLET_ORDER.indexOf(b.outlet));
 
@@ -165,6 +177,32 @@ export function realSources(options: RealSourcesOptions = {}): SourceAdapter {
       return !((await load(url)) instanceof Error);
     },
   };
+
+  /** One show at a time: transcription is CPU-bound on the runner. */
+  async function podcastEpisodes(podcasts: PodcastTranscripts, window: NewsWindow, skipped: SkippedSource[]): Promise<SourceDocument[]> {
+    const documents: SourceDocument[] = [];
+    for (const podcast of NEWS_PODCASTS) {
+      const episodes = await bestEffort(podcast.show, skipped, async () =>
+        podcasts.latest(podcast, { limit: MAX_EPISODES_PER_SHOW, from: window.from, to: window.to, exclude: cited }),
+      );
+      for (const episode of episodes) {
+        if (!episode.transcript) {
+          const reason = `could not transcribe "${episode.title}": ${episode.transcriptError ?? "no transcript"}`;
+          skipped.push({ outlet: podcast.show, reason });
+          continue;
+        }
+        documents.push({
+          url: episode.episodeUrl,
+          outlet: episode.show,
+          title: episode.title,
+          publishedAt: episode.publishedAt,
+          text: episode.transcript,
+          podcast: { show: episode.show, hosts: episode.hosts },
+        });
+      }
+    }
+    return documents;
+  }
 
   async function transcripts(listingHtml: string, window: NewsWindow): Promise<SourceDocument[]> {
     const listed = parseTranscriptListing(listingHtml).filter((t) => window.containsDay(t.date) && !cited.has(t.url));
@@ -204,7 +242,7 @@ export function realSources(options: RealSourcesOptions = {}): SourceAdapter {
   }
 }
 
-const OUTLET_ORDER = ["NBC Sports Bay Area", "ESPN", "San Francisco Chronicle"];
+const OUTLET_ORDER = ["NBC Sports Bay Area", "ESPN", "San Francisco Chronicle", ...NEWS_PODCASTS.map((p) => p.show)];
 
 /** The official injury report, written out as a document the writer can read and cite. */
 function injuryReportDocument(html: string, date: string): SourceDocument {
@@ -240,6 +278,9 @@ function transactionsDocument(html: string, date: string, window: NewsWindow): S
 }
 
 interface NewsWindow {
+  /** The window's start and end instants (ISO 8601, end exclusive). */
+  from: string;
+  to: string;
   contains(isoInstant: string): boolean;
   containsDay(day: string): boolean;
 }
@@ -250,6 +291,8 @@ function newsWindow(date: string): NewsWindow {
   const start = dayStart(previous).getTime();
   const end = dayStart(addDays(date, 1)).getTime();
   return {
+    from: new Date(start).toISOString(),
+    to: new Date(end).toISOString(),
     contains: (instant) => {
       const t = Date.parse(instant);
       return t >= start && t < end;

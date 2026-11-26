@@ -30,6 +30,13 @@ export interface SourceDocument {
   publishedAt: string;
   /** The document's full text. The quote check looks for quotes here, word for word. */
   text: string;
+  /** Set when the document is a podcast episode's transcript: who to credit its opinions to. */
+  podcast?: PodcastCredit;
+}
+
+export interface PodcastCredit {
+  show: string;
+  hosts: string[];
 }
 
 /**
