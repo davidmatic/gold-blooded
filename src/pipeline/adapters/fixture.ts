@@ -1,4 +1,4 @@
-// Fixture adapters for the scheduled workflows until the real ones land (#4).
+// Fixture adapters: recorded sources and canned drafts, for local runs (`--adapters fixture`).
 // The source adapter serves a recorded snapshot, and only links in that snapshot "resolve".
 // The writer returns canned drafts. Nothing here touches the network or Claude.
 import { readFile } from "node:fs/promises";
