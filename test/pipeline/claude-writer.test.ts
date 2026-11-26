@@ -3,7 +3,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
 import { publish } from "../../src/pipeline";
-import { isSpendLimitError, toDraftEntries, type WriterOutput } from "../../src/pipeline/adapters/real/claude-writer";
+import { isSpendLimitError, renderSnapshot, toDraftEntries, type WriterOutput } from "../../src/pipeline/adapters/real/claude-writer";
 import { fakeSources, recordedSnapshot } from "../support/fakes";
 
 const snapshot = recordedSnapshot("daily-news-2026-11-25");
@@ -66,6 +66,34 @@ describe("Claude writer output", () => {
     });
 
     expect(result.status).toBe("published");
+  });
+});
+
+describe("Claude writer input", () => {
+  it("marks podcast transcripts with the show and hosts to credit", () => {
+    const episode = "https://www.buzzsprout.com/2047939/episodes/20168779";
+    const rendered = renderSnapshot(
+      { type: "daily-news", date: "2026-11-25" },
+      {
+        date: "2026-11-25",
+        documents: [
+          {
+            url: episode,
+            outlet: "Jonnydel's Football Academy",
+            title: "JFA Podcast 355: Victory Monday",
+            publishedAt: "2026-11-23T16:00:00.000Z",
+            text: "What a win in Mexico City.",
+            podcast: { show: "Jonnydel's Football Academy", hosts: ["Jonnydel"] },
+          },
+        ],
+      },
+    );
+
+    expect(rendered).toContain(`url: ${episode}\noutlet: Jonnydel's Football Academy\npodcast transcript: show "Jonnydel's Football Academy", hosts: Jonnydel\n`);
+  });
+
+  it("leaves other documents unmarked", () => {
+    expect(renderSnapshot({ type: "daily-news", date: "2026-11-25" }, snapshot)).not.toContain("podcast transcript");
   });
 });
 
