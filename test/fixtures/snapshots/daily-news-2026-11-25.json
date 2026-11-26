@@ -20,7 +20,12 @@
       "outlet": "49ers.com",
       "title": "Kyle Shanahan Wednesday press conference",
       "publishedAt": "2026-11-25T19:00:00Z",
-      "text": "Shanahan said, \"We have to be better on third down.\""
+      "text": "Q: What stood out on the film?\n\nShanahan: We have to be better on third down. That's on all of us,\nstarting with me."
     }
+  ],
+  "injuryReport": [
+    { "player": "Fred Warner", "practiceStatus": "DNP" },
+    { "player": "Brandon Aiyuk", "practiceStatus": "LP" },
+    { "player": "C.J. West", "practiceStatus": "FP", "gameStatus": "Questionable" }
   ]
 }

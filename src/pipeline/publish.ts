@@ -6,6 +6,7 @@
 // failures, so a rejected run leaves the content store untouched.
 import { newsSummarySchema } from "../content/news-summary";
 import type { PublishCheck } from "./checks/check";
+import { injuryStatusesMatch } from "./checks/injury-status";
 import { sourceLinksResolve } from "./checks/source-links";
 import type { CheckFailure, ContentEntry, DraftEntry, Job, JobType, PublishRequest, PublishResult } from "./types";
 
@@ -15,7 +16,7 @@ interface JobDefinition {
 
 // Later tickets add the other job types, more checks, and calendar resolution.
 const JOBS: Partial<Record<JobType, JobDefinition>> = {
-  "daily-news": { checks: [sourceLinksResolve] },
+  "daily-news": { checks: [sourceLinksResolve, injuryStatusesMatch] },
 };
 
 export async function publish(request: PublishRequest): Promise<PublishResult> {
