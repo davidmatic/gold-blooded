@@ -4,6 +4,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { claudeAsker, SpendLimitReachedError } from "../../src/pipeline/adapters/real/claude";
+import { claudeFilmRoomWriter } from "../../src/pipeline/adapters/real/claude-film-room-writer";
+import { claudeGamePreviewWriter } from "../../src/pipeline/adapters/real/claude-game-preview-writer";
+import { claudeWriter } from "../../src/pipeline/adapters/real/claude-writer";
 
 const schema = z.object({ title: z.string() });
 const reply = (overrides: object = {}) => ({
@@ -46,6 +49,41 @@ describe("Claude request", () => {
       system: [{ type: "text", text: "The voice.", cache_control: { type: "ephemeral" } }],
       messages: [{ role: "user", content: "The brief." }],
     });
+  });
+
+  it("uses the model it is given, and Opus when none is given", async () => {
+    const given = fakeClient([reply()]);
+    await claudeAsker({ client: given.client, model: "claude-sonnet-5-5", ...quiet })("v", schema, "b");
+    expect(given.requests[0]).toMatchObject({ model: "claude-sonnet-5-5" });
+
+    const unset = fakeClient([reply()]);
+    await claudeAsker({ client: unset.client, ...quiet })("v", schema, "b");
+    expect(unset.requests[0]).toMatchObject({ model: "claude-opus-5-5" });
+  });
+
+  it("writes the routine jobs (daily news, Film Room) with Sonnet and the rest with Opus", async () => {
+    const asked: Record<string, string> = {};
+    const recordingClient = (name: string) =>
+      ({
+        beta: {
+          messages: {
+            parse: async (request: { model: string }) => {
+              asked[name] = request.model;
+              throw new Error("stop after recording the request");
+            },
+          },
+        },
+      }) as unknown as Anthropic;
+    const job = { type: "daily-news", date: "2026-11-25" } as never;
+    const snapshot = { date: "2026-11-25", documents: [{ url: "https://example.com/a", outlet: "x", title: "t", text: "t", film: { show: "jfa" } }] } as never;
+
+    await claudeWriter({ client: recordingClient("news"), ...quiet }).write(job, snapshot).catch(() => {});
+    await claudeFilmRoomWriter({ client: recordingClient("film-room"), ...quiet }).write(job, snapshot).catch(() => {});
+    await claudeGamePreviewWriter({ client: recordingClient("game-preview"), ...quiet }).write(job, snapshot).catch(() => {});
+
+    expect(asked.news).toBe("claude-sonnet-5-5");
+    expect(asked["film-room"]).toBe("claude-sonnet-5-5");
+    expect(asked["game-preview"] ?? "claude-opus-5-5").toBe("claude-opus-5-5");
   });
 
   it("retries a transient error, up to three attempts in all", async () => {

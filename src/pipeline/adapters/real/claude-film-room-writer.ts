@@ -6,7 +6,7 @@
 // to the source and the summary, so nothing Claude writes is trusted.
 import { z } from "zod";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
-import { claudeAsker, type ClaudeOptions } from "./claude";
+import { claudeAsker, ROUTINE_MODEL, type ClaudeOptions } from "./claude";
 import { NUMBERS_RULE, quotesField, quotesOutput, quotesRule } from "./writer-output";
 
 const filmRoomOutputSchema = z.object({
@@ -71,7 +71,7 @@ export function toFilmRoomDrafts(output: FilmRoomOutput): DraftEntry[] {
 }
 
 export function claudeFilmRoomWriter(options: ClaudeOptions = {}): ContentWriter {
-  const ask = claudeAsker(options);
+  const ask = claudeAsker({ model: ROUTINE_MODEL, ...options });
   return {
     async write(job, snapshot) {
       if (!snapshot.documents.some((doc) => doc.film)) return [];

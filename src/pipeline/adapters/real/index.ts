@@ -16,7 +16,7 @@ import { claudeFilmRoomWriter } from "./claude-film-room-writer";
 import { ytDlpCaptions } from "./captions";
 
 export { BOT_USER_AGENT, realSources, SOURCE_URLS } from "./sources";
-export { MODEL, SpendLimitReachedError } from "./claude";
+export { MODEL, ROUTINE_MODEL, SpendLimitReachedError } from "./claude";
 export { claudeWriter } from "./claude-writer";
 export { claudeGamePreviewWriter } from "./claude-game-preview-writer";
 export { thursdayPreviewSources } from "./thursday-preview-sources";

@@ -107,7 +107,11 @@ transcript.
 
 ## Claude writer
 
-`adapters/real/claude-writer.ts` sends the snapshot to `claude-opus-5-5` through `@anthropic-ai/sdk`,
+`adapters/real/claude-writer.ts` sends the snapshot to `claude-sonnet-5-5` through `@anthropic-ai/sdk`.
+To keep costs down, the high-volume daily jobs (daily news and the Film Room) use Claude Sonnet 5.5,
+at half Opus's price; the Game Preview, Stat Breakdown, post-game (Highlights, Season Stats, Love
+Letter, Reasons) and Offseason writers use `claude-opus-5-5` (`MODEL` and `ROUTINE_MODEL` in
+`adapters/real/claude.ts`). The news writer sends its request
 with a neutral news voice prompt and structured output matching the News Summary schema (including
 the `injuries` and `quotes` the publish checks verify). Every writer (news, Game Preview, Offseason,
 post-game) makes its requests through `claudeAsker()` in `adapters/real/claude.ts`: a voice prompt

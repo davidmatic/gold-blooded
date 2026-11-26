@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { NEWS_CATEGORIES } from "../../../content/news-summary";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
-import { claudeAsker, type ClaudeOptions } from "./claude";
+import { claudeAsker, ROUTINE_MODEL, type ClaudeOptions } from "./claude";
 import { INJURIES_RULE, injuriesField, injuriesOutput, NUMBERS_RULE, quotesField, quotesOutput, quotesRule, renderDocuments, sourcesOutput, sourcesRule } from "./writer-output";
 
 /** What Claude returns. Lists are always present (possibly empty) and unset statuses are null. */
@@ -72,7 +72,7 @@ export function toDraftEntries(output: WriterOutput): DraftEntry[] {
 }
 
 export function claudeWriter(options: ClaudeOptions = {}): ContentWriter {
-  const ask = claudeAsker(options);
+  const ask = claudeAsker({ model: ROUTINE_MODEL, ...options });
   return {
     async write(job, snapshot) {
       return toDraftEntries(await ask(NEWS_VOICE, writerOutputSchema, renderSnapshot(job, snapshot)));

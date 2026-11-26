@@ -8,7 +8,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { z } from "zod";
 
+/** The default model: the Game Preview, Stat Breakdown, post-game and Offseason writers. */
 export const MODEL = "claude-opus-5-5";
+/** Half Opus's price, for the high-volume daily jobs (daily news, Film Room). */
+export const ROUTINE_MODEL = "claude-sonnet-5-5";
 
 const MAX_ATTEMPTS = 3;
 
@@ -45,6 +48,8 @@ function isRetryable(error: unknown): boolean {
 
 export interface ClaudeOptions {
   client?: Anthropic;
+  /** Defaults to MODEL (Opus). */
+  model?: typeof MODEL | typeof ROUTINE_MODEL;
   log?: (message: string) => void;
   /** Waits between retries. Tests pass one that doesn't wait. */
   sleep?: (ms: number) => Promise<void>;
@@ -63,7 +68,7 @@ export function claudeAsker(options: ClaudeOptions = {}): AskClaude {
     for (let attempt = 1; ; attempt++) {
       try {
         const response = await client.beta.messages.parse({
-          model: MODEL,
+          model: options.model ?? MODEL,
           max_tokens: 16000,
           betas: ["server-side-fallback-2026-07-01"],
           fallbacks: "default",
