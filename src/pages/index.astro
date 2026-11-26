@@ -2,13 +2,18 @@
 import { getCollection } from "astro:content";
 import GamePreviewLead from "../components/GamePreviewLead.astro";
 import NewsSummaryCard from "../components/NewsSummaryCard.astro";
+import OffseasonLead from "../components/OffseasonLead.astro";
+import { offseasonLead } from "../site/offseason";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { currentPreview } from "../site/game-weeks";
 import { homepageNews } from "../site/news";
 import { sections, sitePath } from "../site/sections";
 
 const latestNews = homepageNews(await getCollection("news"));
-const preview = currentPreview(await getCollection("gamePreviews"));
+const previews = await getCollection("gamePreviews");
+const preview = currentPreview(previews);
+// In the Offseason the Game Preview slot shows the Free Agency Tracker, or Draft Coverage around the draft.
+const offseason = offseasonLead(await getCollection("freeAgencyTrackers"), await getCollection("draftCoverage"), previews);
 ---
 <BaseLayout>
   <section class="hero">
@@ -16,7 +21,7 @@ const preview = currentPreview(await getCollection("gamePreviews"));
     <p>An unofficial 49ers fan site. Weekly previews, stats, news, film, and a shrine to Brock Purdy.</p>
   </section>
 
-  {preview && <GamePreviewLead entry={preview} />}
+  {offseason ? <OffseasonLead lead={offseason} /> : preview && <GamePreviewLead entry={preview} />}
 
   {latestNews.length > 0 && (
     <section class="latest-news" aria-labelledby="latest-news-heading">

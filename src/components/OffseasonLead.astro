@@ -1,0 +1,50 @@
+---
+// The homepage's Game Preview slot in the Offseason: the Free Agency Tracker, or Draft
+// Coverage around the draft (see offseasonLead in src/site/offseason.ts).
+import type { CollectionEntry } from "astro:content";
+import { formatDay, formatDraftDates, moveLabel, type OffseasonLead } from "../site/offseason";
+import { sitePath } from "../site/sections";
+
+interface Props {
+  lead: OffseasonLead<CollectionEntry<"freeAgencyTrackers">, CollectionEntry<"draftCoverage">>;
+}
+
+const { lead } = Astro.props;
+const trackerHref = sitePath("free-agency-tracker");
+const draftHref = sitePath("draft-coverage");
+---
+<section class="offseason-lead" aria-labelledby="offseason-lead-heading">
+  <p class="eyebrow">Offseason · updated {formatDay(lead.entry.data.updated)}</p>
+  {lead.kind === "free-agency-tracker" ? (
+    <>
+      <h2 id="offseason-lead-heading"><a href={trackerHref}>{lead.entry.data.title}</a></h2>
+      {lead.entry.data.moves.length > 0 ? (
+        <ul class="offseason-items">
+          {lead.entry.data.moves.slice(0, 5).map((move) => (
+            <li><span class="move-kind">{moveLabel(move.kind)}</span> {move.player}, {move.position}</li>
+          ))}
+        </ul>
+      ) : (
+        <p>No moves yet.</p>
+      )}
+      <p><a href={trackerHref}>Every signing, departure, and re-signing</a></p>
+      {lead.other && <p><a href={draftHref}>{lead.other.data.title}</a></p>}
+    </>
+  ) : (
+    <>
+      <h2 id="offseason-lead-heading"><a href={draftHref}>{lead.entry.data.title}</a></h2>
+      <p>The NFL Draft: {formatDraftDates(lead.entry.data.draft)}.</p>
+      {lead.entry.data.picks.length > 0 ? (
+        <ul class="offseason-items">
+          {lead.entry.data.picks.map((pick) => (
+            <li>Round {pick.round}, No. {pick.overall}: {pick.player}, {pick.position}, {pick.school}</li>
+          ))}
+        </ul>
+      ) : lead.entry.data.teamNeeds.length > 0 && (
+        <p>Team needs: {lead.entry.data.teamNeeds.map((need) => need.position).join(", ")}</p>
+      )}
+      <p><a href={draftHref}>Needs, mock drafts, picks, and profiles</a></p>
+      {lead.other && <p><a href={trackerHref}>{lead.other.data.title}</a></p>}
+    </>
+  )}
+</section>
