@@ -12,6 +12,10 @@ const injuryDraft: DraftEntry = {
     title: "Warner sits out Wednesday practice",
     category: "Injury",
     sources: [{ url: "https://www.49ers.com/news/injury-report-wednesday-week-13", outlet: "49ers.com" }],
+    injuries: [
+      { player: "Fred Warner", practiceStatus: "DNP" },
+      { player: "Brandon Aiyuk", practiceStatus: "LP" },
+    ],
   },
   body: "Fred Warner did not practice on Wednesday with an ankle injury. Brandon Aiyuk was limited.",
 };

@@ -1,5 +1,7 @@
 // Types at the publish pipeline's seam (Seam 1 in spec #1).
-import type { NewsSummaryData } from "../content/news-summary";
+import type { GameStatus, NewsSummaryData, PracticeStatus } from "../content/news-summary";
+
+export type { GameStatus, PracticeStatus };
 
 /** The scheduled jobs. Each has its own workflow. */
 export type JobType = "daily-news" | "post-game" | "thursday-preview" | "film-room";
@@ -16,16 +18,30 @@ export interface SourceDocument {
   outlet: string;
   title: string;
   publishedAt: string;
+  /** The document's full text. The quote check looks for quotes here, word for word. */
   text: string;
 }
 
 /**
+ * One player's line on the official NFL injury report, as of the snapshot's date.
+ * A status is absent when the report doesn't give one yet (game status is set only on
+ * the final report of the week).
+ */
+export interface InjuryReportEntry {
+  player: string;
+  practiceStatus?: PracticeStatus;
+  gameStatus?: GameStatus;
+}
+
+/**
  * Everything a job's sources returned, gathered once per run.
- * Later tickets add the injury report, nflverse stats, schedule, and transcripts.
+ * Later tickets add nflverse stats, schedule, and transcripts.
  */
 export interface SourceSnapshot {
   date: string;
   documents: SourceDocument[];
+  /** The official NFL injury report. Absent when the sources couldn't get one. */
+  injuryReport?: InjuryReportEntry[];
 }
 
 /** Gathers source material. The only route the pipeline has to the network. */
