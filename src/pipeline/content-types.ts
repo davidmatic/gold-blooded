@@ -97,6 +97,8 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
         throughGame: {
           gameId: game.gameId,
           gameWeek: gameWeekSlug(game.season, game.week, game.gameType),
+          week: game.week,
+          gameType: game.gameType,
           opponent: game.opponent,
           venue: venue(game),
           result: game.result,

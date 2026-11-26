@@ -100,7 +100,7 @@ describe("post-game job: the day after a game", () => {
             title: "2026 Season Stats",
             season: 2026,
             updated: "2026-11-23",
-            throughGame: { gameId: GAME, gameWeek: "2026-week-11", opponent: "MIN", venue: "neutral", result: { sf: 35, opponent: 10 } },
+            throughGame: { gameId: GAME, gameWeek: "2026-week-11", week: 11, gameType: "REG", opponent: "MIN", venue: "neutral", result: { sf: 35, opponent: 10 } },
             record: { wins: 9, losses: 1, ties: 0 },
           },
           body: seasonStatsDraft.body,

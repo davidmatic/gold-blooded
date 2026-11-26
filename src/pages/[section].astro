@@ -7,7 +7,7 @@ import { sections } from "../site/sections";
 
 export function getStaticPaths() {
   // Sections that have their own pages now. (getStaticPaths can't see frontmatter variables.)
-  const realPages = new Set(["news", "archive"]);
+  const realPages = new Set(["news", "archive", "season-stats"]);
   return sections.filter((section) => !realPages.has(section.slug)).map((section) => ({ params: { section: section.slug }, props: { section } }));
 }
 

@@ -5,6 +5,7 @@
 // The pipeline fills in the season, the record, and the game it runs through; the writer
 // supplies the stats and the write-up.
 import { z } from "astro/zod";
+import { GAME_TYPES } from "../pipeline/calendar";
 import { citedStat } from "./cited-stat";
 import { isoDate } from "./news-summary";
 
@@ -20,6 +21,8 @@ export const seasonStatsSchema = z
     throughGame: z.object({
       gameId: z.string().min(1),
       gameWeek: z.string().min(1),
+      week: z.number().int(),
+      gameType: z.enum(GAME_TYPES),
       opponent: z.string().min(1),
       venue: z.enum(["home", "away", "neutral"]),
       result: z.object({ sf: score, opponent: score }),

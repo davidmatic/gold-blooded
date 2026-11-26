@@ -1,0 +1,53 @@
+---
+// Season Stats: the 49ers' team and player numbers for the newest season, up to its latest
+// game. One standing document per season, content/season-stats/<season>.md, rewritten by the
+// post-game job the day after every game. (The Prediction Record joins this page later.)
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { formatRecord, gameWeekName, matchup, resultLine } from "../site/game-weeks";
+import { currentSeasonStats, seasonStatRows } from "../site/post-game";
+import { sections, sitePath } from "../site/sections";
+
+const section = sections.find((s) => s.slug === "season-stats")!;
+const page = currentSeasonStats(await getCollection("seasonStats"));
+const Content = page ? (await render(page)).Content : undefined;
+const rows = page && seasonStatRows(page.data);
+const through = page?.data.throughGame;
+const title = page?.data.title ?? section.name;
+---
+<BaseLayout title={title}>
+  <h1>{title}</h1>
+  {page && Content && rows && through ? (
+    <article class="season-stats">
+      <p class="record">Record: <strong>{formatRecord(page.data.record)}</strong></p>
+      <p class="news-meta">
+        Through <a href={sitePath(`game-weeks/${through.gameWeek}`)}>{gameWeekName({ season: page.data.season, week: through.week, gameType: through.gameType })}</a>{`, ${matchup(through)}, ${resultLine(through.result)}`}
+      </p>
+      <Content />
+      {rows.team.length > 0 && (
+        <div class="stat-table-wrap">
+          <table class="stat-table">
+            <caption>Team</caption>
+            <thead><tr><th scope="col">Team</th><th scope="col">Stat</th><th scope="col">Value</th></tr></thead>
+            <tbody>{rows.team.map((row) => <tr><th scope="row">{row.who}</th><td>{row.name}</td><td>{row.value}</td></tr>)}</tbody>
+          </table>
+        </div>
+      )}
+      {rows.players.length > 0 && (
+        <div class="stat-table-wrap">
+          <table class="stat-table">
+            <caption>Players</caption>
+            <thead><tr><th scope="col">Player</th><th scope="col">Stat</th><th scope="col">Value</th></tr></thead>
+            <tbody>{rows.players.map((row) => <tr><th scope="row">{row.who}</th><td>{row.name}</td><td>{row.value}</td></tr>)}</tbody>
+          </table>
+        </div>
+      )}
+      <p class="news-sources">Stats: <a href="https://github.com/nflverse/nflverse-data" rel="noopener">nflverse</a></p>
+    </article>
+  ) : (
+    <>
+      <p>{section.blurb}</p>
+      <p class="placeholder">No Season Stats yet. They update the day after every game.</p>
+    </>
+  )}
+</BaseLayout>

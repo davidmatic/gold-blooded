@@ -8,7 +8,7 @@ import { gameWeekName, gameWeekPages, matchup, pastGameWeekPages, predictionLine
 import { sections, sitePath } from "../site/sections";
 
 const section = sections.find((s) => s.slug === "archive")!;
-const pages = pastGameWeekPages(gameWeekPages(await getCollection("gamePreviews"), await getCollection("seasonRecaps")), buildTime());
+const pages = pastGameWeekPages(gameWeekPages({ previews: await getCollection("gamePreviews"), recaps: await getCollection("seasonRecaps") }), buildTime());
 ---
 <BaseLayout title={section.name}>
   <h1>{section.name}</h1>
