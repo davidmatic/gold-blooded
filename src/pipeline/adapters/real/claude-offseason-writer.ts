@@ -5,12 +5,10 @@
 // moves, new mock drafts, picks, profiles) plus a fresh overview body; the pipeline folds that
 // into the document (src/pipeline/running-documents.ts), validates it, and runs every publish
 // check, including that each new item's source names the player.
-import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { draftDates, FREE_AGENCY_MOVES, offseasonYear } from "../../../content/offseason";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
-import { isSpendLimitError, MODEL, SpendLimitReachedError } from "./claude-writer";
+import { claudeAsker, type ClaudeOptions } from "./claude";
 
 const source = z.object({ url: z.string(), outlet: z.string() });
 const quotes = z.array(z.object({ text: z.string(), speaker: z.string(), source: z.string() }));
@@ -109,55 +107,11 @@ export function toOffseasonDrafts(output: OffseasonOutput): DraftEntry[] {
   ];
 }
 
-export interface ClaudeOffseasonWriterOptions {
-  client?: Anthropic;
-  log?: (message: string) => void;
-}
-
-const MAX_ATTEMPTS = 3;
-
-function isRetryable(error: unknown): boolean {
-  if (isSpendLimitError(error)) return false;
-  if (error instanceof Anthropic.APIConnectionError) return true;
-  return error instanceof Anthropic.APIError && (error.status === 408 || error.status === 409 || error.status === 429 || (error.status ?? 0) >= 500);
-}
+export type ClaudeOffseasonWriterOptions = ClaudeOptions;
 
 export function claudeOffseasonWriter(options: ClaudeOffseasonWriterOptions = {}): ContentWriter {
-  // The SDK's own retries would retry a spend-limit 429, so they are off and retries happen here.
-  const client = options.client ?? new Anthropic({ maxRetries: 0 });
-  const log = options.log ?? ((message: string) => console.log(message));
-
+  const ask = claudeAsker(options);
   return {
-    async write(job, snapshot) {
-      const brief = renderOffseasonBrief(job, snapshot);
-      for (let attempt = 1; ; attempt++) {
-        try {
-          const response = await client.beta.messages.parse({
-            model: MODEL,
-            max_tokens: 16000,
-            betas: ["server-side-fallback-2026-07-01"],
-            fallbacks: "default",
-            output_config: { effort: "medium", format: betaZodOutputFormat(offseasonOutputSchema) },
-            system: [{ type: "text", text: OFFSEASON_VOICE, cache_control: { type: "ephemeral" } }],
-            messages: [{ role: "user", content: brief }],
-          });
-          const usage = response.usage;
-          log(
-            `Claude (${response.model}): stop_reason ${response.stop_reason}; input ${usage.input_tokens} ` +
-              `(cache read ${usage.cache_read_input_tokens ?? 0}), output ${usage.output_tokens} tokens`,
-          );
-          if (response.stop_reason === "refusal") throw new Error(`Claude declined to write (${response.stop_details?.category ?? "no category"})`);
-          if (response.stop_reason === "max_tokens") throw new Error("Claude's reply was cut off at max_tokens");
-          if (!response.parsed_output) throw new Error(`Claude's reply didn't match the schema (${response.stop_reason})`);
-          return toOffseasonDrafts(response.parsed_output);
-        } catch (error) {
-          if (isSpendLimitError(error)) throw new SpendLimitReachedError(error);
-          if (attempt >= MAX_ATTEMPTS || !isRetryable(error)) throw error;
-          const delay = 2 ** attempt * 5_000;
-          log(`Claude request failed (${error instanceof Error ? error.message : error}); retrying in ${delay / 1000}s`);
-          await new Promise((resolve) => setTimeout(resolve, delay));
-        }
-      }
-    },
+    write: async (job, snapshot) => toOffseasonDrafts(await ask(OFFSEASON_VOICE, offseasonOutputSchema, renderOffseasonBrief(job, snapshot))),
   };
 }

@@ -11,7 +11,8 @@ import { offseasonSources } from "./offseason-sources";
 import { BOT_USER_AGENT, fetchWithBotUserAgent, realSources } from "./sources";
 
 export { BOT_USER_AGENT, realSources, SOURCE_URLS } from "./sources";
-export { claudeWriter, MODEL, SpendLimitReachedError } from "./claude-writer";
+export { MODEL, SpendLimitReachedError } from "./claude";
+export { claudeWriter } from "./claude-writer";
 export { claudePreviewWriter } from "./claude-preview-writer";
 export { previewSources } from "./preview-sources";
 export { claudeOffseasonWriter } from "./claude-offseason-writer";
