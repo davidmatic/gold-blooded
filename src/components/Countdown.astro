@@ -1,0 +1,36 @@
+---
+// A countdown to kickoff. The kickoff time is in the HTML, so it reads without JavaScript;
+// a small script adds the time remaining and keeps it ticking.
+import { formatKickoff } from "../site/game-weeks";
+
+interface Props {
+  kickoff: string;
+}
+
+const { kickoff } = Astro.props;
+---
+<p class="countdown" data-kickoff={kickoff}>
+  <span class="countdown-kickoff">Kickoff: <time datetime={kickoff}>{formatKickoff(kickoff)}</time></span>
+  <span class="countdown-remaining" aria-live="off"></span>
+</p>
+
+<script>
+  function remaining(ms: number): string {
+    if (ms <= 0) return "Kicked off";
+    const minutes = Math.floor(ms / 60_000);
+    const days = Math.floor(minutes / 1440);
+    const hours = Math.floor((minutes % 1440) / 60);
+    return `${days > 0 ? `${days}d ` : ""}${hours}h ${minutes % 60}m to kickoff`;
+  }
+
+  for (const element of document.querySelectorAll<HTMLElement>(".countdown[data-kickoff]")) {
+    const kickoff = Date.parse(element.dataset.kickoff ?? "");
+    const output = element.querySelector(".countdown-remaining");
+    if (!output || Number.isNaN(kickoff)) continue;
+    const tick = () => {
+      output.textContent = remaining(kickoff - Date.now());
+    };
+    tick();
+    setInterval(tick, 30_000);
+  }
+</script>

@@ -47,6 +47,7 @@ if (!values.claude) {
   if (result.status === "published") {
     console.log(`PUBLISHED: ${result.entries.length} News Summaries pass every check.`);
     for (const entry of result.entries) {
+      if (entry.type !== "news-summary") continue;
       console.log(`\n## [${entry.data.category}] ${entry.data.title}  (${entry.path})`);
       console.log(entry.body);
       console.log(`sources: ${entry.data.sources.map((s) => s.url).join(", ")}`);

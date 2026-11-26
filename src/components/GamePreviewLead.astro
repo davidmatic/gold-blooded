@@ -1,0 +1,20 @@
+---
+// The homepage's lead: the current Game Preview, with a countdown to kickoff.
+import type { CollectionEntry } from "astro:content";
+import { gameWeekName, matchup, predictionLine } from "../site/game-weeks";
+import { sitePath } from "../site/sections";
+import Countdown from "./Countdown.astro";
+
+interface Props {
+  entry: CollectionEntry<"gamePreviews">;
+}
+
+const { data } = Astro.props.entry;
+---
+<section class="game-preview-lead" aria-labelledby="game-preview-lead-heading">
+  <p class="eyebrow">{gameWeekName(data)}: {matchup(data)}</p>
+  <h2 id="game-preview-lead-heading"><a href={sitePath(`game-weeks/${data.gameWeek}`)}>{data.title}</a></h2>
+  <Countdown kickoff={data.kickoff} />
+  <p class="prediction">Our prediction: {predictionLine(data)}</p>
+  <p><a href={sitePath(`game-weeks/${data.gameWeek}`)}>Read the Game Preview</a></p>
+</section>

@@ -6,7 +6,7 @@ import { z } from "astro/zod";
 export const NEWS_CATEGORIES = ["Injury", "Personnel", "Practice Report", "Coach's Comments"] as const;
 export type NewsCategory = (typeof NEWS_CATEGORIES)[number];
 
-const isoDate = z.preprocess(
+export const isoDate = z.preprocess(
   // YAML turns an unquoted 2026-11-25 into a Date; accept that from hand-edited files.
   (value) => (value instanceof Date ? value.toISOString().slice(0, 10) : value),
   z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "expected a YYYY-MM-DD date"),
@@ -25,7 +25,7 @@ export type GameStatus = (typeof GAME_STATUSES)[number];
  * each stated status with the official report, so the writer must list every player whose
  * status the body mentions.
  */
-const injuryStatus = z
+export const injuryStatus = z
   .object({
     player: z.string().min(1),
     practiceStatus: z.enum(PRACTICE_STATUSES).optional(),
@@ -37,7 +37,7 @@ const injuryStatus = z
  * A quote the summary uses, exactly as it appears in the body. The quote publish check
  * looks for `text` word for word in the source document at `source`.
  */
-const quote = z.object({
+export const quote = z.object({
   text: z.string().min(1),
   speaker: z.string().min(1),
   source: z.url({ protocol: /^https?$/ }),

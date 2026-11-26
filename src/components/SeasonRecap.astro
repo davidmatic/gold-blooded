@@ -1,0 +1,28 @@
+---
+// The season recap a Bye Week carries instead of a Game Preview.
+import { render, type CollectionEntry } from "astro:content";
+import { formatKickoff, formatRecord, matchup } from "../site/game-weeks";
+
+interface Props {
+  entry: CollectionEntry<"seasonRecaps">;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { data } = entry;
+---
+<article class="season-recap">
+  <h2>Season recap: {data.title}</h2>
+  <p class="record">Record: <strong>{formatRecord(data.record)}</strong></p>
+  <Content />
+  <p class="next-game">
+    Next up: {matchup(data.nextGame)},
+    {formatKickoff(data.nextGame.kickoff)}
+  </p>
+  <p class="news-sources">
+    Sources:
+    {data.sources.map((source, i) => (
+      <>{i > 0 && ", "}<a href={source.url} rel="noopener">{source.outlet}</a></>
+    ))}
+  </p>
+</article>

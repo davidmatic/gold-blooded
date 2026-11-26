@@ -15,10 +15,13 @@ function toMarkdown(entry: ContentEntry): string {
   return `---\n${yamlLines(entry.data, "").join("\n")}\n---\n${entry.body.replace(/\n*$/, "\n")}`;
 }
 
-// Enough YAML for frontmatter: scalars, lists, and lists of flat objects.
+// Enough YAML for frontmatter: scalars, nested objects, lists, and lists of objects.
 // Strings are written as JSON strings, which are valid double-quoted YAML scalars.
 function yamlLines(value: object, indent: string): string[] {
   return Object.entries(value).flatMap(([key, field]) => {
+    if (isObject(field)) {
+      return Object.keys(field).length === 0 ? [`${indent}${key}: {}`] : [`${indent}${key}:`, ...yamlLines(field, `${indent}  `)];
+    }
     if (!Array.isArray(field)) return [`${indent}${key}: ${scalar(field)}`];
     if (field.length === 0) return [`${indent}${key}: []`];
     return [
@@ -30,6 +33,10 @@ function yamlLines(value: object, indent: string): string[] {
       }),
     ];
   });
+}
+
+function isObject(value: unknown): value is object {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function scalar(value: unknown): string {
