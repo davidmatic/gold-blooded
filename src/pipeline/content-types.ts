@@ -3,6 +3,7 @@
 import type { z } from "astro/zod";
 import { GAME_WEEK_FILES, gamePreviewSchema, highlightsSchema, seasonRecapSchema, statBreakdownSchema } from "../content/game-week";
 import { newsSummarySchema } from "../content/news-summary";
+import { filmRoomSchema } from "../content/film-room";
 import { draftCoverageSchema, draftDates, freeAgencyTrackerSchema, OFFSEASON_FILES, offseasonYear } from "../content/offseason";
 import { seasonStatsPath, seasonStatsSchema } from "../content/season-stats";
 import { LOVE_LETTER_VARIANTS, loveLetterSchema, PURDY_SHRINE_FILES, purdyStatTrackerSchema, reasonsWeLoveBrockSchema } from "../content/purdy-shrine";
@@ -215,6 +216,19 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
       };
     },
     path: () => PURDY_SHRINE_FILES["purdy-stat-tracker"],
+  },
+  "film-room": {
+    schema: filmRoomSchema,
+    // What the entry says about its source comes from the source, never from the writer. A link
+    // that isn't one of the run's breakdowns gets none of it, so the entry fails its schema.
+    merge: (draft, snapshot) => {
+      const { show: _show, medium: _medium, sourceTitle: _title, publishedAt: _published, transcribed: _transcribed, ...rest } = draft;
+      const source = snapshot.documents.find((doc) => doc.film && doc.url === draft.link);
+      if (!source?.film) return rest;
+      return { ...rest, show: source.film.show, medium: source.film.medium, sourceTitle: source.title, publishedAt: source.publishedAt, transcribed: source.film.transcribed };
+    },
+    owned: (job) => ({ date: job.date }),
+    path: (data, job) => `film-room/${job.date}-${slugify(typeof data.title === "string" ? data.title : "untitled")}.md`,
   },
 };
 
