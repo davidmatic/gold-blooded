@@ -11,7 +11,10 @@
 import { z } from "zod";
 import { formatRecord } from "../../../site/game-weeks";
 import { seasonRecord, TEAM } from "../../calendar";
+import { GAME_STATUSES, PRACTICE_STATUSES } from "../../../content/news-summary";
+import { PURDY } from "../../../content/purdy-shrine";
 import { playedGame } from "../../content-types";
+import { purdyPlayed } from "../../purdy";
 import { scopeText } from "../../stats";
 import type { ContentType, ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
@@ -151,6 +154,121 @@ export function toSeasonStatsDraft(output: SeasonStatsOutput): DraftEntry {
   return { type: "season-stats", data: { stats: output.stats.map(toCitedStat) }, body: output.body };
 }
 
+// The Purdy Shrine (#10): the Love Letter and the new Reason We Love Brock.
+
+const loveLetterOutputSchema = z.object({
+  title: z.string(),
+  body: z.string(),
+  stats: z.array(statOutput),
+  injuries: z.array(z.object({ player: z.string(), practiceStatus: z.enum(PRACTICE_STATUSES).nullable(), gameStatus: z.enum(GAME_STATUSES).nullable() })),
+  sources: z.array(z.object({ url: z.string(), outlet: z.string() })),
+  quotes: z.array(z.object({ text: z.string(), speaker: z.string(), source: z.string() })),
+});
+export type LoveLetterOutput = z.infer<typeof loveLetterOutputSchema>;
+
+const reasonOutputSchema = z.object({ reason: z.string() });
+export type ReasonOutput = z.infer<typeof reasonOutputSchema>;
+
+const SHRINE_RULES = `The Purdy Shrine is family-friendly. Write only about Brock Purdy the football player: his play, his poise, his work, how he leads and treats teammates and fans. Never write about his personal life, his family, his relationships, his money, or his life off the field, even when a document mentions them.`;
+
+/** The Love Letter voice. Stable text, so it is cached across runs. */
+export const LOVE_LETTER_VOICE = `You write the Love Letter for the Purdy Shrine on Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site: a weekly letter to Brock Purdy, written the day after each 49ers game.
+
+Voice: lovestruck. We are hopelessly, shamelessly in love with Brock Purdy, the quarterback who went from Mr. Irrelevant (the last pick of the 2022 draft) to Mr. Everything. Swooning, sweet, funny, sincere. The letter stays adoring however the game went: after a loss or a rough day, we love him anyway, and say so, without pretending the game went well.
+
+${SHRINE_RULES}
+
+The brief tells you the letter's variant, worked out from nflverse; follow it:
+- adoring: he played. Write about his game: what he did that we loved.
+- we-miss-you: he did not play (DNP). Write a "we miss you" letter: how much we missed him, how the week felt without him, how we can't wait to have him back. Cite no stats from this game; he has none.
+
+Injuries: mention an injury only as far as the official injury report in the brief goes, and only his. If the report lists him, you may say what it says (his practice status, his game status) and nothing more: no diagnosis beyond it, no timeline, no speculation, no rumours. If the report doesn't list him, don't mention an injury at all. Every injury status you mention goes in injuries; a single one that doesn't match the official report stops the whole run.
+
+Write:
+- title: a short headline in sentence case, like the opening of a letter ("Dear Brock, ...").
+- body: 2 to 4 short Markdown paragraphs, written to him. No headings, no links.
+- stats: every number about him that the body states, as cited stats of Brock Purdy's:
+  - player: "Brock Purdy". team: "SF".
+  - scope: type "game" with gameId the game's id for this game's numbers, or type "season" with season the season's year for his season so far; the other scope fields null.
+  - stat, perGame, value, label as in the brief's nflverse numbers. Use only the brief's numbers; never invent one. Every stat is checked against nflverse, and a single wrong number stops the whole run.
+- injuries: each injury status the body mentions: player "Brock Purdy", practiceStatus and gameStatus exactly as the official report gives them (null for one it doesn't give). An empty list if the body mentions no injury.
+- sources: every document you rely on, with its exact "url" and "outlet" as given; an empty list if you rely only on the brief's numbers.
+- quotes: every quotation in the body, word for word from the document whose url is its "source" (one of your sources). If you cannot quote exactly, paraphrase without quotation marks.`;
+
+/** The voice for the new Reason We Love Brock. */
+export const REASONS_VOICE = `You add to "Reasons We Love Brock" on the Purdy Shrine of Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site: a running list of reasons we are hopelessly in love with Brock Purdy. After each game, the list gets one new reason.
+
+Voice: lovestruck, sweet, a little funny.
+
+${SHRINE_RULES}
+
+Write:
+- reason: one new reason, one sentence, inspired by the game just played or by what he is like as a player. In our own words, with no numbers or digits at all (no stats, scores, or dates), and not one the list already has, even reworded.`;
+
+/** Purdy's injury report line, as the brief gives it. */
+function injuryLine(snapshot: SourceSnapshot): string {
+  if (!snapshot.injuryReport) return `${PURDY.player} on the official injury report: there is no official report in the sources. Mention no injury.`;
+  const line = snapshot.injuryReport.find((entry) => entry.player === PURDY.player);
+  if (!line) return `${PURDY.player} on the official injury report: not listed. Mention no injury.`;
+  const parts = [line.practiceStatus && `practice status ${line.practiceStatus}`, line.gameStatus && `game status ${line.gameStatus}`].filter(Boolean);
+  return `${PURDY.player} on the official injury report: ${parts.join(", ") || "listed, with no status"}.`;
+}
+
+/** The Love Letter's user turn: the game, the variant (from nflverse), his numbers, and his injury report line. */
+export function renderLoveLetterBrief(job: Job, snapshot: SourceSnapshot): string {
+  const game = playedGame(job, "Love Letters");
+  const stats = snapshot.stats;
+  const played = purdyPlayed(stats, game.gameId);
+  const scope = { type: "season" as const, season: game.season };
+  const line = stats!.players.find((l) => l.gameId === game.gameId && l.playerId === PURDY.playerId);
+  const seasonGames = stats!.players.filter((l) => l.playerId === PURDY.playerId && l.season === game.season).length;
+  return [
+    ...situation(job, snapshot, "Love Letter"),
+    played
+      ? `Love Letter variant: adoring. ${PURDY.player} played in this game.`
+      : `Love Letter variant: we-miss-you. ${PURDY.player} did not play in this game (DNP).`,
+    line
+      ? `${PURDY.player} in game ${game.gameId}: ${columns(BRIEF_COLUMNS, (column) => line.stats[column] ?? 0, true)}`
+      : `${PURDY.player} in game ${game.gameId}: no nflverse line (DNP). Cite no stats from this game.`,
+    `${PURDY.player}, ${scopeText(scope)} (${seasonGames} games): ${columns(BRIEF_COLUMNS, (stat) => lookup(stats!, { player: PURDY.player, team: TEAM, stat, scope }), true)}`,
+    injuryLine(snapshot),
+    ...renderDocuments(snapshot.documents),
+  ].join("\n\n");
+}
+
+/** The new reason's user turn: the game just played and the reasons already on the list. */
+export function renderReasonBrief(job: Job, snapshot: SourceSnapshot): string {
+  const game = playedGame(job, "Reasons We Love Brock");
+  const reasons = snapshot.current?.["reasons-we-love-brock"]?.data.reasons ?? [];
+  return [
+    `Job: post-game Reasons We Love Brock for ${job.date}, the day after the game.`,
+    `Game just played: ${describeGame(game)}`,
+    purdyPlayed(snapshot.stats, game.gameId) ? `${PURDY.player} played.` : `${PURDY.player} did not play (DNP). A reason about missing him, or about him in general, fits.`,
+    `Reasons already on the list (${reasons.length}):\n${reasons.map((item) => `- ${item.reason}`).join("\n") || "- none yet"}`,
+  ].join("\n\n");
+}
+
+/** Claude's Love Letter as a pipeline draft. The pipeline sets the variant; empty lists are dropped. */
+export function toLoveLetterDraft(output: LoveLetterOutput): DraftEntry {
+  const injuries = output.injuries.map(({ player, practiceStatus, gameStatus }) => ({ player, ...(practiceStatus && { practiceStatus }), ...(gameStatus && { gameStatus }) }));
+  return {
+    type: "love-letter",
+    data: {
+      title: output.title,
+      ...(output.stats.length > 0 && { stats: output.stats.map(toCitedStat) }),
+      ...(injuries.length > 0 && { injuries }),
+      ...(output.sources.length > 0 && { sources: output.sources }),
+      ...(output.quotes.length > 0 && { quotes: output.quotes }),
+    },
+    body: output.body,
+  };
+}
+
+/** Claude's new reason as a pipeline draft, for the pipeline to add to the list. */
+export function toReasonDraft(output: ReasonOutput): DraftEntry {
+  return { type: "reasons-we-love-brock", data: { reason: output.reason }, body: "" };
+}
+
 interface PostGameWriter<T extends z.ZodType> {
   voice: string;
   schema: T;
@@ -162,6 +280,8 @@ interface PostGameWriter<T extends z.ZodType> {
 const POST_GAME_WRITERS: Partial<Record<ContentType, PostGameWriter<z.ZodType>>> = {
   highlights: { voice: HIGHLIGHTS_VOICE, schema: highlightsOutputSchema, brief: renderHighlightsBrief, toDraft: toHighlightsDraft } as PostGameWriter<z.ZodType>,
   "season-stats": { voice: SEASON_STATS_VOICE, schema: seasonStatsOutputSchema, brief: renderSeasonStatsBrief, toDraft: toSeasonStatsDraft } as PostGameWriter<z.ZodType>,
+  "love-letter": { voice: LOVE_LETTER_VOICE, schema: loveLetterOutputSchema, brief: renderLoveLetterBrief, toDraft: toLoveLetterDraft } as PostGameWriter<z.ZodType>,
+  "reasons-we-love-brock": { voice: REASONS_VOICE, schema: reasonOutputSchema, brief: renderReasonBrief, toDraft: toReasonDraft } as PostGameWriter<z.ZodType>,
 };
 
 export type ClaudePostGameWriterOptions = ClaudeOptions;

@@ -247,3 +247,122 @@ describe("post-game job: Reasons We Love Brock", () => {
     ]);
   });
 });
+
+describe("post-game job: the Purdy stat tracker", () => {
+  // Earlier seasons, cut down: one 49ers game each for 2022 to 2024, and Purdy's lines from those
+  // and from the 2025 opener (the recorded schedule's 2025 season has 19 games).
+  const earlier = [
+    { gameId: "2022_14_TB_SF", season: 2022, week: 14, gameday: "2022-12-11", opponent: "TB", yards: 185, tds: 2 },
+    { gameId: "2023_01_SF_PIT", season: 2023, week: 1, gameday: "2023-09-10", opponent: "PIT", yards: 220, tds: 2 },
+    { gameId: "2024_01_NYJ_SF", season: 2024, week: 1, gameday: "2024-09-09", opponent: "NYJ", yards: 231, tds: 0 },
+    { gameId: "2025_01_SF_SEA", season: 2025, week: 1, gameday: "2025-09-07", opponent: "SEA", yards: 277, tds: 2 },
+  ];
+  const purdyLine = (game: (typeof earlier)[number]) => ({
+    playerId: "00-0037834",
+    player: "Brock Purdy",
+    position: "QB",
+    season: game.season,
+    week: game.week,
+    seasonType: "REG" as const,
+    gameId: game.gameId,
+    team: "SF",
+    opponent: game.opponent,
+    stats: { completions: 20, attempts: 30, passing_yards: game.yards, passing_tds: game.tds, passing_interceptions: 1, rushing_yards: 10, rushing_tds: 0 },
+  });
+  const withCareer = (source: SourceSnapshot): SourceSnapshot => ({
+    ...source,
+    schedule: [
+      ...earlier
+        .filter((game) => game.season < 2025)
+        .map((game) => ({
+          gameId: game.gameId,
+          season: game.season,
+          gameType: "REG" as const,
+          week: game.week,
+          gameday: game.gameday,
+          kickoff: `${game.gameday}T20:25:00.000Z`,
+          opponent: game.opponent,
+          home: game.gameId.endsWith("_SF"),
+          neutralSite: false,
+          result: { sf: 30, opponent: 20 },
+        })),
+      ...source.schedule!,
+    ],
+    stats: { ...source.stats!, players: [...earlier.map(purdyLine), ...source.stats!.players] },
+    purdyCareer: true,
+  });
+  const trackerOf = (entries: Awaited<ReturnType<typeof published>>) => entries.find((entry) => entry.type === "purdy-stat-tracker");
+  const stat = (tracker: ReturnType<typeof trackerOf>, name: string, scope: object) =>
+    tracker?.type === "purdy-stat-tracker" ? tracker.data.stats.find((s) => s.stat === name && JSON.stringify(s.scope) === JSON.stringify(scope))?.value : undefined;
+
+  it("works out his season and career numbers from nflverse, since 2022, without the writer", async () => {
+    const writer = recordingWriter([highlights, seasonStats, loveLetter, reason]);
+    const result = await publish({ job: "post-game", date: DATE, sources: fakeSources(withCareer(snapshot)), writer });
+    const tracker = result.status === "published" ? trackerOf(result.entries) : undefined;
+
+    expect(writer.jobs[0]?.contentTypes).not.toContain("purdy-stat-tracker");
+    expect(tracker?.path).toBe("purdy-shrine/stat-tracker.md");
+    expect(tracker?.data).toMatchObject({
+      title: "Brock Purdy Stat Tracker",
+      updated: DATE,
+      season: 2026,
+      throughGame: { gameId: GAME, gameWeek: "2026-week-11" },
+      seasons: [
+        { season: 2022, games: 1, played: 1, dnp: 0 },
+        { season: 2023, games: 1, played: 1, dnp: 0 },
+        { season: 2024, games: 1, played: 1, dnp: 0 },
+        { season: 2025, games: 19, played: 1, dnp: 18 },
+        { season: 2026, games: 10, played: 10, dnp: 0 },
+      ],
+    });
+    expect(stat(tracker, "passing_yards", { type: "season", season: 2026 })).toBe(2624);
+    expect(stat(tracker, "passing_tds", { type: "season", season: 2022 })).toBe(2);
+    // 2,624 this season, plus 185 + 220 + 231 + 277 before it.
+    expect(stat(tracker, "passing_yards", { type: "seasons", from: 2022, to: 2026 })).toBe(3537);
+    expect(stat(tracker, "passing_tds", { type: "seasons", from: 2022, to: 2026 })).toBe(29);
+    expect(stat(tracker, "passing_yards", { type: "game", gameId: GAME })).toBe(255);
+  });
+
+  it("logs this season's games, with DNP for a game he has no nflverse line in", async () => {
+    const entries = await published([highlights, seasonStats, missYouLetter, reason], withCareer(purdySatOut));
+    const tracker = trackerOf(entries);
+    const log = tracker?.type === "purdy-stat-tracker" ? tracker.data.gameLog : [];
+
+    expect(log).toHaveLength(10);
+    expect(log.at(-1)).toEqual({
+      gameId: GAME,
+      gameWeek: "2026-week-11",
+      week: 11,
+      gameType: "REG",
+      opponent: "MIN",
+      venue: "neutral",
+      result: { sf: 35, opponent: 10 },
+      played: false,
+    });
+    expect(log.filter((game) => game.played)).toHaveLength(9);
+    expect(tracker?.data).toMatchObject({ seasons: expect.arrayContaining([{ season: 2026, games: 10, played: 9, dnp: 1 }]) });
+    expect(stat(tracker, "passing_yards", { type: "season", season: 2026 })).toBe(2369);
+    expect(stat(tracker, "passing_yards", { type: "game", gameId: GAME })).toBeUndefined();
+  });
+
+  it("fails the run when nflverse has none of his lines for an earlier season, rather than call it all DNP", async () => {
+    const missing2023 = withCareer(snapshot);
+    missing2023.stats = { ...missing2023.stats!, players: missing2023.stats!.players.filter((line) => line.season !== 2023) };
+
+    await expect(runPostGame([highlights, seasonStats, loveLetter, reason], missing2023)).rejects.toThrow(/no nflverse lines for Brock Purdy in the 2023 season/);
+  });
+
+  it("leaves the tracker as it stands when the sources didn't collect his career lines", async () => {
+    expect(trackerOf(await published([highlights, seasonStats, loveLetter, reason]))).toBeUndefined();
+  });
+
+  it("refuses a stat tracker from the writer", async () => {
+    const forged: DraftEntry = { type: "purdy-stat-tracker", data: {}, body: "" };
+    const writer: ContentWriter = { write: async () => [highlights, seasonStats, loveLetter, reason, forged] };
+    const result = await publish({ job: "post-game", date: DATE, sources: fakeSources(withCareer(snapshot)), writer });
+
+    expect(result.status === "rejected" && result.failures).toEqual([
+      { check: "schema", entry: "purdy-stat-tracker", reason: "the post-game job doesn't write a purdy-stat-tracker on 2026-11-23" },
+    ]);
+  });
+});

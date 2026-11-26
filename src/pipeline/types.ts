@@ -4,7 +4,7 @@ import type { SeasonStatsData } from "../content/season-stats";
 import type { PredictionRecordData } from "../content/prediction-record";
 import type { GameStatus, NewsSummaryData, PracticeStatus } from "../content/news-summary";
 import type { DraftCoverageData, FreeAgencyTrackerData } from "../content/offseason";
-import type { LoveLetterData, ReasonsWeLoveBrockData } from "../content/purdy-shrine";
+import type { LoveLetterData, PurdyStatTrackerData, ReasonsWeLoveBrockData } from "../content/purdy-shrine";
 import type { CalendarPosition, ScheduledGame } from "./calendar";
 import type { NflverseStats } from "./stats";
 
@@ -90,6 +90,11 @@ export interface SourceSnapshot {
    * store, which the Prediction Record scores. Absent when none was published for the game.
    */
   gamePreview?: GamePreviewData;
+  /**
+   * For the post-game job: set when `stats` also carries Brock Purdy's nflverse lines from every
+   * season since his first (2022), for his stat tracker. Unset, the tracker is left as it stands.
+   */
+  purdyCareer?: boolean;
 }
 
 /** Content types that are one running document (per Offseason, per season, or for good), updated run after run. */
@@ -135,6 +140,7 @@ export interface ContentTypes {
   "season-stats": SeasonStatsData;
   "love-letter": LoveLetterData;
   "reasons-we-love-brock": ReasonsWeLoveBrockData;
+  "purdy-stat-tracker": PurdyStatTrackerData;
   "prediction-record": PredictionRecordData;
 }
 export type ContentType = keyof ContentTypes;

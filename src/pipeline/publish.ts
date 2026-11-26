@@ -61,7 +61,11 @@ export const POST_GAME_CONTENT: ContentType[] = [
  * What the post-game job works out itself the day after a game, with no writer: the Prediction
  * Record, scored from the game's Game Preview and the final score.
  */
-export const POST_GAME_DERIVED: ContentType[] = ["prediction-record"];
+export const POST_GAME_DERIVED: ContentType[] = [
+  "prediction-record",
+  // The Purdy Shrine (#10): his season and career numbers, with DNP games, from nflverse.
+  "purdy-stat-tracker",
+];
 
 // Later tickets add the other job types and more checks.
 const JOBS: Partial<Record<JobType, JobDefinition>> = {

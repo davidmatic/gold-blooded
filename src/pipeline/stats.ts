@@ -80,6 +80,7 @@ export function describeStat(ref: StatRef): string {
 export function scopeText(scope: StatScope): string {
   if (scope.type === "game") return `game ${scope.gameId}`;
   if (scope.type === "last-games") return `last ${scope.games} games of ${scope.season}`;
+  if (scope.type === "seasons") return `${scope.from} to ${scope.to} seasons`;
   return `${scope.season} ${scope.seasonType === "REG" ? "regular season" : scope.seasonType === "POST" ? "postseason" : "season"}`;
 }
 
@@ -97,6 +98,7 @@ function scoped<T extends TeamStatLine>(lines: readonly T[], ref: StatRef): T[] 
   const scope = ref.scope;
   const mine = lines.filter((line) => line.team === ref.team);
   if (scope.type === "game") return mine.filter((line) => line.gameId === scope.gameId);
+  if (scope.type === "seasons") return mine.filter((line) => line.season >= scope.from && line.season <= scope.to);
   const season = mine.filter((line) => line.season === scope.season && (scope.type !== "season" || !scope.seasonType || line.seasonType === scope.seasonType));
   if (scope.type === "season") return season;
   return [...season].sort((a, b) => a.week - b.week).slice(-scope.games);

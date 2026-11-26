@@ -100,3 +100,64 @@ export const reasonsWeLoveBrockSchema = z
   });
 
 export type ReasonsWeLoveBrockData = z.infer<typeof reasonsWeLoveBrockSchema>;
+
+/**
+ * The Purdy stat tracker: `purdy-shrine/stat-tracker.md`, rebuilt by the pipeline (no writer)
+ * the day after every game, from nflverse. For each season since his first: the 49ers' games,
+ * how many he played, and how many he didn't (DNP). This season's game log marks each game
+ * played or DNP. Every number shown is a cited stat in `stats`, for the season, the career
+ * (`seasons` scope), or a game in the log, which the stat publish check compares with nflverse.
+ */
+export const purdyStatTrackerSchema = z
+  .object({
+    title: z.string().min(1),
+    updated: isoDate,
+    /** The season the game log is for. */
+    season: z.number().int(),
+    throughGame: z.object({ gameId: z.string().min(1), gameWeek: gameWeekSlug }),
+    seasons: z
+      .array(z.object({ season: z.number().int(), games: score, played: score, dnp: score }))
+      .min(1)
+      .refine((rows) => rows.every((row) => row.played + row.dnp === row.games), "a season's games are the games he played plus his DNPs"),
+    gameLog: z.array(
+      z.object({
+        gameId: z.string().min(1),
+        gameWeek: gameWeekSlug,
+        week: z.number().int(),
+        gameType: z.enum(GAME_TYPES),
+        opponent: z.string().min(1),
+        venue,
+        result,
+        /** False is a DNP: he has no nflverse line from the game. */
+        played: z.boolean(),
+      }),
+    ),
+    stats: z.array(citedStat),
+  })
+  .superRefine((tracker, ctx) => {
+    const dnp = new Set(tracker.gameLog.filter((game) => !game.played).map((game) => game.gameId));
+    tracker.stats.forEach((stat, i) => {
+      if (stat.player !== PURDY.player) ctx.addIssue({ code: "custom", path: ["stats", i, "player"], message: `a stat tracker stat must be ${PURDY.player}'s` });
+      if (stat.scope.type === "game" && dnp.has(stat.scope.gameId)) {
+        ctx.addIssue({ code: "custom", path: ["stats", i, "scope"], message: `${stat.scope.gameId} is a DNP, so it has no stats` });
+      }
+    });
+  });
+
+export type PurdyStatTrackerData = z.infer<typeof purdyStatTrackerSchema>;
+
+/** The nflverse columns the tracker shows, in order, with their labels. */
+export const TRACKER_COLUMNS = [
+  ["completions", "Cmp"],
+  ["attempts", "Att"],
+  ["completion_pct", "Cmp%"],
+  ["passing_yards", "Yds"],
+  ["yards_per_attempt", "Y/A"],
+  ["passing_tds", "TD"],
+  ["passing_interceptions", "INT"],
+  ["rushing_yards", "Rush Yds"],
+  ["rushing_tds", "Rush TD"],
+] as const;
+
+/** The rates among them: worked out over the scope, so a game log line leaves them out. */
+export const TRACKER_RATES: readonly string[] = ["completion_pct", "yards_per_attempt"];

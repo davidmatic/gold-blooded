@@ -37,6 +37,15 @@ export const sfStatBreakdown: DraftEntry = {
   body: "The numbers.",
 };
 
+/**
+ * The Purdy Shrine's share of a post-game run: a Love Letter that cites no stats and a new
+ * Reason We Love Brock. They pass every check the day after any game.
+ */
+export const purdyShrineDrafts: DraftEntry[] = [
+  { type: "love-letter", data: { title: "Dear Brock" }, body: "Another week of loving you." },
+  { type: "reasons-we-love-brock", data: { reason: "He makes the hard throws look easy." }, body: "" },
+];
+
 /** Returns canned drafts, whatever the job and snapshot. */
 export function fakeWriter(drafts: DraftEntry[]): ContentWriter {
   return { write: async () => drafts };
