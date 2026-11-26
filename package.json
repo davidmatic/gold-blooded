@@ -9,7 +9,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "astro": "^7.4.13"
+    "@anthropic-ai/sdk": "^1.14.0",
+    "astro": "^7.4.13",
+    "fast-xml-parser": "^5.12.1",
+    "node-html-parser": "^9.0.7"
   },
   "devDependencies": {
     "@types/node": "^24.19.4",

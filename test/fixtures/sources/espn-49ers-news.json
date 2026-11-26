@@ -1,0 +1,481 @@
+{
+ "header": "NFL News",
+ "link": {
+  "language": "en",
+  "rel": [
+   "index",
+   "desktop",
+   "league"
+  ],
+  "href": "https://www.espn.com/nfl/",
+  "text": "All NFL News",
+  "shortText": "All News",
+  "isExternal": false,
+  "isPremium": false
+ },
+ "articles": [
+  {
+   "headline": "Will Brock Purdy suit up for the Niners?",
+   "description": "Nick Wagoner explains Brock Purdy's injury status and what it means for the 49ers.",
+   "published": "2026-11-26T01:30:49Z",
+   "type": "Media",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/video/clip/_/id/50599955/will-brock-purdy-suit-niners"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    }
+   ]
+  },
+  {
+   "headline": "Purdy and the 49ers prepare for another tough test against Seahawks' stout defense",
+   "description": "— The San Francisco 49ers passed the first of back-to-back tests against two of the NFL's top defenses with flying colors as Brock Prudy ",
+   "published": "2026-11-26T00:25:33Z",
+   "type": "Preview",
+   "links": {
+    "web": {
+     "href": "http://www.espn.com/nfl/preview?gameId=401873091"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    },
+    {
+     "type": "team",
+     "description": "Seattle Seahawks"
+    }
+   ]
+  },
+  {
+   "headline": "NFL Week 12 arrivals: Aaron Donald leads arrivals ahead of Rams-Packers",
+   "description": "NFL stars continue to turn game-day arrivals into their own weekly fashion showcase.",
+   "published": "2026-11-25T23:58:11Z",
+   "type": "Story",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/nfl/story/_/id/50588078/nfl-week-12-fashionable-arrivals"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "Green Bay Packers"
+    },
+    {
+     "type": "team",
+     "description": "Atlanta Falcons"
+    },
+    {
+     "type": "team",
+     "description": "Kansas City Chiefs"
+    },
+    {
+     "type": "team",
+     "description": "New York Giants"
+    },
+    {
+     "type": "team",
+     "description": "Cleveland Browns"
+    },
+    {
+     "type": "team",
+     "description": "Los Angeles Chargers"
+    },
+    {
+     "type": "team",
+     "description": "Indianapolis Colts"
+    },
+    {
+     "type": "team",
+     "description": "Carolina Panthers"
+    },
+    {
+     "type": "team",
+     "description": "Tennessee Titans"
+    },
+    {
+     "type": "team",
+     "description": "Pittsburgh Steelers"
+    },
+    {
+     "type": "team",
+     "description": "Houston Texans"
+    },
+    {
+     "type": "team",
+     "description": "Washington Commanders"
+    },
+    {
+     "type": "team",
+     "description": "Baltimore Ravens"
+    },
+    {
+     "type": "team",
+     "description": "Minnesota Vikings"
+    },
+    {
+     "type": "team",
+     "description": "Tampa Bay Buccaneers"
+    },
+    {
+     "type": "team",
+     "description": "Las Vegas Raiders"
+    },
+    {
+     "type": "team",
+     "description": "New Orleans Saints"
+    },
+    {
+     "type": "team",
+     "description": "Arizona Cardinals"
+    },
+    {
+     "type": "team",
+     "description": "Dallas Cowboys"
+    },
+    {
+     "type": "team",
+     "description": "Philadelphia Eagles"
+    },
+    {
+     "type": "team",
+     "description": "Chicago Bears"
+    },
+    {
+     "type": "team",
+     "description": "Seattle Seahawks"
+    },
+    {
+     "type": "team",
+     "description": "Buffalo Bills"
+    },
+    {
+     "type": "team",
+     "description": "Miami Dolphins"
+    },
+    {
+     "type": "team",
+     "description": "New York Jets"
+    },
+    {
+     "type": "team",
+     "description": "Cincinnati Bengals"
+    },
+    {
+     "type": "team",
+     "description": "Detroit Lions"
+    },
+    {
+     "type": "team",
+     "description": "Jacksonville Jaguars"
+    },
+    {
+     "type": "team",
+     "description": "Denver Broncos"
+    },
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    },
+    {
+     "type": "team",
+     "description": "Los Angeles Rams"
+    },
+    {
+     "type": "team",
+     "description": "New England Patriots"
+    }
+   ]
+  },
+  {
+   "headline": "NFL Week 12 uniforms: Rams debut alternates, Cowboys rock Thanksgiving throwbacks",
+   "description": "Here's a look at what each NFL team is wearing in Week 12, led by an alternate uniform for the Los Angeles Rams.",
+   "published": "2026-11-25T23:37:34Z",
+   "type": "Story",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/nfl/story/_/id/50577887/nfl-week-12-uniforms"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "Arizona Cardinals"
+    },
+    {
+     "type": "team",
+     "description": "Atlanta Falcons"
+    },
+    {
+     "type": "team",
+     "description": "Baltimore Ravens"
+    },
+    {
+     "type": "team",
+     "description": "Buffalo Bills"
+    },
+    {
+     "type": "team",
+     "description": "Carolina Panthers"
+    },
+    {
+     "type": "team",
+     "description": "Chicago Bears"
+    },
+    {
+     "type": "team",
+     "description": "Cincinnati Bengals"
+    },
+    {
+     "type": "team",
+     "description": "Cleveland Browns"
+    },
+    {
+     "type": "team",
+     "description": "Dallas Cowboys"
+    },
+    {
+     "type": "team",
+     "description": "Denver Broncos"
+    },
+    {
+     "type": "team",
+     "description": "Detroit Lions"
+    },
+    {
+     "type": "team",
+     "description": "Green Bay Packers"
+    },
+    {
+     "type": "team",
+     "description": "Houston Texans"
+    },
+    {
+     "type": "team",
+     "description": "Indianapolis Colts"
+    },
+    {
+     "type": "team",
+     "description": "Jacksonville Jaguars"
+    },
+    {
+     "type": "team",
+     "description": "Kansas City Chiefs"
+    },
+    {
+     "type": "team",
+     "description": "Las Vegas Raiders"
+    },
+    {
+     "type": "team",
+     "description": "Los Angeles Chargers"
+    },
+    {
+     "type": "team",
+     "description": "Los Angeles Rams"
+    },
+    {
+     "type": "team",
+     "description": "Miami Dolphins"
+    },
+    {
+     "type": "team",
+     "description": "Minnesota Vikings"
+    },
+    {
+     "type": "team",
+     "description": "New England Patriots"
+    },
+    {
+     "type": "team",
+     "description": "New Orleans Saints"
+    },
+    {
+     "type": "team",
+     "description": "New York Giants"
+    },
+    {
+     "type": "team",
+     "description": "New York Jets"
+    },
+    {
+     "type": "team",
+     "description": "Philadelphia Eagles"
+    },
+    {
+     "type": "team",
+     "description": "Pittsburgh Steelers"
+    },
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    },
+    {
+     "type": "team",
+     "description": "Seattle Seahawks"
+    },
+    {
+     "type": "team",
+     "description": "Tampa Bay Buccaneers"
+    },
+    {
+     "type": "team",
+     "description": "Tennessee Titans"
+    },
+    {
+     "type": "team",
+     "description": "Washington Commanders"
+    }
+   ]
+  },
+  {
+   "headline": "49ers QB Brock Purdy has ankle injury, sits out practice Wednesday",
+   "description": "49ers quarterback Brock Purdy did not practice Wednesday as he deals with an ankle injury suffered in Sunday night's game against the Vikings.",
+   "published": "2026-11-26T00:16:10Z",
+   "type": "HeadlineNews",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/nfl/story/_/id/50596930/49ers-brock-purdy-ankle-injury-practice-wednesday"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    }
+   ]
+  },
+  {
+   "headline": "2026 NFL awards tracker: Odds for MVP, Rookie of the Year and more",
+   "description": "Who are the favorites to win seasonlong honors? Here are the odds for MVP, Rookie of the Year and more.",
+   "published": "2026-11-24T17:41:04Z",
+   "type": "Story",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/espn/betting/story/_/id/48476156/2026-nfl-awards-betting-odds-mvp-rookie-year-offensive-defensive-player-coach"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    },
+    {
+     "type": "team",
+     "description": "Cincinnati Bengals"
+    }
+   ]
+  },
+  {
+   "headline": "Seahawks to monitor Sam Darnold status this week before final call vs. 49ers",
+   "description": "The Seahawks still plan to start Sam Darnold against the 49ers but will wait to see how the QB looks in practice Wednesday before making a final call.",
+   "published": "2026-11-24T02:21:45Z",
+   "type": "HeadlineNews",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/nfl/story/_/id/50578357/seahawks-holding-final-sam-darnold-call-vs-49ers"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "Seattle Seahawks"
+    },
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    }
+   ]
+  },
+  {
+   "headline": "What's next for Brandon Aiyuk after release by 49ers?",
+   "description": "What's next for Brandon Aiyuk after release by 49ers?",
+   "published": "2026-11-23T19:29:43Z",
+   "type": "Media",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/video/clip/_/id/50575458/next-brandon-aiyuk-release-49ers"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    },
+    {
+     "type": "team",
+     "description": "Washington Commanders"
+    }
+   ]
+  },
+  {
+   "headline": "Early betting for Week 12: Will Seahawks slow down 49ers?",
+   "description": "Which Week 12 lines offered immediate value once odds came out? Matt Bowen found one he's jumping on now.",
+   "published": "2026-11-23T17:59:25Z",
+   "type": "Story",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/espn/betting/story/_/id/50570945/nfl-week-12-betting-odds-props-early-picks-predictions"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    },
+    {
+     "type": "team",
+     "description": "Seattle Seahawks"
+    }
+   ]
+  },
+  {
+   "headline": "Brock Purdy carves up the Vikings' D with 3 TD passes in the 49ers' 35-10 win in Mexico City",
+   "description": "— Brock Purdy and the San Francisco 49ers offense turned the much ballyhooed matchup between one of the game's top offenses and the stingiest defenses into...",
+   "published": "2026-11-23T16:49:32Z",
+   "type": "Recap",
+   "links": {
+    "web": {
+     "href": "http://www.espn.com/nfl/recap?gameId=401873077"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    },
+    {
+     "type": "team",
+     "description": "Minnesota Vikings"
+    }
+   ]
+  },
+  {
+   "headline": "Vikings-49ers matchup in Mexico features the best defense vs. the best offense",
+   "description": "When Brock Purdy last walked off the field after playing Minnesota in 2024, he sought out Vikings defensive coordinator Brian Flores an complimented him on...",
+   "published": "2026-11-19T21:25:08Z",
+   "type": "Preview",
+   "links": {
+    "web": {
+     "href": "http://www.espn.com/nfl/preview?gameId=401873077"
+    }
+   },
+   "categories": [
+    {
+     "type": "team",
+     "description": "San Francisco 49ers"
+    },
+    {
+     "type": "team",
+     "description": "Minnesota Vikings"
+    }
+   ]
+  }
+ ]
+}

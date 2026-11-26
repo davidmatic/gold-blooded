@@ -42,6 +42,13 @@ export interface SourceSnapshot {
   documents: SourceDocument[];
   /** The official NFL injury report. Absent when the sources couldn't get one. */
   injuryReport?: InjuryReportEntry[];
+  /** Best-effort outlets the sources couldn't collect this run (blocked, down), and why. */
+  skipped?: SkippedSource[];
+}
+
+export interface SkippedSource {
+  outlet: string;
+  reason: string;
 }
 
 /** Gathers source material. The only route the pipeline has to the network. */
