@@ -1,0 +1,36 @@
+---
+// The Archive: every past Game Week Page, newest first (see pastGameWeekPages for what "past"
+// means). Readers open an old Game Week Page to compare its Game Preview with how it went.
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { buildTime } from "../site/clock";
+import { gameWeekName, gameWeekPages, matchup, pastGameWeekPages, predictionLine } from "../site/game-weeks";
+import { sections, sitePath } from "../site/sections";
+
+const section = sections.find((s) => s.slug === "archive")!;
+const pages = pastGameWeekPages(gameWeekPages(await getCollection("gamePreviews"), await getCollection("seasonRecaps")), buildTime());
+---
+<BaseLayout title={section.name}>
+  <h1>{section.name}</h1>
+  <p>{section.blurb}</p>
+  {pages.length === 0 ? (
+    <p>No past Game Week Pages yet.</p>
+  ) : (
+    <ol class="archive-list">
+      {pages.map((page) => {
+        const preview = page.preview?.data;
+        const recap = page.recap?.data;
+        const data = preview ?? recap;
+        return (
+          <li>
+            <a href={sitePath(`game-weeks/${page.slug}`)}>
+              <span class="eyebrow">{data ? gameWeekName(data) : page.slug}: {preview ? matchup(preview) : "Bye Week"}</span>
+              <strong>{preview?.title ?? recap?.title}</strong>
+            </a>
+            {preview && <p class="prediction">Our prediction: {predictionLine(preview)}</p>}
+          </li>
+        );
+      })}
+    </ol>
+  )}
+</BaseLayout>
