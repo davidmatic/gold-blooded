@@ -42,7 +42,7 @@ function recordingWriter(drafts: DraftEntry[]): ContentWriter & { jobs: Job[] } 
   };
 }
 
-function runThursday(date: string, writer = recordingWriter([previewDraft, recapDraft]), sources = fakeSources(snapshot)) {
+function runThursday(date: string, writer: ContentWriter = recordingWriter([previewDraft, recapDraft]), sources = fakeSources(snapshot)) {
   return publish({ job: "thursday-preview", date, sources, writer });
 }
 

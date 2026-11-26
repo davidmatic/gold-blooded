@@ -209,3 +209,46 @@ h2 {
 .latest-news {
   margin-bottom: 2rem;
 }
+
+.game-preview-lead {
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 2px solid var(--gold);
+  border-top: 6px solid var(--red);
+  border-radius: 0.5rem;
+}
+
+.game-preview-lead h2 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--red-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.countdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-weight: 600;
+}
+
+.countdown-remaining {
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
+}
+
+.prediction {
+  font-size: 1.125rem;
+}
+
+.game-preview,
+.season-recap {
+  margin-bottom: 2rem;
+}
