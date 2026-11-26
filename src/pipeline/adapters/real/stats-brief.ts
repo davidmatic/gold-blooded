@@ -1,11 +1,10 @@
-// What the writers that cite stats share: the structured-output shape of a cited stat, the games
-// and nflverse numbers as their briefs show them, and the snapshot's documents.
+// What the writers that cite stats share: the structured-output shape of a cited stat, and the
+// games and nflverse numbers as their briefs show them.
 import { z } from "zod";
 import { SEASON_TYPES } from "../../../content/cited-stat";
 import { formatKickoff, gameWeekName, matchup } from "../../../site/game-weeks";
 import type { ScheduledGame } from "../../calendar";
 import { statValue, type NflverseStats, type StatRef } from "../../stats";
-import type { SourceDocument } from "../../types";
 
 // Structured output takes no unions, so a cited stat's scope comes back flat, with nulls for
 // the fields its type doesn't use, and toCitedStat() turns it into the cited-stat shape.
@@ -89,14 +88,4 @@ export function describeGame(game: ScheduledGame): string {
   if (!game.result) return `${name}, kickoff ${formatKickoff(game.kickoff)} (${game.gameId})`;
   const { sf, opponent } = game.result;
   return `${name}, ${sf > opponent ? "won" : sf < opponent ? "lost" : "tied"} ${sf}-${opponent}`;
-}
-
-/** The snapshot's documents, each in full, for a brief. */
-export function renderDocuments(documents: readonly SourceDocument[]): string[] {
-  return [
-    `Documents (${documents.length}):`,
-    ...documents.map((doc, i) =>
-      [`<document index="${i + 1}">`, `url: ${doc.url}`, `outlet: ${doc.outlet}`, `title: ${doc.title}`, `published: ${doc.publishedAt}`, "text:", doc.text, "</document>"].join("\n"),
-    ),
-  ];
 }

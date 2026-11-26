@@ -114,6 +114,10 @@ post-game) makes its requests through `claudeAsker()` in `adapters/real/claude.t
 (cached), a brief, and a Zod schema for the structured output, at effort `medium`, with the API's
 server-side refusal fallback (`fallbacks: "default"`). Transient errors are retried twice; reaching
 the spend limit fails the run at once with a "spend limit reached" error, and is never retried.
+What the writers share is defined once, in `adapters/real/writer-output.ts`: the structured-output
+shapes of sources, quotes, and injury statuses (and turning them into draft fields), the
+`<document>` rendering of the snapshot's documents, and the prompt rules every voice states the
+same way (`SHARED_RULES` and its parts).
 
 ## Publish checks
 

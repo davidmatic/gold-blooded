@@ -7,7 +7,7 @@
 import { z } from "zod";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
-import { NUMBERS_RULE } from "./writer-output";
+import { NUMBERS_RULE, quotesField, quotesOutput, quotesRule } from "./writer-output";
 
 const filmRoomOutputSchema = z.object({
   entries: z.array(
@@ -16,7 +16,7 @@ const filmRoomOutputSchema = z.object({
       title: z.string(),
       body: z.string(),
       purdy: z.boolean(),
-      quotes: z.array(z.object({ text: z.string(), speaker: z.string(), source: z.string() })),
+      quotes: quotesOutput,
     }),
   ),
 });
@@ -34,7 +34,7 @@ Each entry:
 - title: a short, plain headline in sentence case, in our own words.
 - body: one or two short paragraphs of Markdown: what the breakdown covers and its main points. No headings, no links. Name the show in the body. For a Jonnydel's Football Academy episode, also name Jonnydel.
 - purdy: true only when the breakdown is substantially about Brock Purdy (his play, his throws, his decisions), and then the title or body must name him. A passing mention is not enough.
-- quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them), with the quoted words in "text", the "speaker", and in "source" the entry's link. Quote only from a transcript, copied word for word, character for character, and only where it reads cleanly; otherwise paraphrase without quotation marks. Never quote a description.
+${quotesRule("the entry's link")} Quote only from a transcript, and only where it reads cleanly; never quote a description.
 ${NUMBERS_RULE}
 
 Skip ads, sponsor reads, and banter.`;
@@ -65,7 +65,7 @@ export function renderFilmRoomBrief(job: Job, snapshot: SourceSnapshot): string 
 export function toFilmRoomDrafts(output: FilmRoomOutput): DraftEntry[] {
   return output.entries.map((entry) => ({
     type: "film-room",
-    data: { link: entry.link, title: entry.title, purdy: entry.purdy, ...(entry.quotes.length > 0 && { quotes: entry.quotes }) },
+    data: { link: entry.link, title: entry.title, purdy: entry.purdy, ...quotesField(entry.quotes) },
     body: entry.body,
   }));
 }

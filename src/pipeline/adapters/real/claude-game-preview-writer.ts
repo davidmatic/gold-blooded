@@ -6,28 +6,17 @@
 // in the game itself (opponent, kickoff, week) and the record from the schedule, so Claude
 // writes only the take: storylines, keys, a prediction, and the narrative.
 import { z } from "zod";
-import { GAME_STATUSES, PRACTICE_STATUSES } from "../../../content/news-summary";
 import { formatRecord } from "../../../site/game-weeks";
 import type { StatScope } from "../../../content/cited-stat";
 import { seasonRecord, TEAM } from "../../calendar";
 import { scopeText } from "../../stats";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
-import { BRIEF_COLUMNS, columns, describeGame, lookup, NOTABLE, renderDocuments, statOutput, toCitedStat } from "./stats-brief";
-import { NUMBERS_RULE } from "./writer-output";
+import { BRIEF_COLUMNS, columns, describeGame, lookup, NOTABLE, statOutput, toCitedStat } from "./stats-brief";
+import { injuriesField, injuriesOutput, NUMBERS_RULE, quotesField, quotesOutput, renderDocuments, SHARED_RULES, sourcesOutput } from "./writer-output";
 
 /** The Stat Breakdown's recent trends are over this many games. */
 const RECENT_GAMES = 3;
-
-const sources = z.array(z.object({ url: z.string(), outlet: z.string() }));
-const injuries = z.array(
-  z.object({
-    player: z.string(),
-    practiceStatus: z.enum(PRACTICE_STATUSES).nullable(),
-    gameStatus: z.enum(GAME_STATUSES).nullable(),
-  }),
-);
-const quotes = z.array(z.object({ text: z.string(), speaker: z.string(), source: z.string() }));
 
 const gamePreviewOutputSchema = z.object({
   title: z.string(),
@@ -35,24 +24,17 @@ const gamePreviewOutputSchema = z.object({
   storylines: z.array(z.string()),
   keys: z.array(z.string()),
   prediction: z.object({ winner: z.string(), sfScore: z.number().int(), opponentScore: z.number().int() }),
-  sources,
-  injuries,
-  quotes,
+  sources: sourcesOutput,
+  injuries: injuriesOutput,
+  quotes: quotesOutput,
 });
 export type GamePreviewOutput = z.infer<typeof gamePreviewOutputSchema>;
 
-const recapOutputSchema = z.object({ title: z.string(), body: z.string(), sources, injuries, quotes });
+const recapOutputSchema = z.object({ title: z.string(), body: z.string(), sources: sourcesOutput, injuries: injuriesOutput, quotes: quotesOutput });
 export type RecapOutput = z.infer<typeof recapOutputSchema>;
 
 const statBreakdownOutputSchema = z.object({ title: z.string(), body: z.string(), trends: z.array(z.string()), stats: z.array(statOutput) });
 export type StatBreakdownOutput = z.infer<typeof statBreakdownOutputSchema>;
-
-const SHARED_RULES = `Use only what the source snapshot says: the 49ers' schedule and results, the official injury report, and the documents. Never invent a stat, a result, an injury, or a quote.
-- sources: every document you rely on, each with its exact "url" and its "outlet" as given in the snapshot. Never invent or alter a URL. At least one source.
-- injuries: for every player whose practice participation or game status you state, one entry with the player's name exactly as it appears in the official injury report, and practiceStatus (DNP, LP, FP) and/or gameStatus (Out, Doubtful, Questionable) exactly as the official report gives them; null for any status you don't state. Only state statuses the official report gives.
-- quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them). Each has the quoted words in "text", the "speaker", and in "source" the url of the document where those exact words appear (one of your sources). Copy quotes word for word, character for character: no paraphrase, no ellipses. If you cannot quote exactly, paraphrase without quotation marks.
-- body: Markdown paragraphs. No headings, no links in the body.
-${NUMBERS_RULE}`;
 
 /** The Game Preview voice. Stable text, so it is cached across runs. */
 export const GAME_PREVIEW_VOICE = `You write the weekly Game Preview for Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site.
@@ -172,17 +154,8 @@ export function renderStatBreakdownBrief(job: Job, snapshot: SourceSnapshot): st
   return [...situation(job, snapshot, "Stat Breakdown"), `nflverse stats, ${calendar.season} season:`, ...sections].join("\n\n");
 }
 
-function cleanInjuries(list: z.infer<typeof injuries>) {
-  return list.map(({ player, practiceStatus, gameStatus }) => ({
-    player,
-    ...(practiceStatus && { practiceStatus }),
-    ...(gameStatus && { gameStatus }),
-  }));
-}
-
 /** Claude's Game Preview as a pipeline draft: empty lists and null statuses dropped. */
 export function toGamePreviewDraft(output: GamePreviewOutput): DraftEntry {
-  const injuryList = cleanInjuries(output.injuries);
   return {
     type: "game-preview",
     data: {
@@ -191,8 +164,8 @@ export function toGamePreviewDraft(output: GamePreviewOutput): DraftEntry {
       keys: output.keys,
       prediction: { winner: output.prediction.winner, score: { sf: output.prediction.sfScore, opponent: output.prediction.opponentScore } },
       sources: output.sources,
-      ...(injuryList.length > 0 && { injuries: injuryList }),
-      ...(output.quotes.length > 0 && { quotes: output.quotes }),
+      ...injuriesField(output.injuries),
+      ...quotesField(output.quotes),
     },
     body: output.body,
   };
@@ -213,14 +186,13 @@ export function toStatBreakdownDraft(output: StatBreakdownOutput): DraftEntry {
 
 /** Claude's season recap as a pipeline draft. */
 export function toRecapDraft(output: RecapOutput): DraftEntry {
-  const injuryList = cleanInjuries(output.injuries);
   return {
     type: "season-recap",
     data: {
       title: output.title,
       sources: output.sources,
-      ...(injuryList.length > 0 && { injuries: injuryList }),
-      ...(output.quotes.length > 0 && { quotes: output.quotes }),
+      ...injuriesField(output.injuries),
+      ...quotesField(output.quotes),
     },
     body: output.body,
   };

@@ -13,15 +13,14 @@
 import { z } from "zod";
 import { formatRecord } from "../../../site/game-weeks";
 import { seasonRecord, TEAM } from "../../calendar";
-import { GAME_STATUSES, PRACTICE_STATUSES } from "../../../content/news-summary";
 import { PURDY } from "../../../content/purdy-shrine";
 import { playedGame } from "../../content-types";
 import { purdyPlayed } from "../../purdy";
 import { scopeText } from "../../stats";
 import type { ContentType, ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
-import { BRIEF_COLUMNS, columns, describeGame, lookup, NOTABLE, renderDocuments, statOutput, toCitedStat } from "./stats-brief";
-import { NUMBERS_RULE } from "./writer-output";
+import { BRIEF_COLUMNS, columns, describeGame, lookup, NOTABLE, statOutput, toCitedStat } from "./stats-brief";
+import { injuriesField, injuriesOutput, NUMBERS_RULE, quotesField, quotesOutput, quotesRule, renderDocuments, sourcesOutput, sourcesRule } from "./writer-output";
 
 const highlightsOutputSchema = z.object({
   title: z.string(),
@@ -29,8 +28,8 @@ const highlightsOutputSchema = z.object({
   standouts: z.array(z.object({ player: z.string(), team: z.string(), writeUp: z.string() })),
   stats: z.array(statOutput),
   clips: z.array(z.object({ videoId: z.string(), title: z.string(), channel: z.string() })),
-  sources: z.array(z.object({ url: z.string(), outlet: z.string() })),
-  quotes: z.array(z.object({ text: z.string(), speaker: z.string(), source: z.string() })),
+  sources: sourcesOutput,
+  quotes: quotesOutput,
 });
 export type HighlightsOutput = z.infer<typeof highlightsOutputSchema>;
 
@@ -59,8 +58,8 @@ Write:
   - scope: type "game" with gameId the game's id as the brief gives it; season, seasonType, and games null.
 ${STAT_FIELDS}
 - clips: official videos worth embedding (the game's highlights first, then a standout's big play), 0 to 3, each exactly as the brief lists it: videoId, title, channel. Only videos the brief lists; never any other id. If none fit, an empty list.
-- sources: every document you rely on, with its exact "url" and "outlet" as given; an empty list if you rely only on the stats.
-- quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them), word for word from the document whose url is its "source" (one of your sources). If you cannot quote exactly, paraphrase without quotation marks.`;
+${sourcesRule("may be empty")}
+${quotesRule()}`;
 
 /** The Season Stats voice. */
 export const SEASON_STATS_VOICE = `You keep the Season Stats for Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site: the 49ers' team and player numbers for the whole season up to the latest game, rewritten the day after every game.
@@ -147,7 +146,7 @@ export function toHighlightsDraft(output: HighlightsOutput): DraftEntry {
       stats: output.stats.map(toCitedStat),
       ...(output.clips.length > 0 && { clips: output.clips }),
       ...(output.sources.length > 0 && { sources: output.sources }),
-      ...(output.quotes.length > 0 && { quotes: output.quotes }),
+      ...quotesField(output.quotes),
     },
     body: output.body,
   };
@@ -164,9 +163,9 @@ const loveLetterOutputSchema = z.object({
   title: z.string(),
   body: z.string(),
   stats: z.array(statOutput),
-  injuries: z.array(z.object({ player: z.string(), practiceStatus: z.enum(PRACTICE_STATUSES).nullable(), gameStatus: z.enum(GAME_STATUSES).nullable() })),
-  sources: z.array(z.object({ url: z.string(), outlet: z.string() })),
-  quotes: z.array(z.object({ text: z.string(), speaker: z.string(), source: z.string() })),
+  injuries: injuriesOutput,
+  sources: sourcesOutput,
+  quotes: quotesOutput,
 });
 export type LoveLetterOutput = z.infer<typeof loveLetterOutputSchema>;
 
@@ -196,8 +195,8 @@ Write:
   - scope: type "game" with gameId the game's id for this game's numbers, or type "season" with season the season's year for his season so far; the other scope fields null.
   - stat, perGame, value, label as in the brief's nflverse numbers. Use only the brief's numbers; never invent one. Every stat is checked against nflverse, and a single wrong number stops the whole run.
 - injuries: each injury status the body mentions: player "Brock Purdy", practiceStatus and gameStatus exactly as the official report gives them (null for one it doesn't give). An empty list if the body mentions no injury.
-- sources: every document you rely on, with its exact "url" and "outlet" as given; an empty list if you rely only on the brief's numbers.
-- quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them), word for word from the document whose url is its "source" (one of your sources). If you cannot quote exactly, paraphrase without quotation marks.
+${sourcesRule("may be empty")}
+${quotesRule()}
 ${NUMBERS_RULE}`;
 
 /** The voice for the new Reason We Love Brock. */
@@ -255,15 +254,14 @@ export function renderReasonBrief(job: Job, snapshot: SourceSnapshot): string {
 
 /** Claude's Love Letter as a pipeline draft. The pipeline sets the variant; empty lists are dropped. */
 export function toLoveLetterDraft(output: LoveLetterOutput): DraftEntry {
-  const injuries = output.injuries.map(({ player, practiceStatus, gameStatus }) => ({ player, ...(practiceStatus && { practiceStatus }), ...(gameStatus && { gameStatus }) }));
   return {
     type: "love-letter",
     data: {
       title: output.title,
       ...(output.stats.length > 0 && { stats: output.stats.map(toCitedStat) }),
-      ...(injuries.length > 0 && { injuries }),
+      ...injuriesField(output.injuries),
       ...(output.sources.length > 0 && { sources: output.sources }),
-      ...(output.quotes.length > 0 && { quotes: output.quotes }),
+      ...quotesField(output.quotes),
     },
     body: output.body,
   };
