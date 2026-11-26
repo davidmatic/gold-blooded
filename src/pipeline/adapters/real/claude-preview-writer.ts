@@ -7,12 +7,13 @@
 // writes only the take: storylines, keys, a prediction, and the narrative.
 import { z } from "zod";
 import { GAME_STATUSES, PRACTICE_STATUSES } from "../../../content/news-summary";
-import { formatKickoff, formatRecord, gameWeekName, matchup } from "../../../site/game-weeks";
-import { SEASON_TYPES, type StatScope } from "../../../content/cited-stat";
-import { seasonRecord, TEAM, type ScheduledGame } from "../../calendar";
-import { scopeText, statValue, type NflverseStats, type StatRef } from "../../stats";
+import { formatRecord } from "../../../site/game-weeks";
+import type { StatScope } from "../../../content/cited-stat";
+import { seasonRecord, TEAM } from "../../calendar";
+import { scopeText } from "../../stats";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { claudeAsker, type ClaudeOptions } from "./claude";
+import { BRIEF_COLUMNS, columns, describeGame, lookup, NOTABLE, renderDocuments, statOutput, toCitedStat } from "./stats-brief";
 
 /** The Stat Breakdown's recent trends are over this many games. */
 const RECENT_GAMES = 3;
@@ -41,24 +42,6 @@ export type PreviewOutput = z.infer<typeof previewOutputSchema>;
 
 const recapOutputSchema = z.object({ title: z.string(), body: z.string(), sources, injuries, quotes });
 export type RecapOutput = z.infer<typeof recapOutputSchema>;
-
-// Structured output takes no unions, so a cited stat's scope comes back flat, with nulls for
-// the fields its type doesn't use, and toStatBreakdownDraft() turns it into the cited-stat shape.
-const statOutput = z.object({
-  player: z.string().nullable(),
-  team: z.string(),
-  stat: z.string(),
-  scope: z.object({
-    type: z.enum(["game", "season", "last-games"]),
-    gameId: z.string().nullable(),
-    season: z.number().int().nullable(),
-    seasonType: z.enum(SEASON_TYPES).nullable(),
-    games: z.number().int().nullable(),
-  }),
-  perGame: z.boolean(),
-  value: z.number(),
-  label: z.string(),
-});
 
 const statBreakdownOutputSchema = z.object({ title: z.string(), body: z.string(), trends: z.array(z.string()), stats: z.array(statOutput) });
 export type StatBreakdownOutput = z.infer<typeof statBreakdownOutputSchema>;
@@ -117,10 +100,7 @@ export function renderPreviewBrief(job: Job, snapshot: SourceSnapshot): string {
   const what = calendar?.period === "game-week" ? "Game Preview" : "Bye Week season recap";
   return [
     ...situation(job, snapshot, what),
-    `Documents (${snapshot.documents.length}):`,
-    ...snapshot.documents.map((doc, i) =>
-      [`<document index="${i + 1}">`, `url: ${doc.url}`, `outlet: ${doc.outlet}`, `title: ${doc.title}`, `published: ${doc.publishedAt}`, "text:", doc.text, "</document>"].join("\n"),
-    ),
+    ...renderDocuments(snapshot.documents),
   ].join("\n\n");
 }
 
@@ -133,42 +113,18 @@ function situation(job: Job, snapshot: SourceSnapshot, what: string): string[] {
   const games =
     calendar.period === "game-week"
       ? [
-          `Upcoming game: ${describe(calendar.upcoming)}`,
-          `Previous game: ${calendar.previous ? describe(calendar.previous) : "none (this is the season's first game)"}`,
+          `Upcoming game: ${describeGame(calendar.upcoming)}`,
+          `Previous game: ${calendar.previous ? describeGame(calendar.previous) : "none (this is the season's first game)"}`,
         ]
-      : [`Bye Week: ${calendar.season} Week ${calendar.week}`, `Next game: ${describe(calendar.upcoming)}`];
+      : [`Bye Week: ${calendar.season} Week ${calendar.week}`, `Next game: ${describeGame(calendar.upcoming)}`];
   return [
     `Job: Thursday ${what} for ${job.date} (team-local date).`,
     ...games,
     `49ers record this season: ${formatRecord(seasonRecord(schedule, calendar.season, job.date))}`,
-    `Results this season:\n${season.map((game) => `- ${describe(game)}`).join("\n") || "- none yet"}`,
+    `Results this season:\n${season.map((game) => `- ${describeGame(game)}`).join("\n") || "- none yet"}`,
     `Official injury report (structured): ${snapshot.injuryReport ? JSON.stringify(snapshot.injuryReport) : "not available"}`,
   ];
 }
-
-/** nflverse columns the Stat Breakdown brief shows, in this order. */
-const BRIEF_COLUMNS = [
-  "completions",
-  "attempts",
-  "passing_yards",
-  "passing_tds",
-  "passing_interceptions",
-  "sacks_suffered",
-  "carries",
-  "rushing_yards",
-  "rushing_tds",
-  "receptions",
-  "targets",
-  "receiving_yards",
-  "receiving_tds",
-  "def_tackles_solo",
-  "def_sacks",
-  "def_interceptions",
-];
-
-/** A player makes the brief with this much volume over the season in any one column. */
-const NOTABLE: Record<string, number> = { attempts: 10, carries: 10, targets: 10, def_tackles_solo: 10, def_sacks: 1, def_interceptions: 1 };
-
 
 /**
  * The Stat Breakdown's user turn: the situation plus both teams' nflverse lines this season, game
@@ -213,29 +169,6 @@ export function renderStatBreakdownBrief(job: Job, snapshot: SourceSnapshot): st
   return [...situation(job, snapshot, "Stat Breakdown"), `nflverse stats, ${calendar.season} season:`, ...sections].join("\n\n");
 }
 
-function lookup(stats: NflverseStats, ref: StatRef): number {
-  const found = statValue(stats, ref);
-  return "value" in found ? found.value : 0;
-}
-
-/** "completions 25, attempts 34, ...", leaving out zeros when asked. */
-function columns(names: string[], value: (column: string) => number, skipZeros = false): string {
-  return names
-    .map((name) => [name, Math.round(value(name) * 100) / 100] as const)
-    .filter(([, v]) => !skipZeros || v !== 0)
-    .map(([name, v]) => `${name} ${v}`)
-    .join(", ");
-}
-
-/** "2026 Week 11, vs MIN (neutral site), won 35-10" or "2026 Week 12, vs SEA, kickoff ... (id)". */
-function describe(game: ScheduledGame): string {
-  const venue = game.neutralSite ? "neutral" : game.home ? "home" : "away";
-  const name = `${gameWeekName(game)}, ${matchup({ opponent: game.opponent, venue })}`;
-  if (!game.result) return `${name}, kickoff ${formatKickoff(game.kickoff)} (${game.gameId})`;
-  const { sf, opponent } = game.result;
-  return `${name}, ${sf > opponent ? "won" : sf < opponent ? "lost" : "tied"} ${sf}-${opponent}`;
-}
-
 function cleanInjuries(list: z.infer<typeof injuries>) {
   return list.map(({ player, practiceStatus, gameStatus }) => ({
     player,
@@ -269,20 +202,7 @@ export function toStatBreakdownDraft(output: StatBreakdownOutput): DraftEntry {
     data: {
       title: output.title,
       trends: output.trends,
-      stats: output.stats.map(({ player, team, stat, scope, perGame, value, label }) => ({
-        ...(player !== null && { player }),
-        team,
-        stat,
-        scope:
-          scope.type === "game"
-            ? { type: "game", gameId: scope.gameId }
-            : scope.type === "last-games"
-              ? { type: "last-games", season: scope.season, games: scope.games }
-              : { type: "season", season: scope.season, ...(scope.seasonType && { seasonType: scope.seasonType }) },
-        ...(perGame && { per: "game" }),
-        value,
-        label,
-      })),
+      stats: output.stats.map(toCitedStat),
     },
     body: output.body,
   };
