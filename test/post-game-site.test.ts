@@ -75,9 +75,14 @@ describe("built site (post-game content)", () => {
       ["thursday-preview", "2026-11-19", [preview, sfStatBreakdown]],
       ["post-game", "2026-11-23", [highlights, seasonStats]],
     ];
+    // The post-game run is handed the Game Preview the preview run published, as the real
+    // post-game sources read it from the content folder.
+    let gamePreview: SourceSnapshot["gamePreview"];
     for (const [job, date, drafts] of runs) {
-      const result = await runJob({ job, date, sources: fakeSources(snapshot), writer: fakeWriter(drafts), contentDir });
+      const result = await runJob({ job, date, sources: fakeSources({ ...snapshot, gamePreview }), writer: fakeWriter(drafts), contentDir });
       expect(result.status).toBe("published");
+      const published = result.status === "published" ? result.entries.find((entry) => entry.type === "game-preview") : undefined;
+      if (published?.type === "game-preview") gamePreview = published.data;
     }
     site = await buildSite(contentDir);
   }, 120_000);
@@ -122,6 +127,16 @@ describe("built site (post-game content)", () => {
     expect(page).toContain("Brock Purdy Passing yards 2,624");
     expect(page).toContain("49ers Rushing yards 1,386");
   });
+
+  it("shows the Prediction Record on the Season Stats page: correct winners, average points off, and each scored game", async () => {
+    const html = await site.html("/gold-blooded/season-stats/");
+    const section = text(html.match(/<section[^>]*class="prediction-record"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? "");
+
+    expect(section).toContain("Prediction Record");
+    expect(section).toContain("Correct winners: 1 of 1");
+    expect(section).toContain("Average points off: 18");
+    expect(section).toContain("2026 Week 11 vs MIN (neutral site) 49ers 24, MIN 17 49ers 35, MIN 10 Right winner 18");
+  });
 });
 
 describe("built site (Season Stats before any game)", () => {
@@ -135,6 +150,10 @@ describe("built site (Season Stats before any game)", () => {
     const page = text(await site.html("/gold-blooded/season-stats/"));
     expect(page).toContain("No Season Stats yet");
     expect(page).not.toContain("Coming soon");
+  });
+
+  it("says no predictions have been scored yet", async () => {
+    expect(text(await site.html("/gold-blooded/season-stats/"))).toContain("No predictions scored yet");
   });
 });
 

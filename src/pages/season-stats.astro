@@ -1,9 +1,10 @@
 ---
 // Season Stats: the 49ers' team and player numbers for the newest season, up to its latest
 // game. One standing document per season, content/season-stats/<season>.md, rewritten by the
-// post-game job the day after every game. (The Prediction Record joins this page later.)
+// post-game job the day after every game. Below the numbers, the season's Prediction Record.
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import PredictionRecord from "../components/PredictionRecord.astro";
 import { formatRecord, gameWeekName, matchup, resultLine } from "../site/game-weeks";
 import { currentSeasonStats, seasonStatRows } from "../site/post-game";
 import { sections, sitePath } from "../site/sections";
@@ -14,6 +15,9 @@ const Content = page ? (await render(page)).Content : undefined;
 const rows = page && seasonStatRows(page.data);
 const through = page?.data.throughGame;
 const title = page?.data.title ?? section.name;
+// The Prediction Record for the season the stats are for, or the newest one.
+const records = (await getCollection("predictionRecords")).sort((a, b) => b.data.season - a.data.season);
+const record = (page && records.find((r) => r.data.season === page.data.season)) ?? records[0];
 ---
 <BaseLayout title={title}>
   <h1>{title}</h1>
@@ -50,4 +54,5 @@ const title = page?.data.title ?? section.name;
       <p class="placeholder">No Season Stats yet. They update the day after every game.</p>
     </>
   )}
+  <PredictionRecord record={record?.data} />
 </BaseLayout>
