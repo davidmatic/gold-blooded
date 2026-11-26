@@ -8,6 +8,7 @@ import { seasonStatsPath, seasonStatsSchema } from "../content/season-stats";
 import { LOVE_LETTER_VARIANTS, loveLetterSchema, PURDY_SHRINE_FILES, reasonsWeLoveBrockSchema } from "../content/purdy-shrine";
 import { purdyPlayed } from "./purdy";
 import { appendReason, mergeDraftCoverage, mergeFreeAgencyTracker } from "./running-documents";
+import { predictionRecordPath, predictionRecordSchema, scorePrediction } from "../content/prediction-record";
 import { gameJustPlayed, gameWeekSlug, seasonRecord, type ScheduledGame } from "./calendar";
 import type { ContentType, Job, SourceSnapshot } from "./types";
 
@@ -26,6 +27,11 @@ interface ContentTypeDefinition {
   merge?(draft: Record<string, unknown>, snapshot: SourceSnapshot, job: Job): Record<string, unknown>;
   /** The entry's Markdown body, when it isn't the draft's (a running document's kept introduction). */
   body?(draft: { body: string }, snapshot: SourceSnapshot): string;
+  /**
+   * For content the pipeline works out itself, with no writer: the draft it makes from the
+   * snapshot, or undefined when there is nothing to write this run.
+   */
+  derive?(job: Job, snapshot: SourceSnapshot): { data: Record<string, unknown>; body: string } | undefined;
 }
 
 export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
@@ -111,6 +117,37 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
       };
     },
     path: (data) => seasonStatsPath(data.season as number),
+  },
+  "prediction-record": {
+    schema: predictionRecordSchema,
+    // Scores the game's Game Preview against the final score. A re-run for the same game replaces
+    // its earlier score rather than adding a second. No Game Preview for the game, nothing to write.
+    derive: (job, snapshot) => {
+      const game = playedGame(job, "Prediction Records");
+      const preview = snapshot.gamePreview;
+      if (preview?.gameId !== game.gameId) return undefined;
+      const scored = {
+        gameId: game.gameId,
+        gameWeek: gameWeekSlug(game.season, game.week, game.gameType),
+        week: game.week,
+        gameType: game.gameType,
+        opponent: game.opponent,
+        venue: venue(game),
+        result: game.result,
+        predicted: preview.prediction,
+        ...scorePrediction(preview.prediction, game.result, game.opponent),
+      };
+      const current = snapshot.current?.["prediction-record"];
+      const earlier = current?.data.season === game.season ? current.data.games.filter((g) => g.gameId !== game.gameId) : [];
+      // Playoff weeks continue the numbering, so the week orders the season's games.
+      const games = [...earlier, scored].sort((a, b) => a.week - b.week);
+      return { data: { games }, body: current?.body ?? "" };
+    },
+    owned: (job) => {
+      const game = playedGame(job, "Prediction Records");
+      return { title: `${game.season} Prediction Record`, season: game.season, updated: job.date };
+    },
+    path: (data) => predictionRecordPath(data.season as number),
   },
   "free-agency-tracker": {
     schema: freeAgencyTrackerSchema,

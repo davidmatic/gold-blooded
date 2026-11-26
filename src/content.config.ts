@@ -4,6 +4,7 @@ import { GAME_WEEK_FILES, gamePreviewSchema, highlightsSchema, seasonRecapSchema
 import { newsSummarySchema } from "./content/news-summary";
 import { draftCoverageSchema, freeAgencyTrackerSchema, OFFSEASON_FILES } from "./content/offseason";
 import { seasonStatsSchema } from "./content/season-stats";
+import { predictionRecordSchema } from "./content/prediction-record";
 import { contentPath } from "./site/content-dir";
 
 const news = defineCollection({
@@ -49,4 +50,10 @@ const draftCoverage = defineCollection({
   schema: draftCoverageSchema,
 });
 
-export const collections = { news, gamePreviews, seasonRecaps, statBreakdowns, highlights, seasonStats, freeAgencyTrackers, draftCoverage };
+// The Prediction Record: one running document per season, content/prediction-record/<season>.md.
+const predictionRecords = defineCollection({
+  loader: glob({ base: contentPath("prediction-record"), pattern: "*.md" }),
+  schema: predictionRecordSchema,
+});
+
+export const collections = { news, gamePreviews, seasonRecaps, statBreakdowns, highlights, seasonStats, predictionRecords, freeAgencyTrackers, draftCoverage };
