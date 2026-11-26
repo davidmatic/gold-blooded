@@ -1,6 +1,7 @@
 // Writes content entries into the content folder as Markdown files with YAML frontmatter.
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { parse as parseYaml } from "yaml";
 import type { ContentEntry } from "./types";
 
 export async function writeEntries(contentDir: string, entries: ContentEntry[]): Promise<void> {
@@ -9,6 +10,21 @@ export async function writeEntries(contentDir: string, entries: ContentEntry[]):
     await mkdir(path.dirname(file), { recursive: true });
     await writeFile(file, toMarkdown(entry));
   }
+}
+
+/**
+ * Reads one Markdown entry back: its frontmatter and its body. Undefined when the file doesn't
+ * exist. Files may be hand-edited, so the frontmatter is parsed as any YAML.
+ */
+export async function readEntry(contentDir: string, entryPath: string): Promise<{ data: unknown; body: string } | undefined> {
+  const text = await readFile(path.join(contentDir, entryPath), "utf8").catch((error: NodeJS.ErrnoException) => {
+    if (error.code === "ENOENT") return undefined;
+    throw error;
+  });
+  if (text === undefined) return undefined;
+  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!match) throw new Error(`${entryPath} has no frontmatter`);
+  return { data: parseYaml(match[1]!), body: match[2]! };
 }
 
 function toMarkdown(entry: ContentEntry): string {

@@ -13,7 +13,7 @@ import { realAdapters, SpendLimitReachedError } from "../src/pipeline/adapters/r
 import { runJob, type JobType } from "../src/pipeline";
 import { contentDir } from "../src/site/content-dir";
 
-const JOB_TYPES: readonly JobType[] = ["daily-news", "post-game", "thursday-preview", "film-room"];
+const JOB_TYPES: readonly JobType[] = ["daily-news", "post-game", "thursday-preview", "film-room", "offseason"];
 const ADAPTERS = {
   fixture: (job: JobType) => fixtureAdapters(job),
   real: (job: JobType, dir: string) => realAdapters(job, dir),
