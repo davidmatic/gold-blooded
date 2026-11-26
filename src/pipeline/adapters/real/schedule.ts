@@ -3,6 +3,7 @@
 // games.csv lists every NFL game since 1999: regular season and playoffs, but no preseason.
 // Scores are empty until a game is final. Kickoff times are US Eastern.
 import { GAME_TYPES, TEAM, type GameType, type ScheduledGame } from "../../calendar";
+import type { FetchPage } from "./sources";
 
 export const SCHEDULE_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv";
 
@@ -88,4 +89,13 @@ function easternToUtc(day: string, time: string): Date {
   };
   const guess = wall - offset(wall);
   return new Date(wall - offset(guess));
+}
+
+/** Fetches and parses the 49ers' schedule. Required by every calendar job: any failure fails the run. */
+export async function fetchSchedule(fetchPage: FetchPage): Promise<ScheduledGame[]> {
+  const page = await fetchPage(SCHEDULE_URL).catch((error: unknown) => {
+    throw new Error(`could not fetch the nflverse schedule (${SCHEDULE_URL}): ${error instanceof Error ? error.message : error}`);
+  });
+  if (page.status < 200 || page.status > 299) throw new Error(`could not fetch the nflverse schedule (${SCHEDULE_URL}): HTTP ${page.status}`);
+  return parseSchedule(page.body);
 }

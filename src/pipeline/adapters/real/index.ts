@@ -7,15 +7,20 @@ import { claudeWriter } from "./claude-writer";
 import { podcastTranscripts, transcriptCacheDir, whisperTranscriber, type PodcastTranscripts } from "../../../podcasts";
 import { previewSources } from "./preview-sources";
 import { claudeOffseasonWriter } from "./claude-offseason-writer";
+import { claudePostGameWriter } from "./claude-post-game-writer";
+import { postGameSources } from "./post-game-sources";
 import { offseasonSources } from "./offseason-sources";
 import { BOT_USER_AGENT, fetchWithBotUserAgent, realSources } from "./sources";
 
 export { BOT_USER_AGENT, realSources, SOURCE_URLS } from "./sources";
-export { claudeWriter, MODEL, SpendLimitReachedError } from "./claude-writer";
+export { MODEL, SpendLimitReachedError } from "./claude";
+export { claudeWriter } from "./claude-writer";
 export { claudePreviewWriter } from "./claude-preview-writer";
 export { previewSources } from "./preview-sources";
 export { claudeOffseasonWriter } from "./claude-offseason-writer";
 export { offseasonSources } from "./offseason-sources";
+export { claudePostGameWriter } from "./claude-post-game-writer";
+export { postGameSources } from "./post-game-sources";
 
 export async function realAdapters(
   job: JobType,
@@ -23,6 +28,7 @@ export async function realAdapters(
 ): Promise<{ sources: SourceAdapter; writer: ContentWriter }> {
   if (job === "thursday-preview") return { sources: previewSources(), writer: claudePreviewWriter() };
   if (job === "offseason") return { sources: offseasonSources({ contentDir }), writer: claudeOffseasonWriter() };
+  if (job === "post-game") return { sources: postGameSources(), writer: claudePostGameWriter() };
   if (job !== "daily-news") throw new Error(`no real adapters for job type "${job}" yet`);
   return {
     sources: realSources({ alreadyCited: await citedSourceUrls(contentDir), podcasts: realPodcastTranscripts() }),

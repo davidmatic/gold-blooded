@@ -1,11 +1,12 @@
 // How each content type's drafts become entries: the schema that validates them, the fields
 // the pipeline owns (the writer can't set or get them wrong), and where the entry is filed.
 import type { z } from "astro/zod";
-import { GAME_WEEK_FILES, gamePreviewSchema, seasonRecapSchema, statBreakdownSchema } from "../content/game-week";
+import { GAME_WEEK_FILES, gamePreviewSchema, highlightsSchema, seasonRecapSchema, statBreakdownSchema } from "../content/game-week";
 import { newsSummarySchema } from "../content/news-summary";
 import { draftCoverageSchema, draftDates, freeAgencyTrackerSchema, OFFSEASON_FILES, offseasonYear } from "../content/offseason";
+import { seasonStatsPath, seasonStatsSchema } from "../content/season-stats";
 import { mergeDraftCoverage, mergeFreeAgencyTracker } from "./running-documents";
-import { gameWeekSlug, seasonRecord, type ScheduledGame } from "./calendar";
+import { gameJustPlayed, gameWeekSlug, seasonRecord, type ScheduledGame } from "./calendar";
 import type { ContentType, Job, SourceSnapshot } from "./types";
 
 interface ContentTypeDefinition {
@@ -64,6 +65,49 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
     },
     path: (data) => `game-weeks/${data.gameWeek}/${GAME_WEEK_FILES["season-recap"]}`,
   },
+  highlights: {
+    schema: highlightsSchema,
+    single: true,
+    owned: (job) => {
+      const game = playedGame(job, "Highlights");
+      return {
+        date: job.date,
+        gameWeek: gameWeekSlug(game.season, game.week, game.gameType),
+        gameId: game.gameId,
+        season: game.season,
+        week: game.week,
+        gameType: game.gameType,
+        opponent: game.opponent,
+        venue: venue(game),
+        kickoff: game.kickoff,
+        result: game.result,
+      };
+    },
+    path: (data) => `game-weeks/${data.gameWeek}/${GAME_WEEK_FILES.highlights}`,
+  },
+  "season-stats": {
+    schema: seasonStatsSchema,
+    single: true,
+    owned: (job, snapshot) => {
+      const game = playedGame(job, "Season Stats");
+      return {
+        title: `${game.season} Season Stats`,
+        season: game.season,
+        updated: job.date,
+        throughGame: {
+          gameId: game.gameId,
+          gameWeek: gameWeekSlug(game.season, game.week, game.gameType),
+          week: game.week,
+          gameType: game.gameType,
+          opponent: game.opponent,
+          venue: venue(game),
+          result: game.result,
+        },
+        record: seasonRecord(snapshot.schedule ?? [], game.season, job.date),
+      };
+    },
+    path: (data) => seasonStatsPath(data.season as number),
+  },
   "free-agency-tracker": {
     schema: freeAgencyTrackerSchema,
     single: true,
@@ -95,6 +139,14 @@ function upcomingGame(job: Job, what: string) {
     venue: venue(game),
     kickoff: game.kickoff,
   };
+}
+
+/** The game played the day before the job's date, with its final score: what post-game content is about. */
+export function playedGame(job: Job, what: string): ScheduledGame & { result: NonNullable<ScheduledGame["result"]> } {
+  const game = job.calendar && gameJustPlayed(job.calendar, job.date);
+  if (!game) throw new Error(`${what} are written only the day after a game`);
+  if (!game.result) throw new Error(`the schedule has no final score for ${game.gameId} yet`);
+  return { ...game, result: game.result };
 }
 
 /** Fields the pipeline owns on both Offseason running documents. */

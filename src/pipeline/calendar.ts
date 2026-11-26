@@ -97,6 +97,15 @@ export function resolveCalendar(date: string, schedule: readonly ScheduledGame[]
   return { period: "offseason", ...(previous && { previous }), ...(upcoming && { next: upcoming }) };
 }
 
+/**
+ * The 49ers game played the day before the date, if there was one: the previous game, when its
+ * gameday is yesterday. In any period, so the season's last game counts though the day after it
+ * is the Offseason. (nflverse's gameday is US Eastern; a late Pacific kickoff still falls on it.)
+ */
+export function gameJustPlayed(calendar: CalendarPosition, date: string): ScheduledGame | undefined {
+  return calendar.previous?.gameday === addDays(date, -1) ? calendar.previous : undefined;
+}
+
 /** A Game Week Page's slug: `2026-week-08` in the regular season, `2025-wild-card` in the playoffs. */
 export function gameWeekSlug(season: number, week: number, gameType: GameType): string {
   if (gameType !== "REG") return `${season}-${ROUND_SLUGS[gameType]}`;

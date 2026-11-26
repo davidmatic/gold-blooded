@@ -1,6 +1,6 @@
 // Game Week Pages and the homepage's Game Preview: which preview is current, how a Game Week
 // is named, and how kickoff and the prediction read.
-import type { GamePreviewData, SeasonRecapData, StatBreakdownData } from "../content/game-week";
+import type { GamePreviewData, HighlightsData, SeasonRecapData, StatBreakdownData } from "../content/game-week";
 
 interface HasData<T> {
   id: string;
@@ -12,11 +12,13 @@ export function currentPreview<T extends HasData<GamePreviewData>>(previews: rea
   return [...previews].sort((a, b) => b.data.kickoff.localeCompare(a.data.kickoff))[0];
 }
 
-export interface GameWeekPage<P, R, B = never> {
+export interface GameWeekPage<P, R, B = never, H = never> {
   slug: string;
   preview?: P;
   recap?: R;
   breakdown?: B;
+  /** Highlights of this Game Week's game, once it has been played. */
+  highlights?: H;
 }
 
 /** One page per Game Week that has any content, newest first. */
@@ -24,12 +26,14 @@ export function gameWeekPages<
   P extends HasData<GamePreviewData>,
   R extends HasData<SeasonRecapData>,
   B extends HasData<StatBreakdownData> = never,
->(previews: readonly P[], recaps: readonly R[], breakdowns: readonly B[] = []): GameWeekPage<P, R, B>[] {
-  const pages = new Map<string, GameWeekPage<P, R, B>>();
+  H extends HasData<HighlightsData> = never,
+>(parts: { previews: readonly P[]; recaps: readonly R[]; breakdowns?: readonly B[]; highlights?: readonly H[] }): GameWeekPage<P, R, B, H>[] {
+  const pages = new Map<string, GameWeekPage<P, R, B, H>>();
   const page = (slug: string) => pages.get(slug) ?? pages.set(slug, { slug }).get(slug)!;
-  for (const preview of previews) page(preview.data.gameWeek).preview = preview;
-  for (const recap of recaps) page(recap.data.gameWeek).recap = recap;
-  for (const breakdown of breakdowns) page(breakdown.data.gameWeek).breakdown = breakdown;
+  for (const preview of parts.previews) page(preview.data.gameWeek).preview = preview;
+  for (const recap of parts.recaps) page(recap.data.gameWeek).recap = recap;
+  for (const breakdown of parts.breakdowns ?? []) page(breakdown.data.gameWeek).breakdown = breakdown;
+  for (const highlights of parts.highlights ?? []) page(highlights.data.gameWeek).highlights = highlights;
   return [...pages.values()].sort((a, b) => b.slug.localeCompare(a.slug));
 }
 
@@ -90,4 +94,17 @@ export function formatKickoff(iso: string): string {
 /** "6-1", or "6-1-1" with a tie. */
 export function formatRecord(record: { wins: number; losses: number; ties: number }): string {
   return [record.wins, record.losses, ...(record.ties > 0 ? [record.ties] : [])].join("-");
+}
+
+/** "49ers 35, MIN 10", winner first. */
+export function finalScoreLine(data: { opponent: string; result: { sf: number; opponent: number } }): string {
+  const sf = `49ers ${data.result.sf}`;
+  const opponent = `${data.opponent} ${data.result.opponent}`;
+  return data.result.opponent > data.result.sf ? `${opponent}, ${sf}` : `${sf}, ${opponent}`;
+}
+
+/** "won 35-10", "lost 20-29", "tied 17-17", from the 49ers' side. */
+export function resultLine(result: { sf: number; opponent: number }): string {
+  const outcome = result.sf > result.opponent ? "won" : result.sf < result.opponent ? "lost" : "tied";
+  return `${outcome} ${result.sf}-${result.opponent}`;
 }

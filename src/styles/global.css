@@ -279,8 +279,36 @@ h2 {
 
 .game-preview,
 .season-recap,
-.stat-breakdown {
+.stat-breakdown,
+.highlights {
   margin-bottom: 2rem;
+}
+
+.standouts {
+  padding-left: 1.25rem;
+}
+
+.standouts p {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.stat-line {
+  color: var(--red-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Official YouTube clips, 16:9 at any width. */
+.clips {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.clip iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
 }
 
 /* Stat Breakdown tables scroll sideways on a narrow phone instead of widening the page. */

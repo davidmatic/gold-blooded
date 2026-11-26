@@ -1,8 +1,9 @@
 import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
-import { GAME_WEEK_FILES, gamePreviewSchema, seasonRecapSchema, statBreakdownSchema } from "./content/game-week";
+import { GAME_WEEK_FILES, gamePreviewSchema, highlightsSchema, seasonRecapSchema, statBreakdownSchema } from "./content/game-week";
 import { newsSummarySchema } from "./content/news-summary";
 import { draftCoverageSchema, freeAgencyTrackerSchema, OFFSEASON_FILES } from "./content/offseason";
+import { seasonStatsSchema } from "./content/season-stats";
 import { contentPath } from "./site/content-dir";
 
 const news = defineCollection({
@@ -26,6 +27,16 @@ const statBreakdowns = defineCollection({
   schema: statBreakdownSchema,
 });
 
+const highlights = defineCollection({
+  loader: glob({ base: contentPath("game-weeks"), pattern: `*/${GAME_WEEK_FILES.highlights}` }),
+  schema: highlightsSchema,
+});
+
+// Season Stats: one standing document per season, content/season-stats/<season>.md.
+const seasonStats = defineCollection({
+  loader: glob({ base: contentPath("season-stats"), pattern: "*.md" }),
+  schema: seasonStatsSchema,
+});
 
 // The Offseason's running documents: one folder per Offseason under content/offseason/.
 const freeAgencyTrackers = defineCollection({
@@ -38,4 +49,4 @@ const draftCoverage = defineCollection({
   schema: draftCoverageSchema,
 });
 
-export const collections = { news, gamePreviews, seasonRecaps, statBreakdowns, freeAgencyTrackers, draftCoverage };
+export const collections = { news, gamePreviews, seasonRecaps, statBreakdowns, highlights, seasonStats, freeAgencyTrackers, draftCoverage };

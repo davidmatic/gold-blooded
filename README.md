@@ -30,7 +30,10 @@ npm run build    # static output in dist/
   Calendar below). `content-types.ts` says, per content type, which schema validates a draft, which
   fields the pipeline fills in, and where the entry is filed. The Thursday preview job's real adapters
   are `adapters/real/preview-sources.ts` (the news snapshot plus the nflverse schedule, parsed in
-  `schedule.ts`) and `adapters/real/claude-preview-writer.ts`.
+  `schedule.ts`) and `adapters/real/claude-preview-writer.ts`. The post-game job's are
+  `adapters/real/post-game-sources.ts` (with the official YouTube feeds in `youtube.ts`) and
+  `adapters/real/claude-post-game-writer.ts`. Every Claude writer makes its request through
+  `adapters/real/claude.ts` (see Claude writer).
 - `scripts/publish.ts`: CLI the workflows run, e.g.
   `npx tsx scripts/publish.ts daily-news --adapters real --date 2026-11-25` (`--adapters fixture`, the
   default, needs no network or key). Exits non-zero, writing nothing, when any publish check fails.
@@ -44,8 +47,10 @@ npm run build    # static output in dist/
   To fix or remove a published piece, edit or delete its file. News Summaries live in `content/news/`.
   Each Game Week has a folder, `content/game-weeks/<slug>/` (slugs like `2026-week-12` or
   `2025-wild-card`), with one file per part: `preview.md` (the Game Preview) and
-  `stat-breakdown.md` (the Stat Breakdown), or `season-recap.md` (a Bye Week's recap). Its Game
-  Week Page is `/game-weeks/<slug>/`. Each Offseason has a folder,
+  `stat-breakdown.md` (the Stat Breakdown), or `season-recap.md` (a Bye Week's recap), and once
+  the game is played, `highlights.md` (its Highlights). Its Game Week Page is
+  `/game-weeks/<slug>/`. Season Stats are one file per season, `content/season-stats/<season>.md`,
+  shown at `/season-stats/` (see Post-game). Each Offseason has a folder,
   `content/offseason/<year>/`, with its two running documents, `free-agency-tracker.md` and
   `draft-coverage.md` (see Offseason).
 - `test/`: tests. `test/support/built-site.ts` builds the site against a fixture content folder in
@@ -104,10 +109,11 @@ transcript.
 
 `adapters/real/claude-writer.ts` sends the snapshot to `claude-opus-5-5` through `@anthropic-ai/sdk`,
 with a neutral news voice prompt and structured output matching the News Summary schema (including
-the `injuries` and `quotes` the publish checks verify). It uses effort `medium`, caches the voice
-prompt, and turns on the API's server-side refusal fallback (`fallbacks: "default"`). Transient
-errors are retried twice; reaching the spend limit fails the run at once with a "spend limit
-reached" error, and is never retried.
+the `injuries` and `quotes` the publish checks verify). Every writer (news, preview, Offseason,
+post-game) makes its requests through `claudeAsker()` in `adapters/real/claude.ts`: a voice prompt
+(cached), a brief, and a Zod schema for the structured output, at effort `medium`, with the API's
+server-side refusal fallback (`fallbacks: "default"`). Transient errors are retried twice; reaching
+the spend limit fails the run at once with a "spend limit reached" error, and is never retried.
 
 ## Secrets and cost
 
@@ -195,6 +201,39 @@ nothing in the Offseason; News Summaries carry on in the daily news job.
   Saturday after. Add each year's real dates once the NFL announces them.
 - Pages: `/free-agency-tracker/` and `/draft-coverage/` show the newest Offseason's documents.
 
+## Post-game
+
+The `post-game` job (`.github/workflows/post-game.yml`, daily) writes only when a 49ers game was
+played the day before (`gameJustPlayed()` in `calendar.ts`: the calendar's previous game has
+yesterday's nflverse gameday). That is Monday after a Sunday game, Tuesday after a Monday night
+game, Friday after a Thursday night game, and the day after the season's last game, though that
+day is already the Offseason. Every other day it fetches only the schedule and writes nothing.
+If the schedule has no final score for the game yet, the run fails before asking Claude.
+
+- **Highlights** (`content/game-weeks/<slug>/highlights.md`, on the game's own Game Week Page):
+  3 to 5 standouts, each with a write-up and a stat line, plus the final score and up to three
+  official clips. Each standout's stat line is the cited stats with his name (`scope` the game),
+  so the `nflverse-stats` check covers them; the schema rejects a stat from any other game and a
+  standout with no stat line.
+- **Season Stats** (`content/season-stats/<season>.md`, at `/season-stats/`): rewritten after every
+  game. The 49ers' season totals as cited stats (`team: SF`, `scope` the season); the pipeline fills
+  in the record and the game the numbers run through.
+- **Sources** (`adapters/real/post-game-sources.ts`): the day after a game, the day's news snapshot
+  (game recaps, postgame press conferences), the season's nflverse stats, and the official clips.
+  The stats must already include the game; if nflverse hasn't posted them yet the run fails, and
+  can be run again by hand for that date (Actions → Post-game → Run workflow, with the date).
+- **Official clips.** `adapters/real/youtube.ts` reads the RSS feeds of the official
+  [San Francisco 49ers](https://www.youtube.com/channel/UCeIOarQkwmGhimim9cDUTng) and
+  [NFL](https://www.youtube.com/channel/UCDVYQ4Zhbm3S2dlz7P1GBDg) YouTube channels (15 newest
+  videos each, no API key) into `snapshot.videos`: videos posted since kickoff, and from the NFL's
+  channel only those that mention the 49ers. Best effort: a feed that won't load is skipped. The
+  `official-clips` publish check rejects any embedded clip whose id isn't in `snapshot.videos`, so
+  the writer can't embed an id it made up. The page embeds clips with YouTube's privacy-enhanced
+  player (`youtube-nocookie.com`).
+- **Extending it.** Later post-game content adds its content type to `POST_GAME_CONTENT` in
+  `publish.ts`, an entry to `POST_GAME_WRITERS` in `claude-post-game-writer.ts` (voice, schema,
+  brief, draft), and whatever it needs to the post-game sources' snapshot.
+
 ## Smoke test
 
 The real adapters have no unit tests that touch the network or Claude. Check them by hand:
@@ -214,9 +253,12 @@ ANTHROPIC_API_KEY=sk-ant-... npx tsx scripts/smoke-daily-news.ts --claude --out 
 prints where the date falls on the calendar; `--claude` writes the Game Preview or season recap).
 `scripts/smoke-offseason.ts` does the same for the Offseason job (`--claude` writes both running
 documents' updates; it reads the current ones from `content/` or `--content-dir`).
+`scripts/smoke-post-game.ts` does the same for the post-game job (sources only, it prints the game
+the day before, the stats it found, and the official clips; `--claude` writes the Highlights and
+Season Stats). Give it the day after a game, e.g. `--date 2026-11-23`.
 
-Both take `--date YYYY-MM-DD` (default: today, Pacific). Add `--podcasts` to transcribe the news
-window's podcast episodes too (needs Python 3.12 with `pip install -r scripts/requirements-whisper.txt`).
+They all take `--date YYYY-MM-DD` (default: today, Pacific). Add `--podcasts` to
+`smoke-daily-news.ts` to transcribe the news window's podcast episodes too (needs Python 3.12 with `pip install -r scripts/requirements-whisper.txt`).
 
 Podcast transcription alone (network and Whisper, no key). It transcribes the newest episode
 whatever its date and prints the time taken and the transcript's start:
@@ -248,3 +290,7 @@ the Wednesday injury report: a Game Preview and Stat Breakdown in a Game Week, a
 `.github/workflows/offseason.yml` runs the Offseason job every morning, after daily news: it
 updates the Free Agency Tracker and Draft Coverage in the Offseason, and does nothing (no commit,
 no deploy) in the season. Same commit, deploy, and failure behaviour as daily news.
+
+`.github/workflows/post-game.yml` runs the post-game job every day at 10am/11am Pacific: the day
+after a game it writes the Highlights and Season Stats, and otherwise does nothing (no commit, no
+deploy). Same commit, deploy, and failure behaviour as daily news.

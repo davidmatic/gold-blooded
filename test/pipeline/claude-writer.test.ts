@@ -3,7 +3,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
 import { publish } from "../../src/pipeline";
-import { isSpendLimitError, renderSnapshot, toDraftEntries, type WriterOutput } from "../../src/pipeline/adapters/real/claude-writer";
+import { isSpendLimitError } from "../../src/pipeline/adapters/real/claude";
+import { renderSnapshot, toDraftEntries, type WriterOutput } from "../../src/pipeline/adapters/real/claude-writer";
 import { fakeSources, recordedSnapshot } from "../support/fakes";
 
 const snapshot = recordedSnapshot("daily-news-2026-11-25");

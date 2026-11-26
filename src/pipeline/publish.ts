@@ -5,7 +5,8 @@
 // drafts, turns them into content entries, and runs the job's publish checks. It never writes
 // anything itself: a published result carries the entries for the caller to store, and a
 // rejected one carries only the failures, so a rejected run leaves the content store untouched.
-import { resolveCalendar, type CalendarPosition } from "./calendar";
+import { gameJustPlayed, resolveCalendar, type CalendarPosition } from "./calendar";
+import { clipsAreOfficial } from "./checks/official-clips";
 import type { PublishCheck } from "./checks/check";
 import { injuryStatusesMatch } from "./checks/injury-status";
 import { quotesAreVerbatim } from "./checks/quotes";
@@ -32,10 +33,17 @@ interface JobDefinition {
    * What the job writes: always the same content types, or a choice made from where the date
    * falls on the calendar. An empty choice means the job has nothing to do that day.
    */
-  writes: ContentType[] | ((calendar: CalendarPosition) => ContentType[]);
+  writes: ContentType[] | ((calendar: CalendarPosition, date: string) => ContentType[]);
 }
 
-const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, podcastsAttributed, statsMatchNflverse];
+const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, podcastsAttributed, statsMatchNflverse, clipsAreOfficial];
+
+/**
+ * What the post-game job writes the day after a game, all about the game just played. Later
+ * post-game content (the Prediction Record, the Love Letter, the Purdy stat tracker) joins this
+ * list, with its content type and its share of the post-game writer.
+ */
+export const POST_GAME_CONTENT: ContentType[] = ["highlights", "season-stats"];
 
 // Later tickets add the other job types and more checks.
 const JOBS: Partial<Record<JobType, JobDefinition>> = {
@@ -51,6 +59,18 @@ const JOBS: Partial<Record<JobType, JobDefinition>> = {
   offseason: {
     checks: [...ALL_CHECKS, offseasonItemsSourced],
     writes: (calendar) => (calendar.period === "offseason" ? ["free-agency-tracker", "draft-coverage"] : []),
+  },
+  // Runs daily; writes only when a 49ers game was played the day before, in any period (the
+  // day after the season's last game is already the Offseason). Without the final score it fails
+  // before asking the writer.
+  "post-game": {
+    checks: ALL_CHECKS,
+    writes: (calendar, date) => {
+      const game = gameJustPlayed(calendar, date);
+      if (!game) return [];
+      if (!game.result) throw new Error(`the schedule has no final score for ${game.gameId} yet`);
+      return POST_GAME_CONTENT;
+    },
   },
 };
 
@@ -83,7 +103,7 @@ function assign(request: PublishRequest, definition: JobDefinition, snapshot: So
   if (Array.isArray(definition.writes)) return { ...job, contentTypes: definition.writes };
   if (!snapshot.schedule) throw new Error(`the ${request.job} job needs the 49ers schedule, and the source snapshot has none`);
   const calendar = resolveCalendar(request.date, snapshot.schedule);
-  return { ...job, calendar, contentTypes: definition.writes(calendar) };
+  return { ...job, calendar, contentTypes: definition.writes(calendar, request.date) };
 }
 
 /** A draft becomes an entry only if the job asked for its type and it fits the type's schema. */
