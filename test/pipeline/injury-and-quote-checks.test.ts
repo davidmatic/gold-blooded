@@ -179,3 +179,43 @@ describe("quote publish check", () => {
     });
   });
 });
+
+describe("quote publish check: quotations in the body", () => {
+  const withBody = (body: string, quotes: unknown[] = []): DraftEntry => ({ ...coachDraft(quotes), body });
+
+  it("rejects a quotation in the body that isn't listed in quotes, so it can't skip the verbatim check", async () => {
+    const result = await run([withBody("Kyle Shanahan said “we need to be better on third down.”")]);
+
+    expect(result).toEqual({
+      status: "rejected",
+      failures: [
+        {
+          check: "quotes",
+          entry: COACH_PATH,
+          reason: 'the body quotes "we need to be better on third down." but quotes doesn\'t list it, so it isn\'t checked word for word',
+        },
+      ],
+    });
+  });
+
+  it("rejects an unlisted quotation in straight double quotes too", async () => {
+    const result = await run([withBody('Shanahan said "we need to be better on third down."')]);
+
+    expect(result.status).toBe("rejected");
+    expect(result.status === "rejected" && result.failures.map((failure) => failure.check)).toEqual(["quotes"]);
+  });
+
+  it("publishes a body quotation that is listed, curly or straight, whole or in part", async () => {
+    const quotes = [{ text: "That’s on all of us, starting with me.", speaker: "Kyle Shanahan", source: SHANAHAN_URL }];
+    const body = 'Shanahan said "That\'s on all of us, starting with me." He added that it was “on all of us.”';
+    const result = await run([withBody(body, quotes)]);
+
+    expect(result.status).toBe("published");
+  });
+
+  it("doesn't count apostrophes or a scare-quoted single word as quotations", async () => {
+    const result = await run([withBody("The 49ers’ offense calls it the “juice” package, and it’s Shanahan’s favourite.")]);
+
+    expect(result.status).toBe("published");
+  });
+});

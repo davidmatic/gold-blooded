@@ -143,7 +143,11 @@ describe("the Film Room job", () => {
       body: `On Jonnydel's Football Academy, Jonnydel says, "${quote.text}"`,
     };
     const uncredited: DraftEntry = { ...credited, data: { ...credited.data, quotes: [] }, body: "Purdy is throwing early." };
-    const misquoted: DraftEntry = { ...credited, data: { ...credited.data, quotes: [{ ...quote, text: "Purdy is the best ever." }] } };
+    const misquoted: DraftEntry = {
+      ...credited,
+      data: { ...credited.data, quotes: [{ ...quote, text: "Purdy is the best ever." }] },
+      body: `On Jonnydel's Football Academy, Jonnydel says, "Purdy is the best ever."`,
+    };
 
     const published = await run([jfaEpisode], [credited]);
     expect(published.status).toBe("published");

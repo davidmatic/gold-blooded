@@ -115,6 +115,18 @@ post-game) makes its requests through `claudeAsker()` in `adapters/real/claude.t
 server-side refusal fallback (`fallbacks: "default"`). Transient errors are retried twice; reaching
 the spend limit fails the run at once with a "spend limit reached" error, and is never retried.
 
+## Publish checks
+
+Every job runs the checks in `src/pipeline/checks/`; any failure rejects the whole run. Besides
+the ones described with their jobs below:
+
+- **Quotes** (`quotes.ts`). Every listed quote must be word for word in the document it cites. So
+  that no quotation skips that, every quotation in the prose of a type that carries `quotes` (the
+  title, body, and free-text fields) must be listed: any span in double quotes, curly (“…”) or
+  straight ("…"), of two words or more. Single quotes are ignored (they are mostly apostrophes),
+  and so is a scare-quoted single word (the “juice” package). A span counts as listed when it is
+  part of a listed quote's text, ignoring case and the punctuation around it.
+
 ## Secrets and cost
 
 The workflows read the Anthropic API key from the `ANTHROPIC_API_KEY` repository secret. To set it up:

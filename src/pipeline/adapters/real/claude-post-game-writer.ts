@@ -58,7 +58,7 @@ Write:
 ${STAT_FIELDS}
 - clips: official videos worth embedding (the game's highlights first, then a standout's big play), 0 to 3, each exactly as the brief lists it: videoId, title, channel. Only videos the brief lists; never any other id. If none fit, an empty list.
 - sources: every document you rely on, with its exact "url" and "outlet" as given; an empty list if you rely only on the stats.
-- quotes: every quotation in the body, word for word from the document whose url is its "source" (one of your sources). If you cannot quote exactly, paraphrase without quotation marks.`;
+- quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them), word for word from the document whose url is its "source" (one of your sources). If you cannot quote exactly, paraphrase without quotation marks.`;
 
 /** The Season Stats voice. */
 export const SEASON_STATS_VOICE = `You keep the Season Stats for Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site: the 49ers' team and player numbers for the whole season up to the latest game, rewritten the day after every game.
@@ -195,7 +195,7 @@ Write:
   - stat, perGame, value, label as in the brief's nflverse numbers. Use only the brief's numbers; never invent one. Every stat is checked against nflverse, and a single wrong number stops the whole run.
 - injuries: each injury status the body mentions: player "Brock Purdy", practiceStatus and gameStatus exactly as the official report gives them (null for one it doesn't give). An empty list if the body mentions no injury.
 - sources: every document you rely on, with its exact "url" and "outlet" as given; an empty list if you rely only on the brief's numbers.
-- quotes: every quotation in the body, word for word from the document whose url is its "source" (one of your sources). If you cannot quote exactly, paraphrase without quotation marks.`;
+- quotes: every quotation in the body (any words of yours in double quotation marks count, wherever you write them), word for word from the document whose url is its "source" (one of your sources). If you cannot quote exactly, paraphrase without quotation marks.`;
 
 /** The voice for the new Reason We Love Brock. */
 export const REASONS_VOICE = `You add to "Reasons We Love Brock" on the Purdy Shrine of Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site: a running list of reasons we are hopelessly in love with Brock Purdy. After each game, the list gets one new reason.

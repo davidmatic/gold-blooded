@@ -15,7 +15,7 @@ const coachDraft: DraftEntry = {
     category: "Coach's Comments",
     sources: [{ url: SHANAHAN_URL, outlet: "49ers.com" }],
   },
-  body: 'Kyle Shanahan said, "We have to be better on third down."',
+  body: 'Kyle Shanahan said the 49ers have to be better on third down.',
 };
 
 describe("running a job against the content folder", () => {
@@ -48,7 +48,7 @@ sources:
   - url: "${SHANAHAN_URL}"
     outlet: "49ers.com"
 ---
-Kyle Shanahan said, "We have to be better on third down."
+Kyle Shanahan said the 49ers have to be better on third down.
 `);
   });
 
