@@ -1,0 +1,21 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { sections, sitePath } from "../site/sections";
+---
+<BaseLayout>
+  <section class="hero">
+    <h1>Gold Blooded</h1>
+    <p>An unofficial 49ers fan site. Weekly previews, stats, news, film, and a shrine to Brock Purdy.</p>
+  </section>
+
+  <ul class="section-cards">
+    {sections.map((section) => (
+      <li>
+        <a href={sitePath(section.slug)}>
+          <h2>{section.name}</h2>
+          <p>{section.blurb}</p>
+        </a>
+      </li>
+    ))}
+  </ul>
+</BaseLayout>
