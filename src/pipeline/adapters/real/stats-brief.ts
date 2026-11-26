@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { SEASON_TYPES } from "../../../content/cited-stat";
 import { formatKickoff, gameWeekName, matchup } from "../../../site/game-weeks";
-import type { ScheduledGame } from "../../calendar";
+import { venue, type ScheduledGame } from "../../calendar";
 import { statValue, type NflverseStats, type StatRef } from "../../stats";
 
 // Structured output takes no unions, so a cited stat's scope comes back flat, with nulls for
@@ -83,8 +83,7 @@ export function columns(names: string[], value: (column: string) => number, skip
 
 /** "2026 Week 11, vs MIN (neutral site), won 35-10" or "2026 Week 12, vs SEA, kickoff ... (id)". */
 export function describeGame(game: ScheduledGame): string {
-  const venue = game.neutralSite ? "neutral" : game.home ? "home" : "away";
-  const name = `${gameWeekName(game)}, ${matchup({ opponent: game.opponent, venue })}`;
+  const name = `${gameWeekName(game)}, ${matchup({ opponent: game.opponent, venue: venue(game) })}`;
   if (!game.result) return `${name}, kickoff ${formatKickoff(game.kickoff)} (${game.gameId})`;
   const { sf, opponent } = game.result;
   return `${name}, ${sf > opponent ? "won" : sf < opponent ? "lost" : "tied"} ${sf}-${opponent}`;

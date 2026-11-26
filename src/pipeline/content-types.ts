@@ -10,7 +10,7 @@ import { LOVE_LETTER_VARIANTS, loveLetterSchema, PURDY_SHRINE_FILES, purdyStatTr
 import { purdyPlayed, purdyStatTracker } from "./purdy";
 import { appendReason, mergeDraftCoverage, mergeFreeAgencyTracker } from "./running-documents";
 import { predictionRecordPath, predictionRecordSchema, scorePrediction } from "../content/prediction-record";
-import { gameToCover, gameWeekSlug, seasonRecord, type ScheduledGame } from "./calendar";
+import { gameFields, gameWeekOf, playedGame, seasonRecord, venue } from "./calendar";
 import type { ContentType, Job, SourceSnapshot } from "./types";
 
 interface ContentTypeDefinition {
@@ -67,7 +67,7 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
         week: calendar.week,
         record: seasonRecord(snapshot.schedule ?? [], calendar.season, job.date),
         nextGame: {
-          gameWeek: gameWeekSlug(next.season, next.week, next.gameType),
+          gameWeek: gameWeekOf(next),
           opponent: next.opponent,
           venue: venue(next),
           kickoff: next.kickoff,
@@ -81,18 +81,7 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
     single: true,
     owned: (job) => {
       const game = playedGame(job, "Highlights");
-      return {
-        date: job.date,
-        gameWeek: gameWeekSlug(game.season, game.week, game.gameType),
-        gameId: game.gameId,
-        season: game.season,
-        week: game.week,
-        gameType: game.gameType,
-        opponent: game.opponent,
-        venue: venue(game),
-        kickoff: game.kickoff,
-        result: game.result,
-      };
+      return { date: job.date, ...gameFields(game), season: game.season, kickoff: game.kickoff };
     },
     path: (data) => `game-weeks/${data.gameWeek}/${GAME_WEEK_FILES.highlights}`,
   },
@@ -105,15 +94,7 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
         title: `${game.season} Season Stats`,
         season: game.season,
         updated: job.date,
-        throughGame: {
-          gameId: game.gameId,
-          gameWeek: gameWeekSlug(game.season, game.week, game.gameType),
-          week: game.week,
-          gameType: game.gameType,
-          opponent: game.opponent,
-          venue: venue(game),
-          result: game.result,
-        },
+        throughGame: gameFields(game),
         record: seasonRecord(snapshot.schedule ?? [], game.season, job.date),
       };
     },
@@ -128,13 +109,7 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
       const gamePreview = snapshot.gamePreview;
       if (gamePreview?.gameId !== game.gameId) return undefined;
       const scored = {
-        gameId: game.gameId,
-        gameWeek: gameWeekSlug(game.season, game.week, game.gameType),
-        week: game.week,
-        gameType: game.gameType,
-        opponent: game.opponent,
-        venue: venue(game),
-        result: game.result,
+        ...gameFields(game),
         predicted: gamePreview.prediction,
         ...scorePrediction(gamePreview.prediction, game.result, game.opponent),
       };
@@ -173,14 +148,8 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
         date: job.date,
         // Set from the DNP determination, so the writer can't pick the variant.
         variant: purdyPlayed(snapshot.stats, game.gameId) ? LOVE_LETTER_VARIANTS[0] : LOVE_LETTER_VARIANTS[1],
-        gameWeek: gameWeekSlug(game.season, game.week, game.gameType),
-        gameId: game.gameId,
+        ...gameFields(game),
         season: game.season,
-        week: game.week,
-        gameType: game.gameType,
-        opponent: game.opponent,
-        venue: venue(game),
-        result: game.result,
       };
     },
     path: (data) => PURDY_SHRINE_FILES["love-letter"](data.gameWeek as string),
@@ -190,7 +159,7 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
     single: true,
     merge: (draft, snapshot, job) => {
       const game = playedGame(job, "Reasons We Love Brock");
-      return appendReason(draft, snapshot.current?.["reasons-we-love-brock"]?.data, { added: job.date, gameWeek: gameWeekSlug(game.season, game.week, game.gameType) });
+      return appendReason(draft, snapshot.current?.["reasons-we-love-brock"]?.data, { added: job.date, gameWeek: gameWeekOf(game) });
     },
     body: (_, snapshot) => snapshot.current?.["reasons-we-love-brock"]?.body ?? "",
     owned: (job) => ({ title: "Reasons We Love Brock", updated: job.date }),
@@ -212,7 +181,7 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
         title: "Brock Purdy Stat Tracker",
         updated: job.date,
         season: game.season,
-        throughGame: { gameId: game.gameId, gameWeek: gameWeekSlug(game.season, game.week, game.gameType) },
+        throughGame: { gameId: game.gameId, gameWeek: gameWeekOf(game) },
       };
     },
     path: () => PURDY_SHRINE_FILES["purdy-stat-tracker"],
@@ -236,25 +205,8 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
 function upcomingGame(job: Job, what: string) {
   const calendar = job.calendar;
   if (calendar?.period !== "game-week") throw new Error(`${what} is written only in a Game Week`);
-  const game = calendar.upcoming;
-  return {
-    gameWeek: calendar.gameWeek,
-    gameId: game.gameId,
-    season: game.season,
-    week: game.week,
-    gameType: game.gameType,
-    opponent: game.opponent,
-    venue: venue(game),
-    kickoff: game.kickoff,
-  };
-}
-
-/** The game the post-game job covers on the job's date, with its final score: what post-game content is about. */
-export function playedGame(job: Job, what: string): ScheduledGame & { result: NonNullable<ScheduledGame["result"]> } {
-  const game = job.calendar && gameToCover(job.calendar, job.date);
-  if (!game) throw new Error(`${what} are written only in the days after a game`);
-  if (!game.result) throw new Error(`the schedule has no final score for ${game.gameId} yet`);
-  return { ...game, result: game.result };
+  const { result: _result, ...game } = gameFields(calendar.upcoming);
+  return { ...game, gameWeek: calendar.gameWeek, season: calendar.upcoming.season, kickoff: calendar.upcoming.kickoff };
 }
 
 /** Fields the pipeline owns on both Offseason running documents. */
@@ -262,10 +214,6 @@ function offseasonOwned(job: Job, name: string) {
   if (job.calendar?.period !== "offseason") throw new Error(`the ${name} is written only in the Offseason`);
   const year = offseasonYear(job.date);
   return { title: `${year} ${name}`, offseason: year, updated: job.date };
-}
-
-function venue(game: ScheduledGame): "home" | "away" | "neutral" {
-  return game.neutralSite ? "neutral" : game.home ? "home" : "away";
 }
 
 export function slugify(title: string): string {

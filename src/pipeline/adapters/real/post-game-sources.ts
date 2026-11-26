@@ -23,7 +23,7 @@
 import { GAME_WEEK_FILES, gamePreviewSchema } from "../../../content/game-week";
 import { predictionRecordPath, predictionRecordSchema } from "../../../content/prediction-record";
 import { PURDY, PURDY_SHRINE_FILES, reasonsWeLoveBrockSchema } from "../../../content/purdy-shrine";
-import { gameToCover, gameWeekSlug, resolveCalendar, TEAM, type ScheduledGame } from "../../calendar";
+import { gameToCover, gameWeekOf, resolveCalendar, TEAM, type ScheduledGame } from "../../calendar";
 import { readEntry, readValid } from "../../content-store";
 import type { Job, SourceAdapter, SourceSnapshot } from "../../types";
 import { fetchNflverseStats, fetchPlayerSeason } from "./nflverse-stats";
@@ -50,7 +50,7 @@ export function postGameSources(options: PostGameSourcesOptions = {}): SourceAda
       const schedule = await fetchSchedule(fetchPage);
       const game = gameToCover(resolveCalendar(job.date, schedule), job.date);
       if (!game?.result) return { date: job.date, documents: [], schedule };
-      if (options.contentDir && (await readEntry(options.contentDir, `game-weeks/${gameWeekSlug(game.season, game.week, game.gameType)}/${GAME_WEEK_FILES.highlights}`))) {
+      if (options.contentDir && (await readEntry(options.contentDir, `game-weeks/${gameWeekOf(game)}/${GAME_WEEK_FILES.highlights}`))) {
         return { date: job.date, documents: [], schedule, highlightsPublished: [game.gameId] };
       }
 
@@ -96,7 +96,7 @@ async function purdyEarlierSeasons(fetchPage: FetchPage, season: number) {
 
 /** The game's Game Preview and the season's Prediction Record, from the content folder. */
 async function predictionInputs(contentDir: string, game: ScheduledGame): Promise<Pick<SourceSnapshot, "gamePreview" | "current">> {
-  const gamePreview = await readValid(contentDir, `game-weeks/${gameWeekSlug(game.season, game.week, game.gameType)}/${GAME_WEEK_FILES["game-preview"]}`, gamePreviewSchema, UNSCORED);
+  const gamePreview = await readValid(contentDir, `game-weeks/${gameWeekOf(game)}/${GAME_WEEK_FILES["game-preview"]}`, gamePreviewSchema, UNSCORED);
   const record = await readValid(contentDir, predictionRecordPath(game.season), predictionRecordSchema, UNSCORED);
   return { ...(gamePreview && { gamePreview: gamePreview.data }), current: record ? { "prediction-record": record } : {} };
 }

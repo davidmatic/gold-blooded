@@ -116,6 +116,47 @@ export function gameToCover(calendar: CalendarPosition, date: string): Scheduled
   return days >= 1 && days <= POST_GAME_DAYS ? game : undefined;
 }
 
+/** A game with its final score. */
+export type PlayedGame = ScheduledGame & { result: NonNullable<ScheduledGame["result"]> };
+
+/**
+ * The game the post-game job covers on the job's date, with its final score: what post-game
+ * content is about. Only asked for once the job has decided to write (see `gameToCover`).
+ */
+export function playedGame(job: { calendar?: CalendarPosition; date: string }, what: string): PlayedGame {
+  const game = job.calendar && gameToCover(job.calendar, job.date);
+  if (!game?.result) throw new Error(`${what} are written only in the days after a game with a final score`);
+  return { ...game, result: game.result };
+}
+
+export type Venue = "home" | "away" | "neutral";
+
+/** Where the 49ers played: a neutral-site game is neutral whichever team is nominally at home. */
+export function venue(game: ScheduledGame): Venue {
+  return game.neutralSite ? "neutral" : game.home ? "home" : "away";
+}
+
+/** The game's own Game Week Page slug. */
+export function gameWeekOf(game: ScheduledGame): string {
+  return gameWeekSlug(game.season, game.week, game.gameType);
+}
+
+/**
+ * The fields every piece about a game records of it: which game, its Game Week, the opponent,
+ * where, and the final score once there is one.
+ */
+export function gameFields(game: ScheduledGame) {
+  return {
+    gameId: game.gameId,
+    gameWeek: gameWeekOf(game),
+    week: game.week,
+    gameType: game.gameType,
+    opponent: game.opponent,
+    venue: venue(game),
+    ...(game.result && { result: game.result }),
+  };
+}
+
 /** A Game Week Page's slug: `2026-week-08` in the regular season, `2025-wild-card` in the playoffs. */
 export function gameWeekSlug(season: number, week: number, gameType: GameType): string {
   if (gameType !== "REG") return `${season}-${ROUND_SLUGS[gameType]}`;
@@ -145,7 +186,7 @@ export function seasonRecord(schedule: readonly ScheduledGame[], season: number,
 function gameWeek(upcoming: ScheduledGame, previous?: ScheduledGame): CalendarPosition {
   return {
     period: "game-week",
-    gameWeek: gameWeekSlug(upcoming.season, upcoming.week, upcoming.gameType),
+    gameWeek: gameWeekOf(upcoming),
     season: upcoming.season,
     week: upcoming.week,
     upcoming,

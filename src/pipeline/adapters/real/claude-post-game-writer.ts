@@ -12,9 +12,8 @@
 // injury status against the official report, and every clip against the official channels' videos.
 import { z } from "zod";
 import { formatRecord } from "../../../site/game-weeks";
-import { seasonRecord, TEAM } from "../../calendar";
+import { playedGame, seasonRecord, TEAM } from "../../calendar";
 import { PURDY } from "../../../content/purdy-shrine";
-import { playedGame } from "../../content-types";
 import { purdyPlayed } from "../../purdy";
 import { scopeText } from "../../stats";
 import type { ContentType, ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
