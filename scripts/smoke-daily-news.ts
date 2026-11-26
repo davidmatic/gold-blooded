@@ -4,6 +4,10 @@
 //   npx tsx scripts/smoke-daily-news.ts [--date YYYY-MM-DD]            # sources only, no API key
 //   npx tsx scripts/smoke-daily-news.ts --claude [--date YYYY-MM-DD]   # + Claude writer and publish checks
 //
+// Add --podcasts to also transcribe the newest 49ers Talk and JFA episodes in the window with
+// Whisper (needs `pip install -r scripts/requirements-whisper.txt`; transcripts are cached in
+// data/transcripts/, so a second run is fast).
+//
 // Sources only: fetches every Preferred Source and prints what the snapshot holds.
 // With --claude: runs publish() end to end (real sources, real writer, every publish check) and
 // prints the drafted News Summaries or the failed checks. It never writes to the content folder;
@@ -11,18 +15,20 @@
 import { parseArgs } from "node:util";
 import { publish } from "../src/pipeline";
 import { writeEntries } from "../src/pipeline/content-store";
-import { claudeWriter, realSources } from "../src/pipeline/adapters/real";
+import { claudeWriter, realPodcastTranscripts, realSources } from "../src/pipeline/adapters/real";
 
 const { values } = parseArgs({
   options: {
     date: { type: "string", default: new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date()) },
     claude: { type: "boolean", default: false },
+    podcasts: { type: "boolean", default: false },
     out: { type: "string" },
   },
 });
 
 const job = { type: "daily-news" as const, date: values.date };
-const sources = realSources({ log: (message) => console.log(`  [sources] ${message}`) });
+const log = (message: string) => console.log(`  [sources] ${message}`);
+const sources = realSources({ log, ...(values.podcasts && { podcasts: realPodcastTranscripts(log) }) });
 
 if (!values.claude) {
   const snapshot = await sources.collect(job);
