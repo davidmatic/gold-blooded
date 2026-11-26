@@ -3,7 +3,8 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import type { ContentWriter, JobType, SourceAdapter } from "../../types";
 import { claudeWriter } from "./claude-writer";
-import { realSources } from "./sources";
+import { podcastTranscripts, transcriptCacheDir, whisperTranscriber, type PodcastTranscripts } from "../../../podcasts";
+import { BOT_USER_AGENT, fetchWithBotUserAgent, realSources } from "./sources";
 
 export { BOT_USER_AGENT, realSources, SOURCE_URLS } from "./sources";
 export { claudeWriter, MODEL, SpendLimitReachedError } from "./claude-writer";
@@ -14,9 +15,19 @@ export async function realAdapters(
 ): Promise<{ sources: SourceAdapter; writer: ContentWriter }> {
   if (job !== "daily-news") throw new Error(`no real adapters for job type "${job}" yet`);
   return {
-    sources: realSources({ alreadyCited: await citedSourceUrls(contentDir) }),
+    sources: realSources({ alreadyCited: await citedSourceUrls(contentDir), podcasts: realPodcastTranscripts() }),
     writer: claudeWriter(),
   };
+}
+
+/** Podcast transcripts from the real feeds, transcribed with Whisper and cached in the repo. */
+export function realPodcastTranscripts(log?: (message: string) => void): PodcastTranscripts {
+  return podcastTranscripts({
+    fetchPage: fetchWithBotUserAgent,
+    transcriber: whisperTranscriber({ userAgent: BOT_USER_AGENT, ...(log && { log }) }),
+    cacheDir: transcriptCacheDir(),
+    ...(log && { log }),
+  });
 }
 
 /** Source URLs that published News Summaries already cite, so the same article isn't summarised twice. */

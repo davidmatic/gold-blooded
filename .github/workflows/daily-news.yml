@@ -6,6 +6,11 @@ name: Daily news
 #
 # Uses the real adapters: it fetches the Preferred Sources and writes with Claude. The API key
 # is the ANTHROPIC_API_KEY repository secret (see README: Secrets and cost).
+#
+# Podcasts: the newest 49ers Talk and JFA episodes are transcribed on the runner with
+# faster-whisper (Python). Transcripts are cached in data/transcripts/ and committed, even when
+# the run is rejected, so an episode is transcribed only once. The Whisper model is kept in
+# actions/cache.
 
 on:
   schedule:
@@ -19,6 +24,9 @@ on:
 permissions:
   contents: read
 
+env:
+  WHISPER_MODEL: small.en
+
 concurrency:
   group: content-main
   cancel-in-progress: false
@@ -27,6 +35,8 @@ jobs:
   publish:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # Whisper on 4 CPUs: up to two episodes per show, 10-25 minutes each.
+    timeout-minutes: 150
     permissions:
       contents: write
     outputs:
@@ -38,24 +48,47 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements-whisper.txt
+      - run: pip install -r scripts/requirements-whisper.txt
+      - name: Cache the Whisper model
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-${{ env.WHISPER_MODEL }}-${{ hashFiles('scripts/requirements-whisper.txt') }}
       - name: Run the daily news job
+        id: publish
         run: npx tsx scripts/publish.ts daily-news --adapters real ${DATE:+--date "$DATE"}
         env:
           DATE: ${{ inputs.date }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      - name: Commit new content
+      # Runs after a rejected publish too, so new transcripts are kept; content only when published.
+      - name: Commit new content and transcripts
         id: commit
+        if: ${{ !cancelled() }}
+        env:
+          PUBLISHED: ${{ steps.publish.outcome == 'success' }}
         run: |
-          git add content
+          git add data/transcripts 2>/dev/null || true
+          if [ "$PUBLISHED" = true ]; then git add content; fi
           if git diff --cached --quiet; then
-            echo "No content changes."
+            echo "No content or transcript changes."
             exit 0
           fi
+          content_changed=false
+          if ! git diff --cached --quiet -- content; then content_changed=true; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Daily news for $(TZ=America/Los_Angeles date +%F)"
+          if [ "$content_changed" = true ]; then
+            git commit -m "Daily news for $(TZ=America/Los_Angeles date +%F)"
+          else
+            git commit -m "Podcast transcripts for $(TZ=America/Los_Angeles date +%F)"
+          fi
           git push origin HEAD:main
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if [ "$content_changed" = true ]; then echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"; fi
 
   deploy:
     needs: publish
