@@ -6,7 +6,7 @@ import type { PublishCheck } from "./check";
 export const quotesAreVerbatim: PublishCheck = async ({ entries, snapshot }) => {
   const texts = new Map(snapshot.documents.map((doc) => [doc.url, comparable(doc.text)]));
   return entries.flatMap((entry) =>
-    (entry.data.quotes ?? []).flatMap((quote): CheckFailure[] => {
+    (("quotes" in entry.data && entry.data.quotes) || []).flatMap((quote): CheckFailure[] => {
       const text = texts.get(quote.source);
       if (text?.includes(comparable(quote.text))) return [];
       return [

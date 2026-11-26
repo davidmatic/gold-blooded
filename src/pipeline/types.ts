@@ -1,10 +1,12 @@
 // Types at the publish pipeline's seam (Seam 1 in spec #1).
-import type { GamePreviewData, SeasonRecapData } from "../content/game-week";
+import type { GamePreviewData, SeasonRecapData, StatBreakdownData } from "../content/game-week";
 import type { GameStatus, NewsSummaryData, PracticeStatus } from "../content/news-summary";
 import type { CalendarPosition, ScheduledGame } from "./calendar";
+import type { NflverseStats } from "./stats";
 
 export type { GameStatus, PracticeStatus };
 export type { CalendarPeriod, CalendarPosition, GameType, ScheduledGame } from "./calendar";
+export type { NflverseStats, PlayerStatLine, TeamStatLine } from "./stats";
 
 /** The scheduled jobs. Each has its own workflow. */
 export type JobType = "daily-news" | "post-game" | "thursday-preview" | "film-room";
@@ -61,6 +63,11 @@ export interface SourceSnapshot {
   injuryReport?: InjuryReportEntry[];
   /** The 49ers' nflverse schedule (all seasons it covers). Jobs that use the calendar need it. */
   schedule?: ScheduledGame[];
+  /**
+   * nflverse player and team stats, one line per player or team per game. The stat publish check
+   * compares every cited stat with these. Jobs that cite stats need them.
+   */
+  stats?: NflverseStats;
   /** Best-effort outlets the sources couldn't collect this run (blocked, down), and why. */
   skipped?: SkippedSource[];
 }
@@ -87,6 +94,7 @@ export interface ContentTypes {
   "news-summary": NewsSummaryData;
   "game-preview": GamePreviewData;
   "season-recap": SeasonRecapData;
+  "stat-breakdown": StatBreakdownData;
 }
 export type ContentType = keyof ContentTypes;
 

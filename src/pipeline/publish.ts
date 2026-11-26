@@ -10,6 +10,7 @@ import type { PublishCheck } from "./checks/check";
 import { injuryStatusesMatch } from "./checks/injury-status";
 import { quotesAreVerbatim } from "./checks/quotes";
 import { podcastsAttributed } from "./checks/podcast-attribution";
+import { statsMatchNflverse } from "./checks/nflverse-stats";
 import { sourceLinksResolve } from "./checks/source-links";
 import { CONTENT_TYPES } from "./content-types";
 import type {
@@ -33,16 +34,17 @@ interface JobDefinition {
   writes: ContentType[] | ((calendar: CalendarPosition) => ContentType[]);
 }
 
-const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, podcastsAttributed];
+const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, podcastsAttributed, statsMatchNflverse];
 
 // Later tickets add the other job types and more checks.
 const JOBS: Partial<Record<JobType, JobDefinition>> = {
   "daily-news": { checks: ALL_CHECKS, writes: ["news-summary"] },
-  // A Game Preview in a Game Week, a season recap in a Bye Week, nothing in the Offseason.
+  // A Game Preview and a Stat Breakdown in a Game Week, a season recap in a Bye Week, nothing
+  // in the Offseason.
   "thursday-preview": {
     checks: ALL_CHECKS,
     writes: (calendar) =>
-      calendar.period === "game-week" ? ["game-preview"] : calendar.period === "bye-week" ? ["season-recap"] : [],
+      calendar.period === "game-week" ? ["game-preview", "stat-breakdown"] : calendar.period === "bye-week" ? ["season-recap"] : [],
   },
 };
 

@@ -522,6 +522,23 @@
       "neutralSite": false
     }
   ],
+  "stats": {
+    "players": [],
+    "teams": [
+      {
+        "season": 2026,
+        "week": 1,
+        "seasonType": "REG",
+        "gameId": "2026_01_SF_LA",
+        "team": "SF",
+        "opponent": "LA",
+        "stats": {
+          "passing_yards": 250,
+          "rushing_yards": 120
+        }
+      }
+    ]
+  },
   "drafts": [
     {
       "type": "game-preview",
@@ -548,6 +565,38 @@
         ]
       },
       "body": "This is sample content from the Thursday preview pipeline's fixture adapters. It is not a real Game Preview."
+    },
+    {
+      "type": "stat-breakdown",
+      "data": {
+        "title": "Sample Stat Breakdown (pipeline fixture)",
+        "stats": [
+          {
+            "team": "SF",
+            "stat": "passing_yards",
+            "scope": {
+              "type": "game",
+              "gameId": "2026_01_SF_LA"
+            },
+            "value": 250,
+            "label": "Passing yards"
+          },
+          {
+            "team": "SF",
+            "stat": "rushing_yards",
+            "scope": {
+              "type": "game",
+              "gameId": "2026_01_SF_LA"
+            },
+            "value": 120,
+            "label": "Rushing yards"
+          }
+        ],
+        "trends": [
+          "A sample trend from the pipeline fixture."
+        ]
+      },
+      "body": "This is sample content from the Thursday preview pipeline's fixture adapters. It is not a real Stat Breakdown."
     },
     {
       "type": "season-recap",

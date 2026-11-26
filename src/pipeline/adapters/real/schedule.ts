@@ -38,7 +38,7 @@ export function parseSchedule(csv: string): ScheduledGame[] {
 }
 
 /** Rows of a CSV file. Handles quoted fields (with commas and doubled quotes inside). */
-function parseCsv(text: string): string[][] {
+export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";

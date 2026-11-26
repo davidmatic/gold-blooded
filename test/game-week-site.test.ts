@@ -26,6 +26,19 @@ function preview(title: string, prediction: { sf: number; opponent: number }): D
   };
 }
 
+// The recorded snapshot's nflverse lines run through Week 11, whichever week the run is for.
+const PURDY_SEASON = { player: "Brock Purdy", team: "SF", stat: "passing_yards", scope: { type: "season", season: 2026 }, value: 2624, label: "Passing yards" };
+const SEATTLE_STATS = [
+  PURDY_SEASON,
+  { player: "Jaxon Smith-Njigba", team: "SEA", stat: "receiving_yards", scope: { type: "last-games", season: 2026, games: 3 }, value: 340, label: "Receiving yards" },
+  { team: "SF", stat: "rushing_yards", scope: { type: "season", season: 2026 }, per: "game", value: 138.6, label: "Rushing yards" },
+  { team: "SEA", stat: "rushing_yards", scope: { type: "season", season: 2026 }, per: "game", value: 114.7, label: "Rushing yards" },
+];
+
+function breakdown(title: string, stats: object[]): DraftEntry {
+  return { type: "stat-breakdown", data: { title, stats, trends: [`${title}: the trend.`] }, body: `${title}, in full.` };
+}
+
 const recap: DraftEntry = { type: "season-recap", data: { title: "Six and one at the bye", sources: [SOURCE] }, body: "A strong first half." };
 
 describe("built site (Game Week Pages)", () => {
@@ -34,13 +47,13 @@ describe("built site (Game Week Pages)", () => {
 
   beforeAll(async () => {
     contentDir = await mkdtemp(path.join(tmpdir(), "gold-blooded-game-weeks-"));
-    const runs: [string, DraftEntry][] = [
-      ["2026-10-29", recap],
-      ["2026-11-19", preview("Minnesota in Mexico City", { sf: 24, opponent: 17 })],
-      ["2026-11-26", preview("Seattle with the West on the line", { sf: 27, opponent: 20 })],
+    const runs: [string, DraftEntry[]][] = [
+      ["2026-10-29", [recap]],
+      ["2026-11-19", [preview("Minnesota in Mexico City", { sf: 24, opponent: 17 }), breakdown("Minnesota by the numbers", [PURDY_SEASON])]],
+      ["2026-11-26", [preview("Seattle with the West on the line", { sf: 27, opponent: 20 }), breakdown("Seattle by the numbers", SEATTLE_STATS)]],
     ];
-    for (const [date, draft] of runs) {
-      const result = await runJob({ job: "thursday-preview", date, sources: fakeSources(snapshot), writer: fakeWriter([draft]), contentDir });
+    for (const [date, drafts] of runs) {
+      const result = await runJob({ job: "thursday-preview", date, sources: fakeSources(snapshot), writer: fakeWriter(drafts), contentDir });
       expect(result.status).toBe("published");
     }
     site = await buildSite(contentDir);

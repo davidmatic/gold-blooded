@@ -2,12 +2,13 @@
 // The source adapter serves a recorded snapshot, and only links in that snapshot "resolve".
 // The writer returns the canned drafts of the types the run asks for. Nothing here touches the network or Claude.
 import { readFile } from "node:fs/promises";
-import type { ContentWriter, DraftEntry, InjuryReportEntry, JobType, ScheduledGame, SourceAdapter, SourceDocument } from "../types";
+import type { ContentWriter, DraftEntry, InjuryReportEntry, JobType, NflverseStats, ScheduledGame, SourceAdapter, SourceDocument } from "../types";
 
 interface Fixture {
   documents: SourceDocument[];
   injuryReport?: InjuryReportEntry[];
   schedule?: ScheduledGame[];
+  stats?: NflverseStats;
   drafts: DraftEntry[];
 }
 
@@ -32,6 +33,7 @@ export async function fixtureAdapters(job: JobType): Promise<{ sources: SourceAd
         documents: fixture.documents,
         injuryReport: fixture.injuryReport,
         ...(fixture.schedule && { schedule: fixture.schedule }),
+        ...(fixture.stats && { stats: fixture.stats }),
       }),
       linkResolves: async (url) => known.has(url),
     },
