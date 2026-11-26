@@ -371,3 +371,50 @@ h2 {
   display: block;
   font-size: 1.125rem;
 }
+
+/* The Purdy Shrine. */
+.love-letter-lead,
+.love-letter {
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 2px solid var(--gold);
+  border-top: 6px solid var(--gold);
+  border-radius: 0.5rem;
+}
+
+.love-letter.we-miss-you {
+  border-top-color: var(--red);
+}
+
+.love-letter-lead h2,
+.love-letter h1,
+.love-letter h2 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.love-letter-kind {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.origin-story,
+.reasons-we-love-brock,
+.stat-tracker,
+.purdy-film-room,
+.love-letters {
+  margin-bottom: 2rem;
+}
+
+.reasons li {
+  margin-bottom: 0.35rem;
+}
+
+.game-log tr.dnp td {
+  font-weight: 700;
+  color: var(--red-dark);
+}

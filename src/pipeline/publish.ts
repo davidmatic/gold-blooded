@@ -46,8 +46,7 @@ const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, 
 
 /**
  * What the post-game job writes the day after a game, all about the game just played. Later
- * post-game content (the Love Letter, the Purdy stat tracker) joins this
- * list, with its content type and its share of the post-game writer.
+ * post-game content joins this list, with its content type and its share of the post-game writer.
  */
 export const POST_GAME_CONTENT: ContentType[] = [
   "highlights",

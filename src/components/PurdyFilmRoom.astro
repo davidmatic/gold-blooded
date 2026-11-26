@@ -1,0 +1,26 @@
+---
+// Purdy in the Film Room: the Shrine's list of Purdy-related Film Room entries, credited and
+// linked. Shown only when there are some. Ticket #12 passes them in from the Film Room.
+import type { ShrineFilmRoomEntry } from "../site/purdy-shrine";
+import { formatDay } from "../site/offseason";
+
+interface Props {
+  entries: readonly ShrineFilmRoomEntry[];
+}
+
+const { entries } = Astro.props;
+---
+{entries.length > 0 && (
+  <section class="purdy-film-room" aria-labelledby="purdy-film-room-heading">
+    <h2 id="purdy-film-room-heading">Purdy in the Film Room</h2>
+    <ul>
+      {entries.map((entry) => (
+        <li>
+          <a href={entry.href}>{entry.title}</a> <span class="news-meta">{entry.show}, {formatDay(entry.date)}</span>
+          {entry.summary && <p>{entry.summary}</p>}
+          <p><a href={entry.sourceUrl} rel="noopener">Watch or listen to the original</a></p>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}

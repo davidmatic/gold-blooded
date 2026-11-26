@@ -56,7 +56,7 @@ export function postGameSources(options: PostGameSourcesOptions = {}): SourceAda
         news.collect({ type: "daily-news", date: job.date }),
         fetchNflverseStats(fetchPage, game.season),
         officialVideosSince(fetchPage, game.kickoff, log),
-        options.contentDir ? predictionInputs(options.contentDir, game) : {},
+        options.contentDir ? predictionInputs(options.contentDir, game) : ({} as Awaited<ReturnType<typeof predictionInputs>>),
         purdyEarlierSeasons(fetchPage, game.season),
         options.contentDir ? readValid(options.contentDir, PURDY_SHRINE_FILES["reasons-we-love-brock"], reasonsWeLoveBrockSchema, "the new reason can't be added") : undefined,
       ]);

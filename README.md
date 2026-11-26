@@ -234,6 +234,40 @@ If the schedule has no final score for the game yet, the run fails before asking
   `publish.ts`, an entry to `POST_GAME_WRITERS` in `claude-post-game-writer.ts` (voice, schema,
   brief, draft), and whatever it needs to the post-game sources' snapshot.
 
+## Purdy Shrine
+
+The Shrine (`/purdy-shrine/`, `src/content/purdy-shrine.ts`) lives in `content/purdy-shrine/`.
+It stays family-friendly and never covers Purdy's personal life or family (the writer voices say
+so). The post-game job writes three of its four parts:
+
+- **DNP.** `purdyPlayed()` in `src/pipeline/purdy.ts` decides whether Purdy played a game from
+  the schedule and his nflverse lines (a game with no player line for him is a DNP). The writer
+  never decides it. When the game's 49ers team line is missing, the run fails rather than guess.
+- **Love Letter** (`love-letters/<gameWeek>.md`, one per game, its own page under
+  `/purdy-shrine/love-letters/`, and the newest on the homepage). The pipeline owns `variant`:
+  `adoring` when he played, `we-miss-you` on a DNP. A writer's own `variant` is overwritten. Any
+  number is a cited stat of his (`nflverse-stats` check). Any injury status is in `injuries`
+  (`injury-status` check against the official report). The `injury-mentions` check rejects a
+  letter whose body uses injury words (injury, hurt, questionable, ...) without stating a
+  status, so a letter can't speculate past the report.
+- **Reasons We Love Brock** (`reasons.md`, a running document). The writer returns one new
+  `reason`. The pipeline appends it with the date and Game Week, and keeps the file's body (a
+  hand-written introduction). The schema rejects a reason the list already has, and one with
+  digits (a reason has no cited stats to check). The post-game sources read the list from the
+  content folder. A list that fails its schema fails the run.
+- **Stat tracker** (`stat-tracker.md`). Derived by the pipeline (`derive`, no Claude call) after
+  every game: games, played, and DNP for each season since 2022, his season and career numbers
+  (career is the cited-stat scope `{ type: "seasons", from: 2022, to: <season> }`), and this
+  season's game log with DNP games. Every number is a cited stat, so the stat check covers the
+  tracker too. The post-game sources add his lines from each earlier season's nflverse player
+  file (only his are kept) and set `snapshot.purdyCareer`. A season's file that won't load fails
+  the run. Without `purdyCareer` the tracker is left as it stands.
+- **Origin story** (`origin-story.md`, "Mr. Irrelevant to Mr. Everything"). Written by hand.
+  Edit the file to change it.
+- **Purdy in the Film Room.** A slot for ticket #12. `src/pages/purdy-shrine/index.astro` passes
+  `filmRoom` (a `ShrineFilmRoomEntry[]` from `src/site/purdy-shrine.ts`, empty for now) to
+  `PurdyFilmRoom.astro`, which shows nothing until there are entries.
+
 ## Smoke test
 
 The real adapters have no unit tests that touch the network or Claude. Check them by hand:

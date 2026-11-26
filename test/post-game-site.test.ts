@@ -7,7 +7,7 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runJob, type DraftEntry, type SourceSnapshot } from "../src/pipeline";
 import { buildSite, type BuiltSite } from "./support/built-site";
-import { fakeSources, fakeWriter, recordedSnapshot, sfStatBreakdown } from "./support/fakes";
+import { fakeSources, fakeWriter, purdyShrineDrafts, recordedSnapshot, sfStatBreakdown } from "./support/fakes";
 
 const GAME = "2026_11_MIN_SF";
 const snapshot: SourceSnapshot = {
@@ -73,7 +73,7 @@ describe("built site (post-game content)", () => {
     contentDir = await mkdtemp(path.join(tmpdir(), "gold-blooded-post-game-"));
     const runs: [Parameters<typeof runJob>[0]["job"], string, DraftEntry[]][] = [
       ["thursday-preview", "2026-11-19", [preview, sfStatBreakdown]],
-      ["post-game", "2026-11-23", [highlights, seasonStats]],
+      ["post-game", "2026-11-23", [highlights, seasonStats, ...purdyShrineDrafts]],
     ];
     // The post-game run is handed the Game Preview the preview run published, as the real
     // post-game sources read it from the content folder.

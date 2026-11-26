@@ -5,7 +5,9 @@ name: Post-game
 # so it runs on Monday after a Sunday game, Tuesday after a Monday night game, and Friday after a
 # Thursday night game. That day it writes the game's Highlights onto its Game Week Page and
 # rewrites the season's Season Stats, and scores the game's Game Preview into the season's Prediction
-# Record (no Claude call; skipped when no Game Preview was published). On a published result it commits the content to main and
+# Record (no Claude call; skipped when no Game Preview was published). For the Purdy Shrine it
+# writes the Love Letter ("we miss you" when Purdy didn't play), adds a Reason We Love Brock, and
+# rebuilds his stat tracker from nflverse (no Claude call). On a published result it commits the content to main and
 # deploys the site. On a rejected result, or when nflverse doesn't have the game's stats yet, the
 # job fails (GitHub notifies the owner), nothing is committed, and the site keeps its previous
 # version; run it again by hand for that date (Run workflow, with the date) once the stats are out.

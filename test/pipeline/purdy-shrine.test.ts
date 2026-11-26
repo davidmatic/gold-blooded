@@ -5,7 +5,7 @@
 // 2026-11-22), in which Purdy played every game.
 import { describe, expect, it } from "vitest";
 import { publish, type ContentWriter, type DraftEntry, type Job, type SourceSnapshot } from "../../src/pipeline";
-import { fakeSources, recordedSnapshot } from "../support/fakes";
+import { fakeSources, recordedSnapshot, withPurdyCareer } from "../support/fakes";
 
 const GAME = "2026_11_MIN_SF";
 const DATE = "2026-11-23";
@@ -249,48 +249,8 @@ describe("post-game job: Reasons We Love Brock", () => {
 });
 
 describe("post-game job: the Purdy stat tracker", () => {
-  // Earlier seasons, cut down: one 49ers game each for 2022 to 2024, and Purdy's lines from those
-  // and from the 2025 opener (the recorded schedule's 2025 season has 19 games).
-  const earlier = [
-    { gameId: "2022_14_TB_SF", season: 2022, week: 14, gameday: "2022-12-11", opponent: "TB", yards: 185, tds: 2 },
-    { gameId: "2023_01_SF_PIT", season: 2023, week: 1, gameday: "2023-09-10", opponent: "PIT", yards: 220, tds: 2 },
-    { gameId: "2024_01_NYJ_SF", season: 2024, week: 1, gameday: "2024-09-09", opponent: "NYJ", yards: 231, tds: 0 },
-    { gameId: "2025_01_SF_SEA", season: 2025, week: 1, gameday: "2025-09-07", opponent: "SEA", yards: 277, tds: 2 },
-  ];
-  const purdyLine = (game: (typeof earlier)[number]) => ({
-    playerId: "00-0037834",
-    player: "Brock Purdy",
-    position: "QB",
-    season: game.season,
-    week: game.week,
-    seasonType: "REG" as const,
-    gameId: game.gameId,
-    team: "SF",
-    opponent: game.opponent,
-    stats: { completions: 20, attempts: 30, passing_yards: game.yards, passing_tds: game.tds, passing_interceptions: 1, rushing_yards: 10, rushing_tds: 0 },
-  });
-  const withCareer = (source: SourceSnapshot): SourceSnapshot => ({
-    ...source,
-    schedule: [
-      ...earlier
-        .filter((game) => game.season < 2025)
-        .map((game) => ({
-          gameId: game.gameId,
-          season: game.season,
-          gameType: "REG" as const,
-          week: game.week,
-          gameday: game.gameday,
-          kickoff: `${game.gameday}T20:25:00.000Z`,
-          opponent: game.opponent,
-          home: game.gameId.endsWith("_SF"),
-          neutralSite: false,
-          result: { sf: 30, opponent: 20 },
-        })),
-      ...source.schedule!,
-    ],
-    stats: { ...source.stats!, players: [...earlier.map(purdyLine), ...source.stats!.players] },
-    purdyCareer: true,
-  });
+  // Earlier seasons from PURDY_EARLIER_GAMES: one game each in 2022 to 2024, and the 2025 opener.
+  const withCareer = withPurdyCareer;
   const trackerOf = (entries: Awaited<ReturnType<typeof published>>) => entries.find((entry) => entry.type === "purdy-stat-tracker");
   const stat = (tracker: ReturnType<typeof trackerOf>, name: string, scope: object) =>
     tracker?.type === "purdy-stat-tracker" ? tracker.data.stats.find((s) => s.stat === name && JSON.stringify(s.scope) === JSON.stringify(scope))?.value : undefined;

@@ -1,0 +1,18 @@
+---
+// One Love Letter's page, by the Game Week of the game it is about.
+import { getCollection, type CollectionEntry } from "astro:content";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import LoveLetter from "../../../components/LoveLetter.astro";
+import { sitePath } from "../../../site/sections";
+
+export async function getStaticPaths() {
+  const letters = await getCollection("loveLetters");
+  return letters.map((entry) => ({ params: { gameWeek: entry.data.gameWeek }, props: { entry } }));
+}
+
+const { entry } = Astro.props as { entry: CollectionEntry<"loveLetters"> };
+---
+<BaseLayout title={entry.data.title}>
+  <LoveLetter entry={entry} heading="h1" />
+  <p><a href={sitePath("purdy-shrine")}>Back to the Purdy Shrine</a></p>
+</BaseLayout>

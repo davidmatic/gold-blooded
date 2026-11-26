@@ -1,13 +1,15 @@
 // The real content writer for the post-game job: the day after a game, asks Claude for each
 // content type the job writes, one request per type, in its own voice. Today that is the
-// Highlights of the game just played and the season's Season Stats.
+// Highlights of the game just played, the season's Season Stats, and for the Purdy Shrine the
+// Love Letter and a new Reason We Love Brock.
 //
 // Each type is one entry in POST_GAME_WRITERS: its voice, its structured-output schema, its brief,
-// and how its reply becomes a draft. Later post-game content (the Love Letter, ...) adds its own
-// entry, and the job asks for it by adding its type to POST_GAME_CONTENT in publish.ts.
+// and how its reply becomes a draft. Later post-game content adds its own entry, and the job asks
+// for it by adding its type to POST_GAME_CONTENT in publish.ts.
 //
-// The pipeline fills in the game, its final score, and the record from the schedule, and checks
-// every stat against nflverse and every clip against the official channels' videos.
+// The pipeline fills in the game, its final score, and the record from the schedule, sets the
+// Love Letter's variant from nflverse (DNP), and checks every stat against nflverse, every
+// injury status against the official report, and every clip against the official channels' videos.
 import { z } from "zod";
 import { formatRecord } from "../../../site/game-weeks";
 import { seasonRecord, TEAM } from "../../calendar";

@@ -146,6 +146,19 @@ export const purdyStatTrackerSchema = z
 
 export type PurdyStatTrackerData = z.infer<typeof purdyStatTrackerSchema>;
 
+/**
+ * The origin story, "Mr. Irrelevant to Mr. Everything": `purdy-shrine/origin-story.md`, written
+ * by hand (no job writes it). Factual and family-friendly: his football journey from the last
+ * pick of the 2022 draft, never his personal life or family.
+ */
+export const originStorySchema = z.object({
+  title: z.string().min(1),
+  /** One line under the title. */
+  summary: z.string().min(1),
+});
+
+export type OriginStoryData = z.infer<typeof originStorySchema>;
+
 /** The nflverse columns the tracker shows, in order, with their labels. */
 export const TRACKER_COLUMNS = [
   ["completions", "Cmp"],
