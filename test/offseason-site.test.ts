@@ -7,7 +7,7 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runJob, type DraftEntry, type JobType } from "../src/pipeline";
 import { buildSite, type BuiltSite } from "./support/built-site";
-import { fakeSources, fakeWriter, recordedSnapshot } from "./support/fakes";
+import { fakeSources, fakeWriter, recordedSnapshot, sfStatBreakdown } from "./support/fakes";
 
 const previewSnapshot = recordedSnapshot("thursday-preview-2026-11-26");
 const offseasonSnapshot = recordedSnapshot("offseason-2026");
@@ -55,7 +55,7 @@ async function siteAfter(runs: Run[]): Promise<{ site: BuiltSite; contentDir: st
   return { site: await buildSite(contentDir), contentDir };
 }
 
-const lastPlayoffPreview: Run = ["thursday-preview", "2026-01-15", [preview("Divisional round in Seattle")]];
+const lastPlayoffPreview: Run = ["thursday-preview", "2026-01-15", [preview("Divisional round in Seattle"), sfStatBreakdown]];
 
 function useSite(runs: Run[]) {
   const built: { site?: BuiltSite; contentDir?: string } = {};
@@ -113,7 +113,7 @@ describe("built site in the Offseason, around the draft", () => {
 });
 
 describe("built site once the season's first Game Preview is out", () => {
-  const site = useSite([["offseason", "2026-09-03", offseasonUpdate], ["thursday-preview", "2026-09-10", [preview("Opening night in Los Angeles")]]]);
+  const site = useSite([["offseason", "2026-09-03", offseasonUpdate], ["thursday-preview", "2026-09-10", [preview("Opening night in Los Angeles"), sfStatBreakdown]]]);
 
   it("leads with the Game Preview again", async () => {
     const html = await site().html("/gold-blooded/");

@@ -4,14 +4,20 @@
 //
 //   preview.md        the Game Preview (Thursday preview job, in a Game Week)
 //   season-recap.md   the season recap (Thursday preview job, in a Bye Week)
+//   stat-breakdown.md the Stat Breakdown (Thursday preview job, in a Game Week, with the preview)
 //
-// Later parts (the Stat Breakdown, Highlights) add their own files to the same folder.
+// Later parts (Highlights) add their own files to the same folder.
 // The site's content collections and the publish pipeline both validate against these schemas.
 import { z } from "astro/zod";
 import { GAME_TYPES } from "../pipeline/calendar";
+import { citedStat } from "./cited-stat";
 import { injuryStatus, isoDate, quote } from "./news-summary";
 
-export const GAME_WEEK_FILES = { "game-preview": "preview.md", "season-recap": "season-recap.md" } as const;
+export const GAME_WEEK_FILES = {
+  "game-preview": "preview.md",
+  "season-recap": "season-recap.md",
+  "stat-breakdown": "stat-breakdown.md",
+} as const;
 
 const gameWeekSlug = z.string().regex(/^\d{4}-[a-z0-9-]+$/, "expected a Game Week slug such as 2026-week-12");
 const sources = z
@@ -63,6 +69,37 @@ export const gamePreviewSchema = z
   });
 
 export type GamePreviewData = z.infer<typeof gamePreviewSchema>;
+
+/**
+ * The Stat Breakdown: the upcoming game in numbers. Every number it shows is a cited stat in
+ * `stats`, which the stat publish check compares with nflverse, and each is about the 49ers or
+ * this week's opponent. `trends` are one-sentence reads of those numbers. The pipeline fills in
+ * the game (from the schedule); the writer supplies the rest.
+ */
+export const statBreakdownSchema = z
+  .object({
+    title: z.string().min(1),
+    date: isoDate,
+    gameWeek: gameWeekSlug,
+    gameId: z.string().min(1),
+    season: z.number().int(),
+    week: z.number().int(),
+    gameType: z.enum(GAME_TYPES),
+    opponent: z.string().min(1),
+    venue: z.enum(["home", "away", "neutral"]),
+    kickoff: z.iso.datetime(),
+    stats: z.array(citedStat).min(1, "a Stat Breakdown needs stats"),
+    trends: z.array(z.string().min(1)).min(1, "a Stat Breakdown needs trends"),
+  })
+  .superRefine((breakdown, ctx) => {
+    breakdown.stats.forEach((stat, i) => {
+      if (stat.team !== "SF" && stat.team !== breakdown.opponent) {
+        ctx.addIssue({ code: "custom", path: ["stats", i, "team"], message: `a stat must be about SF or ${breakdown.opponent}` });
+      }
+    });
+  });
+
+export type StatBreakdownData = z.infer<typeof statBreakdownSchema>;
 
 /**
  * The season recap a Bye Week carries instead of a Game Preview. The pipeline fills in the

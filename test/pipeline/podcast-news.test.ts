@@ -54,7 +54,7 @@ describe("podcast News Summaries", () => {
 
     expect(result.status).toBe("published");
     if (result.status !== "published") return;
-    expect(result.entries[0]!.data.sources).toEqual([{ url: EPISODE, outlet: "49ers Talk" }]);
+    expect(result.entries[0]).toMatchObject({ type: "news-summary", data: { sources: [{ url: EPISODE, outlet: "49ers Talk" }] } });
   });
 
   it("are rejected when a quote isn't word for word in the transcript", async () => {

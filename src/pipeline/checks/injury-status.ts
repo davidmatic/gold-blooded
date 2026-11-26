@@ -6,7 +6,7 @@ import type { PublishCheck } from "./check";
 export const injuryStatusesMatch: PublishCheck = async ({ entries, snapshot }) => {
   const report = new Map((snapshot.injuryReport ?? []).map((line) => [playerKey(line.player), line]));
   return entries.flatMap((entry): CheckFailure[] => {
-    const injuries = entry.data.injuries ?? [];
+    const injuries = ("injuries" in entry.data && entry.data.injuries) || [];
     if (injuries.length > 0 && !snapshot.injuryReport) {
       return [{ check: "injury-status", entry: entry.path, reason: "the source snapshot has no official injury report" }];
     }

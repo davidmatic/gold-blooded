@@ -1,7 +1,7 @@
 // How each content type's drafts become entries: the schema that validates them, the fields
 // the pipeline owns (the writer can't set or get them wrong), and where the entry is filed.
 import type { z } from "astro/zod";
-import { GAME_WEEK_FILES, gamePreviewSchema, seasonRecapSchema } from "../content/game-week";
+import { GAME_WEEK_FILES, gamePreviewSchema, seasonRecapSchema, statBreakdownSchema } from "../content/game-week";
 import { newsSummarySchema } from "../content/news-summary";
 import { draftCoverageSchema, draftDates, freeAgencyTrackerSchema, OFFSEASON_FILES, offseasonYear } from "../content/offseason";
 import { mergeDraftCoverage, mergeFreeAgencyTracker } from "./running-documents";
@@ -32,23 +32,14 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
   "game-preview": {
     schema: gamePreviewSchema,
     single: true,
-    owned: (job) => {
-      const calendar = job.calendar;
-      if (calendar?.period !== "game-week") throw new Error("a Game Preview is written only in a Game Week");
-      const game = calendar.upcoming;
-      return {
-        date: job.date,
-        gameWeek: calendar.gameWeek,
-        gameId: game.gameId,
-        season: game.season,
-        week: game.week,
-        gameType: game.gameType,
-        opponent: game.opponent,
-        venue: venue(game),
-        kickoff: game.kickoff,
-      };
-    },
+    owned: (job) => ({ date: job.date, ...upcomingGame(job, "a Game Preview") }),
     path: (data) => `game-weeks/${data.gameWeek}/${GAME_WEEK_FILES["game-preview"]}`,
+  },
+  "stat-breakdown": {
+    schema: statBreakdownSchema,
+    single: true,
+    owned: (job) => ({ date: job.date, ...upcomingGame(job, "a Stat Breakdown") }),
+    path: (data) => `game-weeks/${data.gameWeek}/${GAME_WEEK_FILES["stat-breakdown"]}`,
   },
   "season-recap": {
     schema: seasonRecapSchema,
@@ -88,6 +79,23 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
     path: (data) => `offseason/${data.offseason}/${OFFSEASON_FILES["draft-coverage"]}`,
   },
 };
+
+/** A Game Week's upcoming game, from the schedule: the fields its Game Week Page parts share. */
+function upcomingGame(job: Job, what: string) {
+  const calendar = job.calendar;
+  if (calendar?.period !== "game-week") throw new Error(`${what} is written only in a Game Week`);
+  const game = calendar.upcoming;
+  return {
+    gameWeek: calendar.gameWeek,
+    gameId: game.gameId,
+    season: game.season,
+    week: game.week,
+    gameType: game.gameType,
+    opponent: game.opponent,
+    venue: venue(game),
+    kickoff: game.kickoff,
+  };
+}
 
 /** Fields the pipeline owns on both Offseason running documents. */
 function offseasonOwned(job: Job, name: string) {

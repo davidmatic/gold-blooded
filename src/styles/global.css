@@ -278,8 +278,44 @@ h2 {
 }
 
 .game-preview,
-.season-recap {
+.season-recap,
+.stat-breakdown {
   margin-bottom: 2rem;
+}
+
+/* Stat Breakdown tables scroll sideways on a narrow phone instead of widening the page. */
+.stat-table-wrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.stat-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-table caption {
+  text-align: left;
+  font-weight: 700;
+  color: var(--red-dark);
+  padding-bottom: 0.25rem;
+}
+
+.stat-table th,
+.stat-table td {
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--gold-light);
+  text-align: left;
+}
+
+.stat-table td:last-child,
+.stat-table thead th:last-child {
+  text-align: right;
+}
+
+.stat-table thead th {
+  border-bottom: 2px solid var(--gold);
 }
 
 .archive-list {

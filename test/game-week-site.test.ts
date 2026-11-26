@@ -26,6 +26,19 @@ function preview(title: string, prediction: { sf: number; opponent: number }): D
   };
 }
 
+// The recorded snapshot's nflverse lines run through Week 11, whichever week the run is for.
+const PURDY_SEASON = { player: "Brock Purdy", team: "SF", stat: "passing_yards", scope: { type: "season", season: 2026 }, value: 2624, label: "Passing yards" };
+const SEATTLE_STATS = [
+  PURDY_SEASON,
+  { player: "Jaxon Smith-Njigba", team: "SEA", stat: "receiving_yards", scope: { type: "last-games", season: 2026, games: 3 }, value: 340, label: "Receiving yards" },
+  { team: "SF", stat: "rushing_yards", scope: { type: "season", season: 2026 }, per: "game", value: 138.6, label: "Rushing yards" },
+  { team: "SEA", stat: "rushing_yards", scope: { type: "season", season: 2026 }, per: "game", value: 114.7, label: "Rushing yards" },
+];
+
+function breakdown(title: string, stats: object[]): DraftEntry {
+  return { type: "stat-breakdown", data: { title, stats, trends: [`${title}: the trend.`] }, body: `${title}, in full.` };
+}
+
 const recap: DraftEntry = { type: "season-recap", data: { title: "Six and one at the bye", sources: [SOURCE] }, body: "A strong first half." };
 
 describe("built site (Game Week Pages)", () => {
@@ -34,13 +47,13 @@ describe("built site (Game Week Pages)", () => {
 
   beforeAll(async () => {
     contentDir = await mkdtemp(path.join(tmpdir(), "gold-blooded-game-weeks-"));
-    const runs: [string, DraftEntry][] = [
-      ["2026-10-29", recap],
-      ["2026-11-19", preview("Minnesota in Mexico City", { sf: 24, opponent: 17 })],
-      ["2026-11-26", preview("Seattle with the West on the line", { sf: 27, opponent: 20 })],
+    const runs: [string, DraftEntry[]][] = [
+      ["2026-10-29", [recap]],
+      ["2026-11-19", [preview("Minnesota in Mexico City", { sf: 24, opponent: 17 }), breakdown("Minnesota by the numbers", [PURDY_SEASON])]],
+      ["2026-11-26", [preview("Seattle with the West on the line", { sf: 27, opponent: 20 }), breakdown("Seattle by the numbers", SEATTLE_STATS)]],
     ];
-    for (const [date, draft] of runs) {
-      const result = await runJob({ job: "thursday-preview", date, sources: fakeSources(snapshot), writer: fakeWriter([draft]), contentDir });
+    for (const [date, drafts] of runs) {
+      const result = await runJob({ job: "thursday-preview", date, sources: fakeSources(snapshot), writer: fakeWriter(drafts), contentDir });
       expect(result.status).toBe("published");
     }
     site = await buildSite(contentDir);
@@ -77,6 +90,21 @@ describe("built site (Game Week Pages)", () => {
     expect(page).toContain("Seattle with the West on the line: the key.");
     expect(page).toContain("Prediction: 49ers 27, SEA 20");
     expect(page).toContain("Seattle with the West on the line, in full.");
+  });
+
+  it("puts the Stat Breakdown on its Game Week Page: the teams side by side, the players, and the trends", async () => {
+    const html = await site.html("/gold-blooded/game-weeks/2026-week-12/");
+    const section = html.match(/<article[^>]*class="stat-breakdown"[^>]*>([\s\S]*?)<\/article>/)?.[1] ?? "";
+    const rows = [...section.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((row) => text(row[1]!).trim());
+
+    expect(text(section)).toContain("Stat Breakdown: Seattle by the numbers");
+    expect(text(section)).toContain("Seattle by the numbers, in full.");
+    expect(text(section)).toContain("Seattle by the numbers: the trend.");
+    expect(rows).toContain("Rushing yards per game, 2026 season 138.6 114.7");
+    expect(rows).toContain("Brock Purdy SF Passing yards, 2026 season 2,624");
+    expect(rows).toContain("Jaxon Smith-Njigba SEA Receiving yards, last 3 games 340");
+    expect(text(section)).toMatch(/Stats: nflverse/);
+    expect(html.indexOf('class="game-preview"')).toBeLessThan(html.indexOf('class="stat-breakdown"'));
   });
 
   it("gives every Game Week its own page, including the Bye Week's season recap", async () => {

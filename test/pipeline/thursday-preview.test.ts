@@ -21,6 +21,26 @@ const previewDraft: DraftEntry = {
   body: "Seattle visits Levi's Stadium on Sunday.",
 };
 
+const breakdownDraft: DraftEntry = {
+  type: "stat-breakdown",
+  data: {
+    title: "Purdy's arm against Seattle's pass defense",
+    stats: [
+      { player: "Brock Purdy", team: "SF", stat: "passing_yards", scope: { type: "season", season: 2026 }, value: 2624, label: "Passing yards" },
+      { team: "SF", stat: "rushing_yards", scope: { type: "last-games", season: 2026, games: 3 }, per: "game", value: 164.7, label: "Rushing yards" },
+      { team: "SEA", stat: "passing_yards", scope: { type: "game", gameId: "2026_05_SF_SEA" }, value: 195, label: "Passing yards" },
+    ],
+    trends: ["The run game has topped 160 yards a game over the last three."],
+  },
+  body: "The numbers favour the 49ers' offense.",
+};
+
+/** A Stat Breakdown about the 49ers alone, for games against other opponents. */
+const sfOnlyBreakdown: DraftEntry = {
+  ...breakdownDraft,
+  data: { ...breakdownDraft.data, stats: (breakdownDraft.data.stats as { team: string }[]).filter((stat) => stat.team === "SF") },
+};
+
 const recapDraft: DraftEntry = {
   type: "season-recap",
   data: {
@@ -42,12 +62,23 @@ function recordingWriter(drafts: DraftEntry[]): ContentWriter & { jobs: Job[] } 
   };
 }
 
-function runThursday(date: string, writer: ContentWriter = recordingWriter([previewDraft, recapDraft]), sources = fakeSources(snapshot)) {
+function runThursday(date: string, writer: ContentWriter = recordingWriter([previewDraft, breakdownDraft, recapDraft]), sources = fakeSources(snapshot)) {
   return publish({ job: "thursday-preview", date, sources, writer });
 }
 
+const UPCOMING_GAME = {
+  gameWeek: "2026-week-12",
+  gameId: "2026_12_SEA_SF",
+  season: 2026,
+  week: 12,
+  gameType: "REG",
+  opponent: "SEA",
+  venue: "home",
+  kickoff: "2026-11-29T21:25:00.000Z",
+};
+
 describe("Thursday preview job: a regular-season Game Week", () => {
-  it("writes the Game Preview onto the upcoming game's Game Week Page", async () => {
+  it("writes the Game Preview and the Stat Breakdown onto the upcoming game's Game Week Page", async () => {
     const result = await runThursday("2026-11-26");
 
     expect(result).toEqual({
@@ -69,6 +100,12 @@ describe("Thursday preview job: a regular-season Game Week", () => {
             kickoff: "2026-11-29T21:25:00.000Z",
           },
           body: previewDraft.body,
+        },
+        {
+          type: "stat-breakdown",
+          path: "game-weeks/2026-week-12/stat-breakdown.md",
+          data: { ...breakdownDraft.data, date: "2026-11-26", ...UPCOMING_GAME },
+          body: breakdownDraft.body,
         },
       ],
     });
@@ -104,12 +141,12 @@ describe("Thursday preview job: a Bye Week", () => {
 
 describe("Thursday preview job: the playoffs", () => {
   it("gives the Wild Card game its own Game Week Page", async () => {
-    const writer = recordingWriter([{ ...previewDraft, data: { ...previewDraft.data, prediction: { winner: "PHI", score: { sf: 20, opponent: 24 } } } }]);
+    const writer = recordingWriter([{ ...previewDraft, data: { ...previewDraft.data, prediction: { winner: "PHI", score: { sf: 20, opponent: 24 } } } }, sfOnlyBreakdown]);
     const result = await runThursday("2026-01-08", writer);
 
     expect(result.status).toBe("published");
     if (result.status !== "published") return;
-    expect(result.entries.map((entry) => entry.path)).toEqual(["game-weeks/2025-wild-card/preview.md"]);
+    expect(result.entries.map((entry) => entry.path)).toEqual(["game-weeks/2025-wild-card/preview.md", "game-weeks/2025-wild-card/stat-breakdown.md"]);
     expect(result.entries[0]!.data).toMatchObject({
       gameWeek: "2025-wild-card",
       gameId: "2025_19_SF_PHI",
@@ -128,12 +165,12 @@ describe("Thursday preview job: the playoffs", () => {
   });
 
   it("gives the next playoff game its own Game Week, with the Wild Card game as the previous game", async () => {
-    const writer = recordingWriter([{ ...previewDraft, data: { ...previewDraft.data, prediction: { winner: "SF", score: { sf: 24, opponent: 23 } } } }]);
+    const writer = recordingWriter([{ ...previewDraft, data: { ...previewDraft.data, prediction: { winner: "SF", score: { sf: 24, opponent: 23 } } } }, sfOnlyBreakdown]);
     const result = await runThursday("2026-01-15", writer);
 
     expect(result.status).toBe("published");
     if (result.status !== "published") return;
-    expect(result.entries.map((entry) => entry.path)).toEqual(["game-weeks/2025-divisional/preview.md"]);
+    expect(result.entries.map((entry) => entry.path)).toEqual(["game-weeks/2025-divisional/preview.md", "game-weeks/2025-divisional/stat-breakdown.md"]);
     expect(writer.jobs[0]!.calendar).toMatchObject({
       period: "game-week",
       gameWeek: "2025-divisional",
@@ -197,7 +234,7 @@ describe("calendar resolution at the edges of a Game Week", () => {
 describe("Thursday preview job: rejected runs", () => {
   it("rejects a prediction whose winner isn't one of the two teams", async () => {
     const draft = { ...previewDraft, data: { ...previewDraft.data, prediction: { winner: "DAL", score: { sf: 27, opponent: 20 } } } };
-    const result = await runThursday("2026-11-26", recordingWriter([draft]));
+    const result = await runThursday("2026-11-26", recordingWriter([draft, breakdownDraft]));
 
     expect(result).toEqual({
       status: "rejected",
@@ -207,7 +244,7 @@ describe("Thursday preview job: rejected runs", () => {
 
   it("rejects a prediction whose winner doesn't have the higher score", async () => {
     const draft = { ...previewDraft, data: { ...previewDraft.data, prediction: { winner: "SF", score: { sf: 17, opponent: 20 } } } };
-    const result = await runThursday("2026-11-26", recordingWriter([draft]));
+    const result = await runThursday("2026-11-26", recordingWriter([draft, breakdownDraft]));
 
     expect(result.status).toBe("rejected");
     if (result.status !== "rejected") return;
@@ -216,7 +253,7 @@ describe("Thursday preview job: rejected runs", () => {
 
   it("checks a Game Preview's injury statuses against the official report", async () => {
     const draft = { ...previewDraft, data: { ...previewDraft.data, injuries: [{ player: "C.J. West", gameStatus: "Out" }] } };
-    const result = await runThursday("2026-11-26", recordingWriter([draft]));
+    const result = await runThursday("2026-11-26", recordingWriter([draft, breakdownDraft]));
 
     expect(result).toEqual({
       status: "rejected",
@@ -240,11 +277,30 @@ describe("Thursday preview job: rejected runs", () => {
   });
 
   it("rejects a Game Week run that comes back without a Game Preview", async () => {
-    const result = await runThursday("2026-11-26", recordingWriter([]));
+    const result = await runThursday("2026-11-26", recordingWriter([breakdownDraft]));
 
     expect(result).toEqual({
       status: "rejected",
       failures: [{ check: "schema", entry: "game-preview", reason: "the thursday-preview job writes exactly one game-preview, and the writer returned 0" }],
+    });
+  });
+
+  it("rejects a Game Week run that comes back without a Stat Breakdown", async () => {
+    const result = await runThursday("2026-11-26", recordingWriter([previewDraft]));
+
+    expect(result).toEqual({
+      status: "rejected",
+      failures: [{ check: "schema", entry: "stat-breakdown", reason: "the thursday-preview job writes exactly one stat-breakdown, and the writer returned 0" }],
+    });
+  });
+
+  it("rejects a Stat Breakdown stat about a team that isn't playing", async () => {
+    const stats = [{ team: "DAL", stat: "passing_yards", scope: { type: "game", gameId: "2026_10_SF_DAL" }, value: 300, label: "Passing yards" }];
+    const result = await runThursday("2026-11-26", recordingWriter([previewDraft, { ...breakdownDraft, data: { ...breakdownDraft.data, stats } }]));
+
+    expect(result).toEqual({
+      status: "rejected",
+      failures: [{ check: "schema", entry: "game-weeks/2026-week-12/stat-breakdown.md", reason: "stats.0.team: a stat must be about SF or SEA" }],
     });
   });
 

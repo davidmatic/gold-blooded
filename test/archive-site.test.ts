@@ -8,7 +8,7 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runJob, type DraftEntry } from "../src/pipeline";
 import { buildSite, type BuiltSite } from "./support/built-site";
-import { fakeSources, fakeWriter, recordedSnapshot } from "./support/fakes";
+import { fakeSources, fakeWriter, recordedSnapshot, sfStatBreakdown } from "./support/fakes";
 
 const snapshot = recordedSnapshot("thursday-preview-2026-11-26");
 const SOURCE = { url: "https://www.49ers.com/news/injury-report-wednesday-week-13", outlet: "49ers.com" };
@@ -46,7 +46,7 @@ describe("built site (Archive)", () => {
       ["2026-11-26", preview("Seattle with the West on the line", { sf: 27, opponent: 20 })],
     ];
     for (const [date, draft] of runs) {
-      const result = await runJob({ job: "thursday-preview", date, sources: fakeSources(snapshot), writer: fakeWriter([draft]), contentDir });
+      const result = await runJob({ job: "thursday-preview", date, sources: fakeSources(snapshot), writer: fakeWriter(draft.type === "game-preview" ? [draft, sfStatBreakdown] : [draft]), contentDir });
       expect(result.status).toBe("published");
     }
     site = await buildSite(contentDir, { now: BEFORE_WEEK_12 });

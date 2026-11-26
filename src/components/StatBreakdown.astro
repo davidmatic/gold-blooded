@@ -1,0 +1,48 @@
+---
+// The Stat Breakdown, as it appears on its Game Week Page.
+import { render, type CollectionEntry } from "astro:content";
+import { formatStat, playerRows, teamRows } from "../site/stat-breakdown";
+
+interface Props {
+  entry: CollectionEntry<"statBreakdowns">;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { data } = entry;
+const teams = teamRows(data);
+const players = playerRows(data);
+---
+<article class="stat-breakdown">
+  <h2>Stat Breakdown: {data.title}</h2>
+  <Content />
+  {teams.length > 0 && (
+    <div class="stat-table-wrap">
+      <table class="stat-table">
+        <caption>Team stats</caption>
+        <thead><tr><th scope="col">Stat</th><th scope="col">49ers</th><th scope="col">{data.opponent}</th></tr></thead>
+        <tbody>
+          {teams.map((row) => (
+            <tr><th scope="row">{row.name}</th><td>{formatStat(row.sf)}</td><td>{formatStat(row.opponent)}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+  {players.length > 0 && (
+    <div class="stat-table-wrap">
+      <table class="stat-table">
+        <caption>Players</caption>
+        <thead><tr><th scope="col">Player</th><th scope="col">Team</th><th scope="col">Stat</th><th scope="col">Value</th></tr></thead>
+        <tbody>
+          {players.map((row) => (
+            <tr><th scope="row">{row.player}</th><td>{row.team}</td><td>{row.name}</td><td>{formatStat(row.value)}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+  <h3>Trends</h3>
+  <ul>{data.trends.map((trend) => <li>{trend}</li>)}</ul>
+  <p class="news-sources">Stats: <a href="https://github.com/nflverse/nflverse-data" rel="noopener">nflverse</a></p>
+</article>

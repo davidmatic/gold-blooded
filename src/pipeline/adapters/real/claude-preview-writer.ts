@@ -1,5 +1,5 @@
 // The real content writer for the Thursday preview job: asks Claude for the Game Preview in a
-// Game Week, or the season recap in a Bye Week.
+// Game Week, with the Stat Breakdown beside it, or the season recap in a Bye Week.
 //
 // Like the news writer, it uses structured output so the reply has the content type's shape,
 // and the pipeline still validates the draft and runs every publish check. The pipeline fills
@@ -10,9 +10,14 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { GAME_STATUSES, PRACTICE_STATUSES } from "../../../content/news-summary";
 import { formatKickoff, formatRecord, gameWeekName, matchup } from "../../../site/game-weeks";
-import { seasonRecord, type ScheduledGame } from "../../calendar";
+import { SEASON_TYPES, type StatScope } from "../../../content/cited-stat";
+import { seasonRecord, TEAM, type ScheduledGame } from "../../calendar";
+import { scopeText, statValue, type NflverseStats, type StatRef } from "../../stats";
 import type { ContentWriter, DraftEntry, Job, SourceSnapshot } from "../../types";
 import { isSpendLimitError, MODEL, SpendLimitReachedError } from "./claude-writer";
+
+/** The Stat Breakdown's recent trends are over this many games. */
+const RECENT_GAMES = 3;
 
 const sources = z.array(z.object({ url: z.string(), outlet: z.string() }));
 const injuries = z.array(
@@ -38,6 +43,27 @@ export type PreviewOutput = z.infer<typeof previewOutputSchema>;
 
 const recapOutputSchema = z.object({ title: z.string(), body: z.string(), sources, injuries, quotes });
 export type RecapOutput = z.infer<typeof recapOutputSchema>;
+
+// Structured output takes no unions, so a cited stat's scope comes back flat, with nulls for
+// the fields its type doesn't use, and toStatBreakdownDraft() turns it into the cited-stat shape.
+const statOutput = z.object({
+  player: z.string().nullable(),
+  team: z.string(),
+  stat: z.string(),
+  scope: z.object({
+    type: z.enum(["game", "season", "last-games"]),
+    gameId: z.string().nullable(),
+    season: z.number().int().nullable(),
+    seasonType: z.enum(SEASON_TYPES).nullable(),
+    games: z.number().int().nullable(),
+  }),
+  perGame: z.boolean(),
+  value: z.number(),
+  label: z.string(),
+});
+
+const statBreakdownOutputSchema = z.object({ title: z.string(), body: z.string(), trends: z.array(z.string()), stats: z.array(statOutput) });
+export type StatBreakdownOutput = z.infer<typeof statBreakdownOutputSchema>;
 
 const SHARED_RULES = `Use only what the source snapshot says: the 49ers' schedule and results, the official injury report, and the documents. Never invent a stat, a result, an injury, or a quote.
 - sources: every document you rely on, each with its exact "url" and its "outlet" as given in the snapshot. Never invent or alter a URL. At least one source.
@@ -68,31 +94,139 @@ The 49ers have no game this week. Look back at the season so far and ahead to wh
 - body: 3 to 5 short paragraphs: the record and how they got there, standout performances the documents mention, the injury picture, and the road ahead starting with the next game.
 ${SHARED_RULES}`;
 
+/** The Stat Breakdown voice. */
+export const STAT_BREAKDOWN_VOICE = `You write the weekly Stat Breakdown for Gold Blooded, an unofficial, non-commercial San Francisco 49ers fan site.
+
+Voice: a sharp, numbers-first 49ers fan. Plain about what the numbers say, including where the opponent is better.
+
+It is Thursday of the Game Week. Break down the upcoming game in numbers: the 49ers' and the opponent's team stats in the context of this matchup, the key players on both sides, and recent trends (the last ${RECENT_GAMES} games against the season).
+- title: a short, plain headline in sentence case.
+- body: 2 to 4 short Markdown paragraphs on what the numbers say about this matchup. No headings, no links, no tables.
+- trends: 2 to 4 one-sentence trends, each comparing recent games with the season, or one team with the other.
+- stats: every number the body or trends state, and the 8 to 16 stats the page's tables should show, each as a cited stat:
+  - player: the player's name exactly as the brief gives it, or null for a team stat.
+  - team: "SF" or the opponent's abbreviation exactly as the brief gives it.
+  - stat: the nflverse column name exactly as the brief gives it (passing_yards, rushing_tds, def_sacks, ...), or one of completion_pct, yards_per_attempt, yards_per_carry, yards_per_reception.
+  - scope: type "season" (season set, seasonType null for the whole season), "last-games" (season and games set; the player's or team's last N games that season), or "game" (gameId set, as the brief gives it). Null for every field the type doesn't use.
+  - perGame: true for a per-game average over the scope (total divided by the games in it), false for a total.
+  - value: the number, worked out from the brief's numbers. Round averages and rates to one decimal place.
+  - label: how the stat reads in a table, e.g. "Passing yards", "Yards per carry".
+Use only the brief's nflverse numbers. Never invent a stat. Every stat is checked against nflverse, and a single wrong number stops the whole page from publishing, so prefer the totals the brief gives you over working out new ones.`;
+
 /** The user turn: the job, where it falls on the calendar, the season's results, and the snapshot. */
 export function renderPreviewBrief(job: Job, snapshot: SourceSnapshot): string {
+  const calendar = job.calendar;
+  const what = calendar?.period === "game-week" ? "Game Preview" : "Bye Week season recap";
+  return [
+    ...situation(job, snapshot, what),
+    `Documents (${snapshot.documents.length}):`,
+    ...snapshot.documents.map((doc, i) =>
+      [`<document index="${i + 1}">`, `url: ${doc.url}`, `outlet: ${doc.outlet}`, `title: ${doc.title}`, `published: ${doc.publishedAt}`, "text:", doc.text, "</document>"].join("\n"),
+    ),
+  ].join("\n\n");
+}
+
+/** The job, where it falls on the calendar, the season's results, and the injury report. */
+function situation(job: Job, snapshot: SourceSnapshot, what: string): string[] {
   const calendar = job.calendar;
   if (!calendar || calendar.period === "offseason") throw new Error("the preview writer writes only in a Game Week or a Bye Week");
   const schedule = snapshot.schedule ?? [];
   const season = schedule.filter((game) => game.season === calendar.season && game.gameday < job.date);
-  const situation =
+  const games =
     calendar.period === "game-week"
       ? [
           `Upcoming game: ${describe(calendar.upcoming)}`,
           `Previous game: ${calendar.previous ? describe(calendar.previous) : "none (this is the season's first game)"}`,
         ]
       : [`Bye Week: ${calendar.season} Week ${calendar.week}`, `Next game: ${describe(calendar.upcoming)}`];
-
   return [
-    `Job: Thursday ${calendar.period === "game-week" ? "Game Preview" : "Bye Week season recap"} for ${job.date} (team-local date).`,
-    ...situation,
+    `Job: Thursday ${what} for ${job.date} (team-local date).`,
+    ...games,
     `49ers record this season: ${formatRecord(seasonRecord(schedule, calendar.season, job.date))}`,
     `Results this season:\n${season.map((game) => `- ${describe(game)}`).join("\n") || "- none yet"}`,
     `Official injury report (structured): ${snapshot.injuryReport ? JSON.stringify(snapshot.injuryReport) : "not available"}`,
-    `Documents (${snapshot.documents.length}):`,
-    ...snapshot.documents.map((doc, i) =>
-      [`<document index="${i + 1}">`, `url: ${doc.url}`, `outlet: ${doc.outlet}`, `title: ${doc.title}`, `published: ${doc.publishedAt}`, "text:", doc.text, "</document>"].join("\n"),
-    ),
-  ].join("\n\n");
+  ];
+}
+
+/** nflverse columns the Stat Breakdown brief shows, in this order. */
+const BRIEF_COLUMNS = [
+  "completions",
+  "attempts",
+  "passing_yards",
+  "passing_tds",
+  "passing_interceptions",
+  "sacks_suffered",
+  "carries",
+  "rushing_yards",
+  "rushing_tds",
+  "receptions",
+  "targets",
+  "receiving_yards",
+  "receiving_tds",
+  "def_tackles_solo",
+  "def_sacks",
+  "def_interceptions",
+];
+
+/** A player makes the brief with this much volume over the season in any one column. */
+const NOTABLE: Record<string, number> = { attempts: 10, carries: 10, targets: 10, def_tackles_solo: 10, def_sacks: 1, def_interceptions: 1 };
+
+
+/**
+ * The Stat Breakdown's user turn: the situation plus both teams' nflverse lines this season, game
+ * by game, and their season and last-3 totals; and the notable players' totals. Totals are worked
+ * out by the same lookup the stat check uses, so a total copied from here passes it.
+ */
+export function renderStatBreakdownBrief(job: Job, snapshot: SourceSnapshot): string {
+  const calendar = job.calendar;
+  if (calendar?.period !== "game-week") throw new Error("the Stat Breakdown is written only in a Game Week");
+  const stats = snapshot.stats;
+  const teams = [TEAM, calendar.upcoming.opponent];
+  const scopes: StatScope[] = [
+    { type: "season", season: calendar.season },
+    { type: "last-games", season: calendar.season, games: RECENT_GAMES },
+  ];
+
+  const sections = !stats
+    ? ["nflverse stats: not available. Cite no stats."]
+    : teams.flatMap((team) => {
+        const lines = stats.teams.filter((line) => line.team === team && line.season === calendar.season).sort((a, b) => a.week - b.week);
+        const players = [...new Set(stats.players.filter((line) => line.team === team && line.season === calendar.season).map((line) => line.player))];
+        const notable = players.filter((player) =>
+          Object.entries(NOTABLE).some(([column, least]) => lookup(stats, { player, team, stat: column, scope: scopes[0]! }) >= least),
+        );
+        return [
+          `${team} game by game:\n${lines.map((line) => `- ${line.gameId} (Week ${line.week}, against ${line.opponent}): ${columns(BRIEF_COLUMNS, (c) => line.stats[c] ?? 0)}`).join("\n") || "- none yet"}`,
+          ...scopes.map((scope) => `${team} ${scopeText(scope)} (${Math.min(lines.length, scope.type === "last-games" ? scope.games : Infinity)} games): ${columns(BRIEF_COLUMNS, (stat) => lookup(stats, { team, stat, scope }))}`),
+          `${team} players:\n${notable
+            .flatMap((player) =>
+              scopes.map((scope) => {
+                const games = stats.players.filter((line) => line.player === player && line.team === team && line.season === calendar.season).length;
+                const count = scope.type === "last-games" ? Math.min(games, scope.games) : games;
+                const position = stats.players.find((line) => line.player === player)?.position ?? "";
+                const values = columns(BRIEF_COLUMNS, (stat) => lookup(stats, { player, team, stat, scope }), true);
+                return `- ${player} (${position}, ${team}), ${scopeText(scope)} (${count} games): ${values}`;
+              }),
+            )
+            .join("\n") || "- none"}`,
+        ];
+      });
+
+  return [...situation(job, snapshot, "Stat Breakdown"), `nflverse stats, ${calendar.season} season:`, ...sections].join("\n\n");
+}
+
+function lookup(stats: NflverseStats, ref: StatRef): number {
+  const found = statValue(stats, ref);
+  return "value" in found ? found.value : 0;
+}
+
+/** "completions 25, attempts 34, ...", leaving out zeros when asked. */
+function columns(names: string[], value: (column: string) => number, skipZeros = false): string {
+  return names
+    .map((name) => [name, Math.round(value(name) * 100) / 100] as const)
+    .filter(([, v]) => !skipZeros || v !== 0)
+    .map(([name, v]) => `${name} ${v}`)
+    .join(", ");
 }
 
 /** "2026 Week 11, vs MIN (neutral site), won 35-10" or "2026 Week 12, vs SEA, kickoff ... (id)". */
@@ -125,6 +259,32 @@ export function toPreviewDraft(output: PreviewOutput): DraftEntry {
       sources: output.sources,
       ...(injuryList.length > 0 && { injuries: injuryList }),
       ...(output.quotes.length > 0 && { quotes: output.quotes }),
+    },
+    body: output.body,
+  };
+}
+
+/** Claude's Stat Breakdown as a pipeline draft: each stat in the cited-stat shape, nulls dropped. */
+export function toStatBreakdownDraft(output: StatBreakdownOutput): DraftEntry {
+  return {
+    type: "stat-breakdown",
+    data: {
+      title: output.title,
+      trends: output.trends,
+      stats: output.stats.map(({ player, team, stat, scope, perGame, value, label }) => ({
+        ...(player !== null && { player }),
+        team,
+        stat,
+        scope:
+          scope.type === "game"
+            ? { type: "game", gameId: scope.gameId }
+            : scope.type === "last-games"
+              ? { type: "last-games", season: scope.season, games: scope.games }
+              : { type: "season", season: scope.season, ...(scope.seasonType && { seasonType: scope.seasonType }) },
+        ...(perGame && { per: "game" }),
+        value,
+        label,
+      })),
     },
     body: output.body,
   };
@@ -197,7 +357,15 @@ export function claudePreviewWriter(options: ClaudePreviewWriterOptions = {}): C
   return {
     async write(job, snapshot) {
       const brief = renderPreviewBrief(job, snapshot);
-      if (job.contentTypes?.includes("game-preview")) return [toPreviewDraft(await ask(GAME_PREVIEW_VOICE, previewOutputSchema, brief))];
+      if (job.contentTypes?.includes("game-preview")) {
+        const [preview, breakdown] = await Promise.all([
+          ask(GAME_PREVIEW_VOICE, previewOutputSchema, brief),
+          job.contentTypes.includes("stat-breakdown")
+            ? ask(STAT_BREAKDOWN_VOICE, statBreakdownOutputSchema, renderStatBreakdownBrief(job, snapshot))
+            : undefined,
+        ]);
+        return [toPreviewDraft(preview), ...(breakdown ? [toStatBreakdownDraft(breakdown)] : [])];
+      }
       if (job.contentTypes?.includes("season-recap")) return [toRecapDraft(await ask(SEASON_RECAP_VOICE, recapOutputSchema, brief))];
       throw new Error(`the preview writer doesn't write ${job.contentTypes?.join(", ") || "nothing"}`);
     },

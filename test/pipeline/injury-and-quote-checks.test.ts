@@ -49,7 +49,7 @@ describe("injury status publish check", () => {
 
     expect(result.status).toBe("published");
     if (result.status !== "published") return;
-    expect(result.entries[0]!.data.injuries).toEqual(injuries);
+    expect(result.entries[0]).toMatchObject({ type: "news-summary", data: { injuries } });
   });
 
   it("rejects a game status the official report doesn't give", async () => {
@@ -109,7 +109,7 @@ describe("quote publish check", () => {
 
     expect(result.status).toBe("published");
     if (result.status !== "published") return;
-    expect(result.entries[0]!.data.quotes).toEqual(quotes);
+    expect(result.entries[0]).toMatchObject({ type: "news-summary", data: { quotes } });
   });
 
   it("rejects a quote whose source isn't in the source snapshot", async () => {
