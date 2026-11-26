@@ -44,7 +44,9 @@ npm run build    # static output in dist/
   To fix or remove a published piece, edit or delete its file. News Summaries live in `content/news/`.
   Each Game Week has a folder, `content/game-weeks/<slug>/` (slugs like `2026-week-12` or
   `2025-wild-card`), with one file per part: `preview.md` (the Game Preview) or `season-recap.md`
-  (a Bye Week's recap). Its Game Week Page is `/game-weeks/<slug>/`.
+  (a Bye Week's recap). Its Game Week Page is `/game-weeks/<slug>/`. Each Offseason has a folder,
+  `content/offseason/<year>/`, with its two running documents, `free-agency-tracker.md` and
+  `draft-coverage.md` (see Offseason).
 - `test/`: tests. `test/support/built-site.ts` builds the site against a fixture content folder in
   `test/fixtures/<name>/` and exposes the generated HTML (the spec's Seam 2). `test/support/fakes.ts`
   has the fake source and writer adapters for pipeline tests (Seam 1), which serve the recorded
@@ -137,6 +139,32 @@ A job opts in through its `writes` entry in `publish.ts`'s `JOBS` registry: give
 position, it returns the content types to write (none means nothing to do). The pipeline puts the
 position on `job.calendar` for the writer, and needs `snapshot.schedule` from the sources.
 
+## Offseason
+
+The `offseason` job (`.github/workflows/offseason.yml`, daily) writes the Free Agency Tracker
+and Draft Coverage on every Offseason day, and nothing in the season. Game content jobs write
+nothing in the Offseason; News Summaries carry on in the daily news job.
+
+- **Running documents.** Each Offseason (named by its NFL Draft's year: the 2026 Offseason
+  follows the 2025 season) has one Free Agency Tracker and one Draft Coverage, updated run after
+  run. The sources (`adapters/real/offseason-sources.ts`) read each document as it stands into
+  `snapshot.current`; the writer (`adapters/real/claude-offseason-writer.ts`, one Claude call for
+  both) returns only what is new or corrected, plus a fresh overview; and the pipeline folds that
+  in (`src/pipeline/running-documents.ts`). Lists only grow: a move is replaced only by one for the
+  same player and kind, a pick by one with the same overall number. Team needs are replaced when
+  the update gives any. `sources` lists what the latest update drew on. To remove an item or fix
+  one, edit the file.
+- **Publish check.** Besides the usual checks, every item an update adds (a move, mock draft, pick,
+  or profile) must cite a document in the snapshot that names the player (`offseason-sources`).
+- **Homepage.** In the Offseason the Game Preview slot shows the Free Agency Tracker, or Draft
+  Coverage around the draft: from **21 days before the draft's first day through 7 days after its
+  last** (`homepageWindow` in `data/nfl-drafts.json`). The latest update date stands for "today",
+  and the slot goes back to the Game Preview once one newer than that update is published.
+- **Draft dates.** `data/nfl-drafts.json` lists each NFL Draft's dates; the pipeline copies them
+  into Draft Coverage. A year not listed is estimated as the fourth Thursday of April through the
+  Saturday after. Add each year's real dates once the NFL announces them.
+- Pages: `/free-agency-tracker/` and `/draft-coverage/` show the newest Offseason's documents.
+
 ## Smoke test
 
 The real adapters have no unit tests that touch the network or Claude. Check them by hand:
@@ -154,6 +182,8 @@ ANTHROPIC_API_KEY=sk-ant-... npx tsx scripts/smoke-daily-news.ts --claude --out 
 
 `scripts/smoke-thursday-preview.ts` does the same for the Thursday preview job (sources only, it
 prints where the date falls on the calendar; `--claude` writes the Game Preview or season recap).
+`scripts/smoke-offseason.ts` does the same for the Offseason job (`--claude` writes both running
+documents' updates; it reads the current ones from `content/` or `--content-dir`).
 
 Both take `--date YYYY-MM-DD` (default: today, Pacific). Add `--podcasts` to transcribe the news
 window's podcast episodes too (needs Python 3.12 with `pip install -r scripts/requirements-whisper.txt`).
@@ -184,3 +214,7 @@ nothing. It uses the real adapters and the `ANTHROPIC_API_KEY` secret.
 `.github/workflows/thursday-preview.yml` runs the Thursday preview job every Thursday morning, after
 the Wednesday injury report: a Game Preview in a Game Week, a season recap in a Bye Week, and nothing
 (no commit, no deploy) in the Offseason. Same commit, deploy, and failure behaviour as daily news.
+
+`.github/workflows/offseason.yml` runs the Offseason job every morning, after daily news: it
+updates the Free Agency Tracker and Draft Coverage in the Offseason, and does nothing (no commit,
+no deploy) in the season. Same commit, deploy, and failure behaviour as daily news.
