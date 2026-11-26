@@ -1,6 +1,6 @@
 // Game Week Pages and the homepage's Game Preview: which preview is current, how a Game Week
 // is named, and how kickoff and the prediction read.
-import type { GamePreviewData, SeasonRecapData } from "../content/game-week";
+import type { GamePreviewData, SeasonRecapData, StatBreakdownData } from "../content/game-week";
 
 interface HasData<T> {
   id: string;
@@ -12,21 +12,24 @@ export function currentPreview<T extends HasData<GamePreviewData>>(previews: rea
   return [...previews].sort((a, b) => b.data.kickoff.localeCompare(a.data.kickoff))[0];
 }
 
-export interface GameWeekPage<P, R> {
+export interface GameWeekPage<P, R, B = never> {
   slug: string;
   preview?: P;
   recap?: R;
+  breakdown?: B;
 }
 
 /** One page per Game Week that has any content, newest first. */
-export function gameWeekPages<P extends HasData<GamePreviewData>, R extends HasData<SeasonRecapData>>(
-  previews: readonly P[],
-  recaps: readonly R[],
-): GameWeekPage<P, R>[] {
-  const pages = new Map<string, GameWeekPage<P, R>>();
+export function gameWeekPages<
+  P extends HasData<GamePreviewData>,
+  R extends HasData<SeasonRecapData>,
+  B extends HasData<StatBreakdownData> = never,
+>(previews: readonly P[], recaps: readonly R[], breakdowns: readonly B[] = []): GameWeekPage<P, R, B>[] {
+  const pages = new Map<string, GameWeekPage<P, R, B>>();
   const page = (slug: string) => pages.get(slug) ?? pages.set(slug, { slug }).get(slug)!;
   for (const preview of previews) page(preview.data.gameWeek).preview = preview;
   for (const recap of recaps) page(recap.data.gameWeek).recap = recap;
+  for (const breakdown of breakdowns) page(breakdown.data.gameWeek).breakdown = breakdown;
   return [...pages.values()].sort((a, b) => b.slug.localeCompare(a.slug));
 }
 

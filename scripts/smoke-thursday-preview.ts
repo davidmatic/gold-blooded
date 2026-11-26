@@ -4,9 +4,9 @@
 //   npx tsx scripts/smoke-thursday-preview.ts [--date YYYY-MM-DD]            # sources + calendar, no API key
 //   npx tsx scripts/smoke-thursday-preview.ts --claude [--date YYYY-MM-DD]   # + Claude writer and publish checks
 //
-// Sources only: fetches the nflverse schedule and the day's Preferred Sources, and prints where
+// Sources only: fetches the nflverse schedule and stats, and the day's Preferred Sources, and prints where
 // the date falls on the calendar. With --claude: runs publish() end to end and prints the Game
-// Preview (or season recap) or the failed checks. It never writes to the content folder; pass
+// Preview and Stat Breakdown (or season recap) or the failed checks. It never writes to the content folder; pass
 // --out <dir> to have the published entries written there for a look.
 import { parseArgs } from "node:util";
 import { publish } from "../src/pipeline";
@@ -35,7 +35,8 @@ if (!values.claude) {
   }
   if (calendar.period === "game-week" || calendar.period === "bye-week") console.log(`  previous ${calendar.previous?.gameId ?? "none"}`);
   console.log(`Documents: ${snapshot.documents.length}; injury report: ${snapshot.injuryReport?.length ?? 0} players`);
-  console.log(`Skipped: ${snapshot.skipped?.map((s) => `${s.outlet} (${s.reason})`).join(", ") || "none"}`);
+  console.log(`nflverse stats: ${snapshot.stats ? `${snapshot.stats.players.length} player lines, ${snapshot.stats.teams.length} team lines` : "none (Offseason)"}`);
+  console.log(`Skipped:${snapshot.skipped?.map((s) => `${s.outlet} (${s.reason})`).join(", ") || "none"}`);
 } else {
   const result = await publish({ job: job.type, date: job.date, sources, writer: claudePreviewWriter() });
   if (result.status === "published") {

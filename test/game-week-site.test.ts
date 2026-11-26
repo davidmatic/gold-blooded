@@ -92,6 +92,21 @@ describe("built site (Game Week Pages)", () => {
     expect(page).toContain("Seattle with the West on the line, in full.");
   });
 
+  it("puts the Stat Breakdown on its Game Week Page: the teams side by side, the players, and the trends", async () => {
+    const html = await site.html("/gold-blooded/game-weeks/2026-week-12/");
+    const section = html.match(/<article[^>]*class="stat-breakdown"[^>]*>([\s\S]*?)<\/article>/)?.[1] ?? "";
+    const rows = [...section.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((row) => text(row[1]!).trim());
+
+    expect(text(section)).toContain("Stat Breakdown: Seattle by the numbers");
+    expect(text(section)).toContain("Seattle by the numbers, in full.");
+    expect(text(section)).toContain("Seattle by the numbers: the trend.");
+    expect(rows).toContain("Rushing yards per game, 2026 season 138.6 114.7");
+    expect(rows).toContain("Brock Purdy SF Passing yards, 2026 season 2,624");
+    expect(rows).toContain("Jaxon Smith-Njigba SEA Receiving yards, last 3 games 340");
+    expect(text(section)).toMatch(/Stats: nflverse/);
+    expect(html.indexOf('class="game-preview"')).toBeLessThan(html.indexOf('class="stat-breakdown"'));
+  });
+
   it("gives every Game Week its own page, including the Bye Week's season recap", async () => {
     const pages = await site.pagePaths();
     expect(pages).toEqual(

@@ -1,31 +1,34 @@
 ---
 // The Game Week Page: one per Game Week, at /game-weeks/<slug>/ (e.g. 2026-week-12,
-// 2025-wild-card). It brings together the parts in content/game-weeks/<slug>/. In a Bye Week
-// it carries the season recap instead of a Game Preview. Later parts (the Stat Breakdown and
-// Highlights) slot in here.
+// 2025-wild-card). It brings together the parts in content/game-weeks/<slug>/: the Game
+// Preview and the Stat Breakdown. In a Bye Week it carries the season recap instead of a Game
+// Preview. Later parts (Highlights) slot in here.
 import { getCollection, type CollectionEntry } from "astro:content";
 import GamePreview from "../../components/GamePreview.astro";
 import SeasonRecap from "../../components/SeasonRecap.astro";
+import StatBreakdown from "../../components/StatBreakdown.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { gameWeekName, gameWeekPages, matchup, type GameWeekPage } from "../../site/game-weeks";
 
 export async function getStaticPaths() {
-  const pages = gameWeekPages(await getCollection("gamePreviews"), await getCollection("seasonRecaps"));
+  const pages = gameWeekPages(await getCollection("gamePreviews"), await getCollection("seasonRecaps"), await getCollection("statBreakdowns"));
   return pages.map((page) => ({ params: { gameWeek: page.slug }, props: { page } }));
 }
 
 interface Props {
-  page: GameWeekPage<CollectionEntry<"gamePreviews">, CollectionEntry<"seasonRecaps">>;
+  page: GameWeekPage<CollectionEntry<"gamePreviews">, CollectionEntry<"seasonRecaps">, CollectionEntry<"statBreakdowns">>;
 }
 
 const { page } = Astro.props;
 const preview = page.preview?.data;
 const recap = page.recap?.data;
-const name = preview ? gameWeekName(preview) : recap ? gameWeekName(recap) : page.slug;
-const heading = preview ? `${name}: ${matchup(preview)}` : `${name}: Bye Week`;
+const game = preview ?? page.breakdown?.data;
+const name = game ? gameWeekName(game) : recap ? gameWeekName(recap) : page.slug;
+const heading = game ? `${name}: ${matchup(game)}` : `${name}: Bye Week`;
 ---
 <BaseLayout title={heading}>
   <h1>{heading}</h1>
   {page.preview && <GamePreview entry={page.preview} />}
+  {page.breakdown && <StatBreakdown entry={page.breakdown} />}
   {page.recap && <SeasonRecap entry={page.recap} />}
 </BaseLayout>

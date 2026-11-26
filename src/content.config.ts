@@ -1,6 +1,6 @@
 import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
-import { GAME_WEEK_FILES, gamePreviewSchema, seasonRecapSchema } from "./content/game-week";
+import { GAME_WEEK_FILES, gamePreviewSchema, seasonRecapSchema, statBreakdownSchema } from "./content/game-week";
 import { newsSummarySchema } from "./content/news-summary";
 import { contentPath } from "./site/content-dir";
 
@@ -20,4 +20,9 @@ const seasonRecaps = defineCollection({
   schema: seasonRecapSchema,
 });
 
-export const collections = { news, gamePreviews, seasonRecaps };
+const statBreakdowns = defineCollection({
+  loader: glob({ base: contentPath("game-weeks"), pattern: `*/${GAME_WEEK_FILES["stat-breakdown"]}` }),
+  schema: statBreakdownSchema,
+});
+
+export const collections = { news, gamePreviews, seasonRecaps, statBreakdowns };

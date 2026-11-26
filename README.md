@@ -43,8 +43,9 @@ npm run build    # static output in dist/
 - `content/`: the content store (Markdown + data files). Override with `GOLD_BLOODED_CONTENT_DIR`.
   To fix or remove a published piece, edit or delete its file. News Summaries live in `content/news/`.
   Each Game Week has a folder, `content/game-weeks/<slug>/` (slugs like `2026-week-12` or
-  `2025-wild-card`), with one file per part: `preview.md` (the Game Preview) or `season-recap.md`
-  (a Bye Week's recap). Its Game Week Page is `/game-weeks/<slug>/`.
+  `2025-wild-card`), with one file per part: `preview.md` (the Game Preview) and
+  `stat-breakdown.md` (the Stat Breakdown), or `season-recap.md` (a Bye Week's recap). Its Game
+  Week Page is `/game-weeks/<slug>/`.
 - `test/`: tests. `test/support/built-site.ts` builds the site against a fixture content folder in
   `test/fixtures/<name>/` and exposes the generated HTML (the spec's Seam 2). `test/support/fakes.ts`
   has the fake source and writer adapters for pipeline tests (Seam 1), which serve the recorded
@@ -137,6 +138,35 @@ A job opts in through its `writes` entry in `publish.ts`'s `JOBS` registry: give
 position, it returns the content types to write (none means nothing to do). The pipeline puts the
 position on `job.calendar` for the writer, and needs `snapshot.schedule` from the sources.
 
+## nflverse stats and cited stats
+
+Outside the Offseason, the Thursday preview sources add the season's nflverse week-level stats to
+the snapshot (`snapshot.stats`), fetched and parsed in `adapters/real/nflverse-stats.ts`:
+`stats_player_week_<season>.csv` (one line per player per game; a player with no recorded stats in a
+game has no line) and `stats_team_week_<season>.csv` (one line per team per game). Every numeric
+column is kept under its nflverse name. Before a season's first stats are out (HTTP 404) the stats
+are empty and listed in `snapshot.skipped`; any other fetch failure fails the run.
+
+Content that states stats lists every number in a `stats` array of **cited stats**
+(`src/content/cited-stat.ts`), the way News Summaries list their quotes:
+
+```yaml
+- player: "Brock Purdy"   # left out for a team stat
+  team: "SF"              # nflverse abbreviation
+  stat: "passing_yards"   # an nflverse column, or completion_pct, yards_per_attempt, yards_per_carry, yards_per_reception
+  scope: { type: "season", season: 2026 }   # or { type: "game", gameId }, or { type: "last-games", season, games }
+  per: "game"             # optional: a per-game average instead of a total
+  value: 262.4
+  label: "Passing yards"
+```
+
+`statValue()` in `src/pipeline/stats.ts` works a cited stat out from the week lines (season and
+last-N totals, per-game averages, the derived rates; rate columns such as `passing_cpoe` only for
+one game). The `nflverse-stats` publish check (`checks/nflverse-stats.ts`) rejects any cited stat
+nflverse can't give, or whose value differs once nflverse's number is rounded to the decimal places
+the cited value has. The Stat Breakdown's stats must be about SF or that week's opponent; the
+Claude writer gets both teams' lines and totals in its brief, worked out by the same `statValue()`.
+
 ## Smoke test
 
 The real adapters have no unit tests that touch the network or Claude. Check them by hand:
@@ -182,5 +212,5 @@ committed to `main` and deployed; a rejected one fails the run (GitHub emails th
 nothing. It uses the real adapters and the `ANTHROPIC_API_KEY` secret.
 
 `.github/workflows/thursday-preview.yml` runs the Thursday preview job every Thursday morning, after
-the Wednesday injury report: a Game Preview in a Game Week, a season recap in a Bye Week, and nothing
+the Wednesday injury report: a Game Preview and Stat Breakdown in a Game Week, a season recap in a Bye Week, and nothing
 (no commit, no deploy) in the Offseason. Same commit, deploy, and failure behaviour as daily news.
