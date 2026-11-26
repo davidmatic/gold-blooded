@@ -1,0 +1,51 @@
+---
+title: "Wednesday injury report: Evans, Watkins, Neal sit; three veterans rested"
+category: "Practice Report"
+date: "2026-11-26"
+sources:
+  - url: "https://www.49ers.com/team/injury-report/"
+    outlet: "49ers.com"
+  - url: "https://49ers.1rmg.com/transcripts/head-coach-kyle-shanahan-press-conference-64/"
+    outlet: "49ers.com"
+injuries:
+  - player: "Mike Evans"
+    practiceStatus: "DNP"
+  - player: "Jordan Watkins"
+    practiceStatus: "DNP"
+  - player: "Siran Neal"
+    practiceStatus: "DNP"
+  - player: "Christian McCaffrey"
+    practiceStatus: "DNP"
+  - player: "Trent Williams"
+    practiceStatus: "DNP"
+  - player: "Keenan Allen"
+    practiceStatus: "LP"
+  - player: "Dre Greenlaw"
+    practiceStatus: "LP"
+  - player: "Deommodore Lenoir"
+    practiceStatus: "LP"
+  - player: "Upton Stout"
+    practiceStatus: "LP"
+  - player: "Austen Pleasants"
+    practiceStatus: "LP"
+  - player: "Carver Willis"
+    practiceStatus: "LP"
+  - player: "Romello Height"
+    practiceStatus: "FP"
+  - player: "Khalid Kareem"
+    practiceStatus: "FP"
+  - player: "Mykel Williams"
+    practiceStatus: "FP"
+quotes:
+  - text: "I know he still feels his neck, so we’ll see how he is tomorrow."
+    speaker: "Kyle Shanahan"
+    source: "https://49ers.1rmg.com/transcripts/head-coach-kyle-shanahan-press-conference-64/"
+  - text: "He’s been healthy for a few weeks now."
+    speaker: "Kyle Shanahan"
+    source: "https://49ers.1rmg.com/transcripts/head-coach-kyle-shanahan-press-conference-64/"
+---
+These players did not practise Wednesday: Mike Evans (Achilles), Jordan Watkins (groin) and Siran Neal (knee, foot). Christian McCaffrey and Trent Williams were also held out, and Keenan Allen was limited. The team listed all three as resting players, not injuries. Shanahan said Evans would probably not practise on Wednesdays regardless, and that the team will keep managing his workload.
+
+These players were limited: Dre Greenlaw (neck), Deommodore Lenoir (foot), Upton Stout (shoulder, neck), Austen Pleasants (knee) and Carver Willis (illness). On Greenlaw, Shanahan said, "I know he still feels his neck, so we’ll see how he is tomorrow." He added that he does not see the problem as long-term. Shanahan said Pleasants could be activated, noting, "He’s been healthy for a few weeks now."
+
+Romello Height (hand), Khalid Kareem (ankle) and Mykel Williams (hand) were full participants.
