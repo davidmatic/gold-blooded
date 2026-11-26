@@ -69,7 +69,7 @@ export const POST_GAME_DERIVED: ContentType[] = [
 
 // Later tickets add the other job types and more checks.
 const JOBS: Partial<Record<JobType, JobDefinition>> = {
-  "daily-news": { checks: ALL_CHECKS, writes: ["news-summary"] },
+  "daily-news": { checks: [...ALL_CHECKS, injuryMentionsStated], writes: ["news-summary"] },
   // Daily: an entry for each new QB School video and JFA episode in the snapshot.
   "film-room": { checks: [...ALL_CHECKS, filmRoomCovered, purdyTagGrounded], writes: ["film-room"] },
   // A Game Preview and a Stat Breakdown in a Game Week, a season recap in a Bye Week, nothing

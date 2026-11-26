@@ -180,6 +180,36 @@ describe("quote publish check", () => {
   });
 });
 
+describe("injury mentions in a News Summary", () => {
+  const practiceDraft = (body: string, injuries?: unknown[]): DraftEntry => ({
+    type: "news-summary",
+    data: { title: "Warner watches from the side", category: "Practice Report", sources: [{ url: INJURY_URL, outlet: "49ers.com" }], ...(injuries && { injuries }) },
+    body,
+  });
+  const PATH = "news/2026-11-25-warner-watches-from-the-side.md";
+
+  it("rejects a body that talks about an injury without stating a status in injuries", async () => {
+    const result = await run([practiceDraft("Fred Warner sat out with an ankle injury and looks doubtful for Sunday.")]);
+
+    expect(result).toEqual({
+      status: "rejected",
+      failures: [
+        {
+          check: "injury-mentions",
+          entry: PATH,
+          reason: 'the News Summary mentions an injury ("injury") but states no injury status from the official report in injuries',
+        },
+      ],
+    });
+  });
+
+  it("publishes it once the status is stated, so the injury-status check holds it to the official report", async () => {
+    const result = await run([practiceDraft("Fred Warner sat out with an ankle injury.", [{ player: "Fred Warner", practiceStatus: "DNP" }])]);
+
+    expect(result.status).toBe("published");
+  });
+});
+
 describe("quote publish check: quotations in the body", () => {
   const withBody = (body: string, quotes: unknown[] = []): DraftEntry => ({ ...coachDraft(quotes), body });
 

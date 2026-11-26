@@ -126,6 +126,11 @@ the ones described with their jobs below:
   straight ("…"), of two words or more. Single quotes are ignored (they are mostly apostrophes),
   and so is a scare-quoted single word (the “juice” package). A span counts as listed when it is
   part of a listed quote's text, ignoring case and the punctuation around it.
+- **Injury mentions** (`injury-mentions.ts`, News Summaries and Love Letters). A body that uses
+  injury words (injury, hurt, questionable, injured reserve, ...) must state at least one status
+  in `injuries`, which the `injury-status` check holds to the official report. So a summary can't
+  report an injury the official report doesn't give. (A roster move to injured reserve for a
+  player the week's report doesn't list is rejected too, by design: it can't be checked.)
 
 ## Secrets and cost
 
