@@ -1,0 +1,23 @@
+---
+// The Film Room: credited, linked summaries of The QB School's and Jonnydel's Football Academy's
+// breakdowns, newest first. Purdy-tagged entries also appear in the Purdy Shrine.
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import FilmRoomEntry from "../components/FilmRoomEntry.astro";
+import { filmRoomNewestFirst } from "../site/film-room";
+import { sections } from "../site/sections";
+
+const section = sections.find((s) => s.slug === "film-room")!;
+const entries = filmRoomNewestFirst(await getCollection("filmRoom"));
+---
+<BaseLayout title={section.name}>
+  <h1>{section.name}</h1>
+  <p>{section.blurb} Every take is the analyst's own; follow the link for the full breakdown.</p>
+  {entries.length > 0 ? (
+    <div class="news-list film-room-list">
+      {entries.map((entry) => <FilmRoomEntry entry={entry} />)}
+    </div>
+  ) : (
+    <p class="placeholder">No Film Room entries yet. New breakdowns are checked for every day.</p>
+  )}
+</BaseLayout>

@@ -1,0 +1,38 @@
+---
+// The News page, optionally filtered to one category. Filtering is by static page per
+// category (/news/<category>/), so it works without JavaScript.
+import type { CollectionEntry } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import type { NewsCategory } from "../content/news-summary";
+import { sitePath } from "../site/sections";
+import { newsCategories } from "../site/news";
+import NewsSummaryCard from "./NewsSummaryCard.astro";
+
+interface Props {
+  entries: CollectionEntry<"news">[];
+  category?: NewsCategory;
+}
+
+const { entries, category } = Astro.props;
+const filters = [
+  { name: "All", href: sitePath("news"), current: !category },
+  ...newsCategories.map((c) => ({ name: c.name, href: sitePath(`news/${c.slug}`), current: c.name === category })),
+];
+---
+<BaseLayout title={category ? `${category} News` : "News"}>
+  <h1>{category ? `News: ${category}` : "News"}</h1>
+  <nav class="news-filter" aria-label="News categories">
+    <ul>
+      {filters.map((f) => (
+        <li><a href={f.href} aria-current={f.current ? "page" : undefined}>{f.name}</a></li>
+      ))}
+    </ul>
+  </nav>
+  {entries.length === 0 ? (
+    <p class="placeholder">No News Summaries yet.</p>
+  ) : (
+    <div class="news-list">
+      {entries.map((entry) => <NewsSummaryCard entry={entry} />)}
+    </div>
+  )}
+</BaseLayout>

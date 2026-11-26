@@ -1,0 +1,66 @@
+---
+// The Purdy Shrine: the newest Love Letter, the origin story, the Reasons We Love Brock, his
+// stat tracker, Purdy in the Film Room, and every Love Letter. Family-friendly, and never about
+// his personal life or family.
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import LoveLetter from "../../components/LoveLetter.astro";
+import PurdyFilmRoom from "../../components/PurdyFilmRoom.astro";
+import PurdyStatTracker from "../../components/PurdyStatTracker.astro";
+import { letterGameLine, loveLettersNewestFirst, variantLabel } from "../../site/purdy-shrine";
+import { shrineFilmRoom } from "../../site/film-room";
+import { sections, sitePath } from "../../site/sections";
+
+const section = sections.find((s) => s.slug === "purdy-shrine")!;
+const letters = loveLettersNewestFirst(await getCollection("loveLetters"));
+const newest = letters[0];
+const origin = (await getCollection("originStory"))[0];
+const OriginStory = origin ? (await render(origin)).Content : undefined;
+const reasonsList = (await getCollection("reasonsWeLoveBrock"))[0];
+const ReasonsIntro = reasonsList ? (await render(reasonsList)).Content : undefined;
+const tracker = (await getCollection("purdyStatTracker"))[0];
+// The Purdy-tagged Film Room entries, newest first.
+const filmRoom = shrineFilmRoom(await getCollection("filmRoom"));
+---
+<BaseLayout title={section.name}>
+  <h1>{section.name}</h1>
+  <p>{section.blurb}</p>
+
+  {newest ? <LoveLetter entry={newest} /> : <p class="placeholder">No Love Letters yet. The first arrives the day after the next game.</p>}
+
+  {origin && OriginStory && (
+    <section class="origin-story" aria-labelledby="origin-story-heading">
+      <h2 id="origin-story-heading">{origin.data.title}</h2>
+      <p class="news-meta">{origin.data.summary}</p>
+      <OriginStory />
+    </section>
+  )}
+
+  {reasonsList && (
+    <section class="reasons-we-love-brock" aria-labelledby="reasons-heading">
+      <h2 id="reasons-heading">{reasonsList.data.title}</h2>
+      {ReasonsIntro && <ReasonsIntro />}
+      <ol class="reasons">
+        {reasonsList.data.reasons.map((item) => <li>{item.reason}</li>)}
+      </ol>
+    </section>
+  )}
+
+  {tracker && <PurdyStatTracker entry={tracker} />}
+
+  <PurdyFilmRoom entries={filmRoom} />
+
+  {letters.length > 0 && (
+    <section class="love-letters" aria-labelledby="love-letters-heading">
+      <h2 id="love-letters-heading">All Love Letters</h2>
+      <ul>
+        {letters.map((letter) => (
+          <li>
+            <a href={sitePath(`purdy-shrine/love-letters/${letter.data.gameWeek}`)}>{letter.data.title}</a>
+            <span class="news-meta"> {letterGameLine(letter.data)}{letter.data.variant === "we-miss-you" && ` (${variantLabel(letter.data.variant)})`}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</BaseLayout>

@@ -1,0 +1,13 @@
+---
+import { getCollection } from "astro:content";
+import NewsPage from "../../components/NewsPage.astro";
+import { newestFirst, newsCategories } from "../../site/news";
+
+export function getStaticPaths() {
+  return newsCategories.map((category) => ({ params: { category: category.slug }, props: { name: category.name } }));
+}
+
+const { name } = Astro.props;
+const entries = newestFirst(await getCollection("news", (entry) => entry.data.category === name));
+---
+<NewsPage entries={entries} category={name} />

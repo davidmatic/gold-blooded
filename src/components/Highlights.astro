@@ -1,0 +1,51 @@
+---
+// The Highlights of a game just played, on that game's Game Week Page: the final score, the
+// standouts with their stat lines and write-ups, and any official YouTube clips (embedded with
+// YouTube's privacy-enhanced player; the publish check keeps every id to the official channels).
+import { render, type CollectionEntry } from "astro:content";
+import { finalScoreLine } from "../site/game-weeks";
+import { standouts } from "../site/post-game";
+
+interface Props {
+  entry: CollectionEntry<"highlights">;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { data } = entry;
+---
+<article class="highlights">
+  <h2>Highlights: {data.title}</h2>
+  <p class="final-score"><strong>Final: {finalScoreLine(data)}</strong></p>
+  <Content />
+  <ul class="standouts">
+    {standouts(data).map((standout) => (
+      <li>
+        <strong>{standout.player}</strong> ({standout.team}) <span class="stat-line">{standout.statLine}</span>
+        <p>{standout.writeUp}</p>
+      </li>
+    ))}
+  </ul>
+  {data.clips && data.clips.length > 0 && (
+    <div class="clips">
+      {data.clips.map((clip) => (
+        <div class="clip">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${clip.videoId}`}
+            title={`${clip.title} (${clip.channel})`}
+            loading="lazy"
+            allow="encrypted-media; picture-in-picture"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+          ></iframe>
+        </div>
+      ))}
+    </div>
+  )}
+  <p class="news-sources">
+    Stats: <a href="https://github.com/nflverse/nflverse-data" rel="noopener">nflverse</a>
+    {data.sources?.map((source) => (
+      <>, <a href={source.url} rel="noopener">{source.outlet}</a></>
+    ))}
+  </p>
+</article>

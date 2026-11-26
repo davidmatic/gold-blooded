@@ -1,0 +1,450 @@
+:root {
+  --red: #aa0000;
+  --red-dark: #7a0000;
+  --gold: #b3995d;
+  --gold-light: #e6d3a3;
+  --ink: #1d1d1d;
+  --paper: #fffaf0;
+  --max-width: 60rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+a {
+  color: var(--red);
+}
+
+.site-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.site-header {
+  background: var(--red);
+  border-bottom: 4px solid var(--gold);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+}
+
+.site-title {
+  color: var(--gold-light);
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.site-header ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+.site-header nav a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.site-header nav a:hover,
+.site-header nav a[aria-current="page"] {
+  color: var(--gold-light);
+  text-decoration: underline;
+}
+
+h1,
+h2 {
+  color: var(--red-dark);
+  line-height: 1.2;
+}
+
+.hero {
+  border-left: 6px solid var(--gold);
+  padding-left: 1rem;
+  margin-bottom: 2rem;
+}
+
+.section-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+}
+
+.section-cards a {
+  display: block;
+  height: 100%;
+  padding: 1rem;
+  border: 2px solid var(--gold);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+}
+
+.section-cards a:hover {
+  border-color: var(--red);
+}
+
+.section-cards h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+}
+
+.section-cards p {
+  margin: 0;
+}
+
+.placeholder {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.site-footer {
+  border-top: 4px solid var(--gold);
+  background: var(--red-dark);
+  color: var(--gold-light);
+  font-size: 0.875rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.site-footer p {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+/* News Summaries */
+.news-filter ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+}
+
+.news-filter a {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border: 2px solid var(--gold);
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.news-filter a[aria-current="page"] {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.news-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.news-summary {
+  padding: 1rem;
+  background: #fff;
+  border-left: 4px solid var(--gold);
+  border-radius: 0.25rem;
+}
+
+.news-summary[data-category="Injury"] {
+  border-left-color: var(--red);
+}
+
+.news-summary h3 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.news-meta {
+  display: flex;
+  gap: 0.75rem;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.news-category {
+  font-weight: 700;
+  color: var(--red-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.news-sources {
+  margin-bottom: 0;
+  font-size: 0.875rem;
+}
+
+.latest-news {
+  margin-bottom: 2rem;
+}
+
+.game-preview-lead {
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 2px solid var(--gold);
+  border-top: 6px solid var(--red);
+  border-radius: 0.5rem;
+}
+
+.offseason-lead {
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 2px solid var(--gold);
+  border-top: 6px solid var(--red);
+  border-radius: 0.5rem;
+}
+
+.offseason-lead h2 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.offseason-items {
+  padding-left: 1.25rem;
+}
+
+.offseason-items li {
+  margin-bottom: 0.375rem;
+}
+
+.move-kind {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--red-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.game-preview-lead h2 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--red-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.countdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-weight: 600;
+}
+
+.countdown-remaining {
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
+}
+
+.prediction {
+  font-size: 1.125rem;
+}
+
+.game-preview,
+.season-recap,
+.stat-breakdown,
+.highlights {
+  margin-bottom: 2rem;
+}
+
+.standouts {
+  padding-left: 1.25rem;
+}
+
+.standouts p {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.stat-line {
+  color: var(--red-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Official YouTube clips, 16:9 at any width. */
+.clips {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.clip iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+
+/* Stat Breakdown tables scroll sideways on a narrow phone instead of widening the page. */
+.stat-table-wrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.stat-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-table caption {
+  text-align: left;
+  font-weight: 700;
+  color: var(--red-dark);
+  padding-bottom: 0.25rem;
+}
+
+.stat-table th,
+.stat-table td {
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--gold-light);
+  text-align: left;
+}
+
+.stat-table td:last-child,
+.stat-table thead th:last-child {
+  text-align: right;
+}
+
+.stat-table thead th {
+  border-bottom: 2px solid var(--gold);
+}
+
+.archive-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.archive-list li {
+  padding: 1rem;
+  border: 2px solid var(--gold);
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.archive-list a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.archive-list strong {
+  display: block;
+  font-size: 1.125rem;
+}
+
+/* The Purdy Shrine. */
+.love-letter-lead,
+.love-letter {
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 2px solid var(--gold);
+  border-top: 6px solid var(--gold);
+  border-radius: 0.5rem;
+}
+
+.love-letter.we-miss-you {
+  border-top-color: var(--red);
+}
+
+.love-letter-lead h2,
+.love-letter h1,
+.love-letter h2 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.love-letter-kind {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.origin-story,
+.reasons-we-love-brock,
+.stat-tracker,
+.purdy-film-room,
+.love-letters {
+  margin-bottom: 2rem;
+}
+
+.reasons li {
+  margin-bottom: 0.35rem;
+}
+
+.game-log tr.dnp td {
+  font-weight: 700;
+  color: var(--red-dark);
+}
+
+/* The Film Room. */
+.film-room-lead {
+  margin-bottom: 2rem;
+}
+
+.film-room-entry {
+  padding: 1rem;
+  background: #fff;
+  border-left: 4px solid var(--gold);
+  border-radius: 0.25rem;
+}
+
+.film-room-entry[data-purdy] {
+  border-left-color: var(--red);
+}
+
+.film-room-entry h3 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.film-room-purdy {
+  font-weight: 700;
+  color: var(--red);
+}
+
+.film-room-note {
+  font-size: 0.875rem;
+  font-style: italic;
+}

@@ -1,0 +1,20 @@
+---
+import { sections, sitePath } from "../site/sections";
+
+const current = Astro.url.pathname;
+---
+<header class="site-header">
+  <a class="site-title" href={sitePath()}>Gold Blooded</a>
+  <nav aria-label="Site">
+    <ul>
+      {sections.map((section) => {
+        const href = sitePath(section.slug);
+        return (
+          <li>
+            <a href={href} aria-current={current === href ? "page" : undefined}>{section.name}</a>
+          </li>
+        );
+      })}
+    </ul>
+  </nav>
+</header>

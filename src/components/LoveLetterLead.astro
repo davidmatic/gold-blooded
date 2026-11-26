@@ -1,0 +1,22 @@
+---
+// The newest Love Letter on the homepage, linking to its page and to the Purdy Shrine.
+import { render, type CollectionEntry } from "astro:content";
+import { letterGameLine, variantLabel } from "../site/purdy-shrine";
+import { sitePath } from "../site/sections";
+
+interface Props {
+  entry: CollectionEntry<"loveLetters">;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { data } = entry;
+const href = sitePath(`purdy-shrine/love-letters/${data.gameWeek}`);
+---
+<section class="love-letter-lead" aria-labelledby="love-letter-heading">
+  <p class="love-letter-kind">The newest Love Letter{data.variant === "we-miss-you" && `: ${variantLabel(data.variant)}`}</p>
+  <h2 id="love-letter-heading"><a href={href}>{data.title}</a></h2>
+  <p class="news-meta">{letterGameLine(data)}</p>
+  <Content />
+  <p><a href={sitePath("purdy-shrine")}>Visit the Purdy Shrine</a></p>
+</section>

@@ -1,0 +1,73 @@
+---
+// Draft Coverage: the newest Offseason's team needs, mock draft roundup, draft-day pick
+// tracker, and profiles of the players drafted. One running document per Offseason, in
+// content/offseason/<year>/draft-coverage.md.
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { currentDocument, formatDay, formatDraftDates } from "../site/offseason";
+
+const coverage = currentDocument(await getCollection("draftCoverage"));
+const Content = coverage ? (await render(coverage)).Content : undefined;
+const title = coverage?.data.title ?? "Draft Coverage";
+const data = coverage?.data;
+---
+<BaseLayout title={title}>
+  <h1>{title}</h1>
+  {data && Content ? (
+    <article class="offseason-document">
+      <p class="news-meta">The NFL Draft: {formatDraftDates(data.draft)}. Updated {formatDay(data.updated)}.</p>
+      <Content />
+
+      {data.picks.length > 0 && (
+        <section aria-labelledby="picks-heading">
+          <h2 id="picks-heading">Pick tracker</h2>
+          <ol class="offseason-items">
+            {data.picks.map((pick) => (
+              <li>
+                Round {pick.round}, No. {pick.overall}: <strong>{pick.player}</strong>, {pick.position}, {pick.school}
+                <span class="news-sources"> (<a href={pick.source.url} rel="noopener">{pick.source.outlet}</a>)</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {data.profiles.length > 0 && (
+        <section aria-labelledby="profiles-heading">
+          <h2 id="profiles-heading">The draft class</h2>
+          {data.profiles.map((profile) => (
+            <article class="news-summary">
+              <h3>{profile.player}, {profile.position}, {profile.school}</h3>
+              <p>{profile.profile}</p>
+              <p class="news-sources">Source: <a href={profile.source.url} rel="noopener">{profile.source.outlet}</a></p>
+            </article>
+          ))}
+        </section>
+      )}
+
+      {data.teamNeeds.length > 0 && (
+        <section aria-labelledby="needs-heading">
+          <h2 id="needs-heading">Team needs</h2>
+          <ul class="offseason-items">
+            {data.teamNeeds.map((need) => <li><strong>{need.position}</strong>: {need.note}</li>)}
+          </ul>
+        </section>
+      )}
+
+      {data.mockDrafts.length > 0 && (
+        <section aria-labelledby="mocks-heading">
+          <h2 id="mocks-heading">Mock draft roundup</h2>
+          <ul class="offseason-items">
+            {data.mockDrafts.map((mock) => (
+              <li>
+                <a href={mock.source.url} rel="noopener">{mock.source.outlet}</a>: No. {mock.pick}, <strong>{mock.player}</strong>, {mock.position}, {mock.school}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </article>
+  ) : (
+    <p class="placeholder">Draft Coverage starts with the Offseason.</p>
+  )}
+</BaseLayout>

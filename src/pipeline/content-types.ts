@@ -1,0 +1,225 @@
+// How each content type's drafts become entries: the schema that validates them, the fields
+// the pipeline owns (the writer can't set or get them wrong), and where the entry is filed.
+import type { z } from "astro/zod";
+import { GAME_WEEK_FILES, gamePreviewSchema, highlightsSchema, seasonRecapSchema, statBreakdownSchema } from "../content/game-week";
+import { newsSummarySchema } from "../content/news-summary";
+import { filmRoomSchema } from "../content/film-room";
+import { draftCoverageSchema, draftDates, freeAgencyTrackerSchema, OFFSEASON_FILES, offseasonYear } from "../content/offseason";
+import { seasonStatsPath, seasonStatsSchema } from "../content/season-stats";
+import { LOVE_LETTER_VARIANTS, loveLetterSchema, PURDY_SHRINE_FILES, purdyStatTrackerSchema, reasonsWeLoveBrockSchema } from "../content/purdy-shrine";
+import { purdyPlayed, purdyStatTracker } from "./purdy";
+import { appendReason, mergeDraftCoverage, mergeFreeAgencyTracker } from "./running-documents";
+import { predictionRecordPath, predictionRecordSchema, scorePrediction } from "../content/prediction-record";
+import { gameFields, gameWeekOf, playedGame, seasonRecord, venue } from "./calendar";
+import type { ContentType, Job, SourceSnapshot } from "./types";
+
+interface ContentTypeDefinition {
+  schema: z.ZodType;
+  /** Fields the pipeline fills in, overriding anything the writer put there. */
+  owned(job: Job, snapshot: SourceSnapshot): Record<string, unknown>;
+  /** Where the entry goes inside the content folder. */
+  path(data: Record<string, unknown>, job: Job): string;
+  /** A run writes exactly one of these (a Game Week Page has one Game Preview). */
+  single?: boolean;
+  /**
+   * For a running document: folds the writer's update into the document as it stood (from the
+   * snapshot), before the owned fields are filled in. Without it the draft is the whole entry.
+   */
+  merge?(draft: Record<string, unknown>, snapshot: SourceSnapshot, job: Job): Record<string, unknown>;
+  /** The entry's Markdown body, when it isn't the draft's (a running document's kept introduction). */
+  body?(draft: { body: string }, snapshot: SourceSnapshot): string;
+  /**
+   * For content the pipeline works out itself, with no writer: the draft it makes from the
+   * snapshot, or undefined when there is nothing to write this run.
+   */
+  derive?(job: Job, snapshot: SourceSnapshot): { data: Record<string, unknown>; body: string } | undefined;
+}
+
+export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
+  "news-summary": {
+    schema: newsSummarySchema,
+    owned: (job) => ({ date: job.date }),
+    path: (data, job) => `news/${job.date}-${slugify(typeof data.title === "string" ? data.title : "untitled")}.md`,
+  },
+  "game-preview": {
+    schema: gamePreviewSchema,
+    single: true,
+    owned: (job) => ({ date: job.date, ...upcomingGame(job, "a Game Preview") }),
+    path: (data) => `game-weeks/${data.gameWeek}/${GAME_WEEK_FILES["game-preview"]}`,
+  },
+  "stat-breakdown": {
+    schema: statBreakdownSchema,
+    single: true,
+    owned: (job) => ({ date: job.date, ...upcomingGame(job, "a Stat Breakdown") }),
+    path: (data) => `game-weeks/${data.gameWeek}/${GAME_WEEK_FILES["stat-breakdown"]}`,
+  },
+  "season-recap": {
+    schema: seasonRecapSchema,
+    single: true,
+    owned: (job, snapshot) => {
+      const calendar = job.calendar;
+      if (calendar?.period !== "bye-week") throw new Error("a season recap is written only in a Bye Week");
+      const next = calendar.upcoming;
+      return {
+        date: job.date,
+        gameWeek: calendar.gameWeek,
+        season: calendar.season,
+        week: calendar.week,
+        record: seasonRecord(snapshot.schedule ?? [], calendar.season, job.date),
+        nextGame: {
+          gameWeek: gameWeekOf(next),
+          opponent: next.opponent,
+          venue: venue(next),
+          kickoff: next.kickoff,
+        },
+      };
+    },
+    path: (data) => `game-weeks/${data.gameWeek}/${GAME_WEEK_FILES["season-recap"]}`,
+  },
+  highlights: {
+    schema: highlightsSchema,
+    single: true,
+    owned: (job) => {
+      const game = playedGame(job, "Highlights");
+      return { date: job.date, ...gameFields(game), season: game.season, kickoff: game.kickoff };
+    },
+    path: (data) => `game-weeks/${data.gameWeek}/${GAME_WEEK_FILES.highlights}`,
+  },
+  "season-stats": {
+    schema: seasonStatsSchema,
+    single: true,
+    owned: (job, snapshot) => {
+      const game = playedGame(job, "Season Stats");
+      return {
+        title: `${game.season} Season Stats`,
+        season: game.season,
+        updated: job.date,
+        throughGame: gameFields(game),
+        record: seasonRecord(snapshot.schedule ?? [], game.season, job.date),
+      };
+    },
+    path: (data) => seasonStatsPath(data.season as number),
+  },
+  "prediction-record": {
+    schema: predictionRecordSchema,
+    // Scores the game's Game Preview against the final score. A re-run for the same game replaces
+    // its earlier score rather than adding a second. No Game Preview for the game, nothing to write.
+    derive: (job, snapshot) => {
+      const game = playedGame(job, "Prediction Records");
+      const gamePreview = snapshot.gamePreview;
+      if (gamePreview?.gameId !== game.gameId) return undefined;
+      const scored = {
+        ...gameFields(game),
+        predicted: gamePreview.prediction,
+        ...scorePrediction(gamePreview.prediction, game.result, game.opponent),
+      };
+      const current = snapshot.current?.["prediction-record"];
+      const earlier = current?.data.season === game.season ? current.data.games.filter((g) => g.gameId !== game.gameId) : [];
+      // Playoff weeks continue the numbering, so the week orders the season's games.
+      const games = [...earlier, scored].sort((a, b) => a.week - b.week);
+      return { data: { games }, body: current?.body ?? "" };
+    },
+    owned: (job) => {
+      const game = playedGame(job, "Prediction Records");
+      return { title: `${game.season} Prediction Record`, season: game.season, updated: job.date };
+    },
+    path: (data) => predictionRecordPath(data.season as number),
+  },
+  "free-agency-tracker": {
+    schema: freeAgencyTrackerSchema,
+    single: true,
+    merge: (draft, snapshot) => mergeFreeAgencyTracker(draft, snapshot.current?.["free-agency-tracker"]?.data),
+    owned: (job) => offseasonOwned(job, "Free Agency Tracker"),
+    path: (data) => `offseason/${data.offseason}/${OFFSEASON_FILES["free-agency-tracker"]}`,
+  },
+  "draft-coverage": {
+    schema: draftCoverageSchema,
+    single: true,
+    merge: (draft, snapshot) => mergeDraftCoverage(draft, snapshot.current?.["draft-coverage"]?.data),
+    owned: (job) => ({ ...offseasonOwned(job, "Draft Coverage"), draft: draftDates(offseasonYear(job.date)) }),
+    path: (data) => `offseason/${data.offseason}/${OFFSEASON_FILES["draft-coverage"]}`,
+  },
+  "love-letter": {
+    schema: loveLetterSchema,
+    single: true,
+    owned: (job, snapshot) => {
+      const game = playedGame(job, "Love Letters");
+      return {
+        date: job.date,
+        // Set from the DNP determination, so the writer can't pick the variant.
+        variant: purdyPlayed(snapshot.stats, game.gameId) ? LOVE_LETTER_VARIANTS[0] : LOVE_LETTER_VARIANTS[1],
+        ...gameFields(game),
+        season: game.season,
+      };
+    },
+    path: (data) => PURDY_SHRINE_FILES["love-letter"](data.gameWeek as string),
+  },
+  "reasons-we-love-brock": {
+    schema: reasonsWeLoveBrockSchema,
+    single: true,
+    merge: (draft, snapshot, job) => {
+      const game = playedGame(job, "Reasons We Love Brock");
+      return appendReason(draft, snapshot.current?.["reasons-we-love-brock"]?.data, { added: job.date, gameWeek: gameWeekOf(game) });
+    },
+    body: (_, snapshot) => snapshot.current?.["reasons-we-love-brock"]?.body ?? "",
+    owned: (job) => ({ title: "Reasons We Love Brock", updated: job.date }),
+    path: () => PURDY_SHRINE_FILES["reasons-we-love-brock"],
+  },
+  "purdy-stat-tracker": {
+    schema: purdyStatTrackerSchema,
+    // Rebuilt from nflverse after every game. Without his career lines (the sources didn't
+    // collect them) it is left as it stands.
+    derive: (job, snapshot) => {
+      if (!snapshot.purdyCareer) return undefined;
+      const game = playedGame(job, "The Purdy stat tracker");
+      if (!snapshot.stats) throw new Error("the Purdy stat tracker needs nflverse stats, and the source snapshot has none");
+      return { data: purdyStatTracker(game, snapshot.schedule ?? [], snapshot.stats, job.date), body: "" };
+    },
+    owned: (job) => {
+      const game = playedGame(job, "The Purdy stat tracker");
+      return {
+        title: "Brock Purdy Stat Tracker",
+        updated: job.date,
+        season: game.season,
+        throughGame: { gameId: game.gameId, gameWeek: gameWeekOf(game) },
+      };
+    },
+    path: () => PURDY_SHRINE_FILES["purdy-stat-tracker"],
+  },
+  "film-room": {
+    schema: filmRoomSchema,
+    // What the entry says about its source comes from the source, never from the writer. A link
+    // that isn't one of the run's breakdowns gets none of it, so the entry fails its schema.
+    merge: (draft, snapshot) => {
+      const { show: _show, medium: _medium, sourceTitle: _title, publishedAt: _published, transcribed: _transcribed, ...rest } = draft;
+      const source = snapshot.documents.find((doc) => doc.film && doc.url === draft.link);
+      if (!source?.film) return rest;
+      return { ...rest, show: source.film.show, medium: source.film.medium, sourceTitle: source.title, publishedAt: source.publishedAt, transcribed: source.film.transcribed };
+    },
+    owned: (job) => ({ date: job.date }),
+    path: (data, job) => `film-room/${job.date}-${slugify(typeof data.title === "string" ? data.title : "untitled")}.md`,
+  },
+};
+
+/** A Game Week's upcoming game, from the schedule: the fields its Game Week Page parts share. */
+function upcomingGame(job: Job, what: string) {
+  const calendar = job.calendar;
+  if (calendar?.period !== "game-week") throw new Error(`${what} is written only in a Game Week`);
+  const { result: _result, ...game } = gameFields(calendar.upcoming);
+  return { ...game, gameWeek: calendar.gameWeek, season: calendar.upcoming.season, kickoff: calendar.upcoming.kickoff };
+}
+
+/** Fields the pipeline owns on both Offseason running documents. */
+function offseasonOwned(job: Job, name: string) {
+  if (job.calendar?.period !== "offseason") throw new Error(`the ${name} is written only in the Offseason`);
+  const year = offseasonYear(job.date);
+  return { title: `${year} ${name}`, offseason: year, updated: job.date };
+}
+
+export function slugify(title: string): string {
+  return title
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}

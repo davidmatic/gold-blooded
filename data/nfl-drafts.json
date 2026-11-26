@@ -1,0 +1,7 @@
+{
+  "$comment": "NFL Draft dates, and the window around them when Draft Coverage takes over the homepage from the Free Agency Tracker (see README: Offseason). Add each year's dates once the NFL announces them; a year missing here is estimated as the fourth Thursday of April through the Saturday after.",
+  "homepageWindow": { "daysBefore": 21, "daysAfter": 7 },
+  "drafts": {
+    "2026": { "start": "2026-04-23", "end": "2026-04-25" }
+  }
+}

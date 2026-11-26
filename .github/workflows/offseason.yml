@@ -1,0 +1,66 @@
+name: Offseason
+
+# Runs the Offseason publish job every day. The job places the date on the 49ers' nflverse
+# schedule: in the Offseason it updates the year's running documents, the Free Agency Tracker
+# and Draft Coverage (content/offseason/<year>/); in the season it does nothing (no commit, no
+# deploy), so it can stay scheduled all year. On a published result it commits the updated
+# documents to main and deploys the site. On a rejected result the job fails (GitHub notifies
+# the owner), nothing is committed, and the site keeps its previous version.
+#
+# Uses the real adapters: it fetches the schedule and the Preferred Sources and writes with
+# Claude. The API key is the ANTHROPIC_API_KEY repository secret (see README: Secrets and cost).
+# News Summaries carry on as usual in the daily news workflow.
+
+on:
+  schedule:
+    - cron: "30 16 * * *" # 16:30 UTC = 8:30am / 9:30am Pacific, after the daily news run
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Date to run for (YYYY-MM-DD, Pacific). Defaults to today.
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Run the Offseason job
+        run: npx tsx scripts/publish.ts offseason --adapters real ${DATE:+--date "$DATE"}
+        env:
+          DATE: ${{ inputs.date }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Commit new content
+        id: commit
+        uses: ./.github/actions/commit-content
+        with:
+          message: Offseason update for
+          date: ${{ inputs.date }}
+
+  deploy:
+    needs: publish
+    if: needs.publish.outputs.sha != ''
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.publish.outputs.sha }}

@@ -1,0 +1,44 @@
+---
+// The Prediction Record on the Season Stats page: how each Game Preview's prediction compared
+// with the final score, scored by the post-game job.
+import type { PredictionRecordData } from "../content/prediction-record";
+import { predictionTally } from "../content/prediction-record";
+import { finalScoreLine, gameWeekName, matchup } from "../site/game-weeks";
+import { sitePath } from "../site/sections";
+
+interface Props {
+  record?: PredictionRecordData;
+}
+
+const { record } = Astro.props;
+const tally = record && predictionTally(record);
+---
+<section class="prediction-record">
+  <h2>Prediction Record</h2>
+  {record && tally && tally.scored > 0 ? (
+    <>
+      <p class="record">Correct winners: <strong>{tally.correctWinners} of {tally.scored}</strong></p>
+      <p class="record">Average points off: <strong>{tally.averagePointsOff?.toFixed(1)}</strong></p>
+      <p class="news-meta">Points off: how far a predicted score was from the final, adding up the gap in each team's points (24-17 predicted, 35-10 final: 11 + 7 = 18). Games without a Game Preview aren't counted.</p>
+      <div class="stat-table-wrap">
+        <table class="stat-table">
+          <caption>{record.season} predictions</caption>
+          <thead><tr><th scope="col">Game</th><th scope="col">Predicted</th><th scope="col">Final</th><th scope="col">Winner</th><th scope="col">Points off</th></tr></thead>
+          <tbody>
+            {record.games.map((game) => (
+              <tr>
+                <th scope="row"><a href={sitePath(`game-weeks/${game.gameWeek}`)}>{gameWeekName({ season: record.season, week: game.week, gameType: game.gameType })}</a> {matchup(game)}</th>
+                <td>{finalScoreLine({ opponent: game.opponent, result: game.predicted.score })}</td>
+                <td>{finalScoreLine(game)}</td>
+                <td>{game.correctWinner ? "Right winner" : "Wrong winner"}</td>
+                <td>{game.pointsOff}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  ) : (
+    <p class="placeholder">No predictions scored yet. Each Game Preview's prediction is scored the day after its game.</p>
+  )}
+</section>

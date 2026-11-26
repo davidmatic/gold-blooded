@@ -1,0 +1,30 @@
+---
+// The Game Preview, as it appears on its Game Week Page.
+import { render, type CollectionEntry } from "astro:content";
+import { predictionLine } from "../site/game-weeks";
+import Countdown from "./Countdown.astro";
+
+interface Props {
+  entry: CollectionEntry<"gamePreviews">;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { data } = entry;
+---
+<article class="game-preview">
+  <h2>Game Preview: {data.title}</h2>
+  <Countdown kickoff={data.kickoff} />
+  <Content />
+  <h3>Storylines</h3>
+  <ul>{data.storylines.map((storyline) => <li>{storyline}</li>)}</ul>
+  <h3>Keys to the game</h3>
+  <ul>{data.keys.map((key) => <li>{key}</li>)}</ul>
+  <p class="prediction"><strong>Prediction: {predictionLine(data)}</strong></p>
+  <p class="news-sources">
+    Sources:
+    {data.sources.map((source, i) => (
+      <>{i > 0 && ", "}<a href={source.url} rel="noopener">{source.outlet}</a></>
+    ))}
+  </p>
+</article>

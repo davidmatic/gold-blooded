@@ -1,0 +1,46 @@
+{
+  "resultCount": 6,
+  "results": [
+    {
+      "wrapperType": "track",
+      "trackName": "49ers Talk: A San Francisco 49ers Podcast",
+      "trackViewUrl": "https://podcasts.apple.com/us/podcast/49ers-talk-a-san-francisco-49ers-podcast/id1153457233?uo=4",
+      "releaseDate": "2026-11-26T02:32:00Z"
+    },
+    {
+      "wrapperType": "podcastEpisode",
+      "trackName": "Brock Purdy misses practice as 49ers prepare to face desperate Seahawks",
+      "trackViewUrl": "https://podcasts.apple.com/us/podcast/brock-purdy-misses-practice-as-49ers-prepare-to-face/id1153457233?i=1000804108161&uo=4",
+      "episodeGuid": "bef9e9dd-a899-4978-bff6-3341812da8eb",
+      "releaseDate": "2026-11-26T02:32:18Z"
+    },
+    {
+      "wrapperType": "podcastEpisode",
+      "trackName": "49ers send message to NFL with prime-time magic in Mexico City",
+      "trackViewUrl": "https://podcasts.apple.com/us/podcast/49ers-send-message-to-nfl-with-prime-time-magic-in/id1153457233?i=1000803552730&uo=4",
+      "episodeGuid": "534d666c-09dd-48f3-b7b8-12039ba201e3",
+      "releaseDate": "2026-11-23T08:17:23Z"
+    },
+    {
+      "wrapperType": "podcastEpisode",
+      "trackName": "Kyle Shanahan discusses 49ers’ challenges for matchup vs. Vikings in Mexico City",
+      "trackViewUrl": "https://podcasts.apple.com/us/podcast/kyle-shanahan-discusses-49ers-challenges-for-matchup/id1153457233?i=1000803301115&uo=4",
+      "episodeGuid": "19f71f0b-18a5-4708-806d-b2464fd78a4b",
+      "releaseDate": "2026-11-21T14:00:00Z"
+    },
+    {
+      "wrapperType": "podcastEpisode",
+      "trackName": "Inside the 49ers’ altitude training ahead of their Sunday night showdown vs. Vikings",
+      "trackViewUrl": "https://podcasts.apple.com/us/podcast/inside-the-49ers-altitude-training-ahead-of-their/id1153457233?i=1000802845878&uo=4",
+      "episodeGuid": "1566d312-377e-452a-89c1-220eba88821a",
+      "releaseDate": "2026-11-19T02:49:14Z"
+    },
+    {
+      "wrapperType": "podcastEpisode",
+      "trackName": "Christian McCaffrey, 49ers’ offense explode in historic win vs. Cowboys",
+      "trackViewUrl": "https://podcasts.apple.com/us/podcast/christian-mccaffrey-49ers-offense-explode-in-historic/id1153457233?i=1000802189845&uo=4",
+      "episodeGuid": "e45aaf8a-3ede-4f79-a994-f2a3b98dde27",
+      "releaseDate": "2026-11-16T06:03:40Z"
+    }
+  ]
+}

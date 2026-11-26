@@ -1,0 +1,36 @@
+---
+// The Free Agency Tracker: the newest Offseason's signings, departures, and re-signings,
+// newest first, each linked to its source. One running document per Offseason, in
+// content/offseason/<year>/free-agency-tracker.md.
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { currentDocument, formatDay, moveLabel } from "../site/offseason";
+
+const tracker = currentDocument(await getCollection("freeAgencyTrackers"));
+const Content = tracker ? (await render(tracker)).Content : undefined;
+const title = tracker?.data.title ?? "Free Agency Tracker";
+---
+<BaseLayout title={title}>
+  <h1>{title}</h1>
+  {tracker && Content ? (
+    <article class="offseason-document">
+      <p class="news-meta">Updated {formatDay(tracker.data.updated)}</p>
+      <Content />
+      {tracker.data.moves.length > 0 ? (
+        <ul class="offseason-items">
+          {tracker.data.moves.map((move) => (
+            <li>
+              <span class="move-kind">{moveLabel(move.kind)}</span> <strong>{move.player}</strong>, {move.position}
+              {move.detail && <>: {move.detail}</>}
+              <span class="news-sources"> ({formatDay(move.date)}, <a href={move.source.url} rel="noopener">{move.source.outlet}</a>)</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No moves yet.</p>
+      )}
+    </article>
+  ) : (
+    <p class="placeholder">The Free Agency Tracker starts with the Offseason.</p>
+  )}
+</BaseLayout>

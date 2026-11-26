@@ -1,0 +1,80 @@
+name: Daily news
+
+# Runs the daily news publish job. On a published result it commits the new News Summaries
+# to main and deploys the site. On a rejected result the job fails (GitHub notifies the
+# owner), nothing is committed, and the site keeps its previous version.
+#
+# Uses the real adapters: it fetches the Preferred Sources and writes with Claude. The API key
+# is the ANTHROPIC_API_KEY repository secret (see README: Secrets and cost).
+#
+# Podcasts: the newest 49ers Talk and JFA episodes are transcribed on the runner with
+# faster-whisper (Python). Transcripts are cached in data/transcripts/ and committed, even when
+# the run is rejected, so an episode is transcribed only once. The Whisper model is kept in
+# actions/cache.
+
+on:
+  schedule:
+    - cron: "0 15 * * *" # 15:00 UTC = 7am / 8am Pacific
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Date to run for (YYYY-MM-DD, Pacific). Defaults to today.
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  WHISPER_MODEL: small.en
+
+concurrency:
+  group: content-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Whisper on 4 CPUs: up to two episodes per show, 10-25 minutes each.
+    timeout-minutes: 150
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: ./.github/actions/setup-whisper
+        with:
+          model: ${{ env.WHISPER_MODEL }}
+      - name: Run the daily news job
+        id: publish
+        run: npx tsx scripts/publish.ts daily-news --adapters real ${DATE:+--date "$DATE"}
+        env:
+          DATE: ${{ inputs.date }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Runs after a rejected publish too, so new transcripts are kept; content only when published.
+      - name: Commit new content and transcripts
+        id: commit
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/commit-content
+        with:
+          message: Daily news for
+          date: ${{ inputs.date }}
+          published: ${{ steps.publish.outcome == 'success' }}
+          transcripts: true
+
+  deploy:
+    needs: publish
+    if: needs.publish.outputs.sha != ''
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.publish.outputs.sha }}

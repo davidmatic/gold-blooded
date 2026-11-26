@@ -1,0 +1,166 @@
+// The publish pipeline's single entry point (Seam 1 in spec #1).
+//
+// publish() collects a source snapshot, works out what the job writes on its date (for
+// calendar jobs, from where the date falls in the 49ers' schedule), asks the writer for those
+// drafts, turns them into content entries, and runs the job's publish checks. It never writes
+// anything itself: a published result carries the entries for the caller to store, and a
+// rejected one carries only the failures, so a rejected run leaves the content store untouched.
+import { gameToCover, resolveCalendar, type CalendarPosition } from "./calendar";
+import { clipsAreOfficial } from "./checks/official-clips";
+import type { PublishCheck } from "./checks/check";
+import { injuryStatusesMatch } from "./checks/injury-status";
+import { quotesAreVerbatim } from "./checks/quotes";
+import { podcastsAttributed } from "./checks/podcast-attribution";
+import { statsMatchNflverse } from "./checks/nflverse-stats";
+import { sourceLinksResolve } from "./checks/source-links";
+import { offseasonItemsSourced } from "./checks/offseason-items";
+import { injuryMentionsStated } from "./checks/injury-mentions";
+import { numbersGrounded } from "./checks/numbers";
+import { filmRoomCovered, purdyTagGrounded } from "./checks/film-room";
+import { CONTENT_TYPES } from "./content-types";
+import { schemaIssues } from "./content-store";
+import type {
+  CheckFailure,
+  ContentEntry,
+  ContentType,
+  DraftEntry,
+  Job,
+  JobType,
+  PublishRequest,
+  PublishResult,
+  SourceSnapshot,
+} from "./types";
+
+interface JobDefinition {
+  checks: PublishCheck[];
+  /**
+   * What the job writes: always the same content types, or a choice made from where the date
+   * falls on the calendar. An empty choice means the job has nothing to do that day.
+   */
+  writes: ContentType[] | ((calendar: CalendarPosition, date: string, snapshot: SourceSnapshot) => ContentType[]);
+  /**
+   * Content the pipeline works out itself (each type's `derive`), never asked of the writer.
+   * Made only on a run that writes something; a type with nothing to derive is left as it stands.
+   */
+  derives?: ContentType[];
+}
+
+const ALL_CHECKS = [sourceLinksResolve, injuryStatusesMatch, quotesAreVerbatim, podcastsAttributed, statsMatchNflverse, numbersGrounded, clipsAreOfficial];
+
+/**
+ * What the post-game job writes the day after a game, all about the game just played. Later
+ * post-game content joins this list, with its content type and its share of the post-game writer.
+ */
+export const POST_GAME_CONTENT: ContentType[] = [
+  "highlights",
+  "season-stats",
+  // The Purdy Shrine (#10).
+  "love-letter",
+  "reasons-we-love-brock",
+];
+
+/**
+ * What the post-game job works out itself the day after a game, with no writer: the Prediction
+ * Record, scored from the game's Game Preview and the final score.
+ */
+export const POST_GAME_DERIVED: ContentType[] = [
+  "prediction-record",
+  // The Purdy Shrine (#10): his season and career numbers, with DNP games, from nflverse.
+  "purdy-stat-tracker",
+];
+
+const JOBS: Record<JobType, JobDefinition> = {
+  "daily-news": { checks: [...ALL_CHECKS, injuryMentionsStated], writes: ["news-summary"] },
+  // Daily: an entry for each new QB School video and JFA episode in the snapshot.
+  "film-room": { checks: [...ALL_CHECKS, filmRoomCovered, purdyTagGrounded], writes: ["film-room"] },
+  // A Game Preview and a Stat Breakdown in a Game Week, a season recap in a Bye Week, nothing
+  // in the Offseason.
+  "thursday-preview": {
+    checks: ALL_CHECKS,
+    writes: (calendar) =>
+      calendar.period === "game-week" ? ["game-preview", "stat-breakdown"] : calendar.period === "bye-week" ? ["season-recap"] : [],
+  },
+  // The Offseason's running documents, updated every Offseason day; nothing in the season.
+  offseason: {
+    checks: [...ALL_CHECKS, offseasonItemsSourced],
+    writes: (calendar) => (calendar.period === "offseason" ? ["free-agency-tracker", "draft-coverage"] : []),
+  },
+  // Runs daily; writes when a 49ers game was played in the last few days (in any period: the
+  // days after the season's last game are already the Offseason) and its Highlights aren't in the
+  // content store yet, so a run that failed is caught up by the next. Without the final score it
+  // fails before asking the writer.
+  "post-game": {
+    checks: [...ALL_CHECKS, injuryMentionsStated],
+    writes: (calendar, date, snapshot) => {
+      const game = gameToCover(calendar, date);
+      if (!game) return [];
+      if (!game.result) throw new Error(`the schedule has no final score for ${game.gameId} yet`);
+      if (snapshot.highlightsPublished?.includes(game.gameId)) return [];
+      return POST_GAME_CONTENT;
+    },
+    derives: POST_GAME_DERIVED,
+  },
+};
+
+export async function publish(request: PublishRequest): Promise<PublishResult> {
+  const definition = JOBS[request.job];
+
+  const snapshot = await request.sources.collect({ type: request.job, date: request.date });
+  const job = assign(request, definition, snapshot);
+  if (job.contentTypes!.length === 0) return { status: "published", entries: [] };
+
+  const drafts = await request.writer.write(job, snapshot);
+  const entries: ContentEntry[] = [];
+  const failures: CheckFailure[] = [];
+  for (const draft of drafts) {
+    const result = job.contentTypes!.includes(draft.type) ? toEntry(draft, job, snapshot) : notAsked(draft, job);
+    if ("entry" in result) entries.push(result.entry);
+    else failures.push(result.failure);
+  }
+  failures.push(...missingContent(job, drafts));
+  for (const type of definition.derives ?? []) {
+    const derived = CONTENT_TYPES[type].derive!(job, snapshot);
+    if (!derived) continue;
+    const result = toEntry({ type, ...derived }, job, snapshot);
+    if ("entry" in result) entries.push(result.entry);
+    else failures.push(result.failure);
+  }
+
+  const input = { job, entries, snapshot, sources: request.sources };
+  failures.push(...(await Promise.all(definition.checks.map((check) => check(input)))).flat());
+  return failures.length > 0 ? { status: "rejected", failures } : { status: "published", entries };
+}
+
+/** The job as the writer sees it: what to write, and for calendar jobs, where the date falls. */
+function assign(request: PublishRequest, definition: JobDefinition, snapshot: SourceSnapshot): Job {
+  const job: Job = { type: request.job, date: request.date };
+  if (Array.isArray(definition.writes)) return { ...job, contentTypes: definition.writes };
+  if (!snapshot.schedule) throw new Error(`the ${request.job} job needs the 49ers schedule, and the source snapshot has none`);
+  const calendar = resolveCalendar(request.date, snapshot.schedule);
+  return { ...job, calendar, contentTypes: definition.writes(calendar, request.date, snapshot) };
+}
+
+/** A writer's draft of a type the job didn't ask it for (or works out itself) is refused. */
+function notAsked(draft: DraftEntry, job: Job): { failure: CheckFailure } {
+  return { failure: { check: "schema", entry: draft.type, reason: `the ${job.type} job doesn't write a ${draft.type} on ${job.date}` } };
+}
+
+/** A draft becomes an entry only if it fits the type's schema. */
+function toEntry(draft: DraftEntry, job: Job, snapshot: SourceSnapshot): { entry: ContentEntry } | { failure: CheckFailure } {
+  const definition = CONTENT_TYPES[draft.type];
+  const data = { ...(definition.merge ? definition.merge(draft.data, snapshot, job) : draft.data), ...definition.owned(job, snapshot) };
+  const path = definition.path(data, job);
+  const parsed = definition.schema.safeParse(data);
+  if (!parsed.success) return { failure: { check: "schema", entry: path, reason: schemaIssues(parsed.error, "draft") } };
+  const body = definition.body ? definition.body(draft, snapshot) : draft.body;
+  return { entry: { type: draft.type, path, data: parsed.data, body } as ContentEntry };
+}
+
+/** A content type a run writes exactly one of must be there exactly once. */
+function missingContent(job: Job, drafts: DraftEntry[]): CheckFailure[] {
+  return job.contentTypes!.flatMap((type) => {
+    const count = drafts.filter((draft) => draft.type === type).length;
+    if (!CONTENT_TYPES[type].single || count === 1) return [];
+    return [{ check: "schema", entry: type, reason: `the ${job.type} job writes exactly one ${type}, and the writer returned ${count}` }];
+  });
+}
