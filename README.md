@@ -29,8 +29,8 @@ npm run build    # static output in dist/
   `calendar.ts` is calendar resolution, shared by every job that depends on the calendar (see
   Calendar below). `content-types.ts` says, per content type, which schema validates a draft, which
   fields the pipeline fills in, and where the entry is filed. The Thursday preview job's real adapters
-  are `adapters/real/preview-sources.ts` (the news snapshot plus the nflverse schedule, parsed in
-  `schedule.ts`) and `adapters/real/claude-preview-writer.ts`. The post-game job's are
+  are `adapters/real/thursday-preview-sources.ts` (the news snapshot plus the nflverse schedule, parsed in
+  `schedule.ts`) and `adapters/real/claude-game-preview-writer.ts`. The post-game job's are
   `adapters/real/post-game-sources.ts` (with the official YouTube feeds in `youtube.ts`) and
   `adapters/real/claude-post-game-writer.ts`. Every Claude writer makes its request through
   `adapters/real/claude.ts` (see Claude writer).
@@ -109,7 +109,7 @@ transcript.
 
 `adapters/real/claude-writer.ts` sends the snapshot to `claude-opus-5-5` through `@anthropic-ai/sdk`,
 with a neutral news voice prompt and structured output matching the News Summary schema (including
-the `injuries` and `quotes` the publish checks verify). Every writer (news, preview, Offseason,
+the `injuries` and `quotes` the publish checks verify). Every writer (news, Game Preview, Offseason,
 post-game) makes its requests through `claudeAsker()` in `adapters/real/claude.ts`: a voice prompt
 (cached), a brief, and a Zod schema for the structured output, at effort `medium`, with the API's
 server-side refusal fallback (`fallbacks: "default"`). Transient errors are retried twice; reaching

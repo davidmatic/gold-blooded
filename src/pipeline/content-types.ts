@@ -125,8 +125,8 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
     // its earlier score rather than adding a second. No Game Preview for the game, nothing to write.
     derive: (job, snapshot) => {
       const game = playedGame(job, "Prediction Records");
-      const preview = snapshot.gamePreview;
-      if (preview?.gameId !== game.gameId) return undefined;
+      const gamePreview = snapshot.gamePreview;
+      if (gamePreview?.gameId !== game.gameId) return undefined;
       const scored = {
         gameId: game.gameId,
         gameWeek: gameWeekSlug(game.season, game.week, game.gameType),
@@ -135,8 +135,8 @@ export const CONTENT_TYPES: Record<ContentType, ContentTypeDefinition> = {
         opponent: game.opponent,
         venue: venue(game),
         result: game.result,
-        predicted: preview.prediction,
-        ...scorePrediction(preview.prediction, game.result, game.opponent),
+        predicted: gamePreview.prediction,
+        ...scorePrediction(gamePreview.prediction, game.result, game.opponent),
       };
       const current = snapshot.current?.["prediction-record"];
       const earlier = current?.data.season === game.season ? current.data.games.filter((g) => g.gameId !== game.gameId) : [];

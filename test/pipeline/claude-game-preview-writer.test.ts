@@ -1,17 +1,17 @@
-// The Claude preview writer's pure parts: the brief it sends, and turning its structured output
+// The Claude Game Preview writer's pure parts: the brief it sends, and turning its structured output
 // into drafts the pipeline accepts. Nothing here calls Claude.
 import { describe, expect, it } from "vitest";
 import { publish, type Job } from "../../src/pipeline";
 import {
-  renderPreviewBrief,
+  renderGamePreviewBrief,
   renderStatBreakdownBrief,
-  toPreviewDraft,
+  toGamePreviewDraft,
   toRecapDraft,
   toStatBreakdownDraft,
-  type PreviewOutput,
+  type GamePreviewOutput,
   type RecapOutput,
   type StatBreakdownOutput,
-} from "../../src/pipeline/adapters/real/claude-preview-writer";
+} from "../../src/pipeline/adapters/real/claude-game-preview-writer";
 import { resolveCalendar } from "../../src/pipeline/calendar";
 import { fakeSources, recordedSnapshot } from "../support/fakes";
 
@@ -19,7 +19,7 @@ const snapshot = recordedSnapshot("thursday-preview-2026-11-26");
 const INJURY_URL = "https://www.49ers.com/news/injury-report-wednesday-week-13";
 const SHANAHAN_URL = "https://www.49ers.com/news/shanahan-press-conference-wednesday";
 
-const previewOutput: PreviewOutput = {
+const gamePreviewOutput: GamePreviewOutput = {
   title: "Seattle comes to Santa Clara",
   body: 'Kyle Shanahan said, "We have to be better on third down."',
   storylines: ["The NFC West lead."],
@@ -76,9 +76,9 @@ const recapOutput: RecapOutput = {
   quotes: [],
 };
 
-describe("Claude preview writer output", () => {
+describe("Claude Game Preview writer output", () => {
   it("becomes a Game Preview draft the pipeline publishes", async () => {
-    const draft = toPreviewDraft(previewOutput);
+    const draft = toGamePreviewDraft(gamePreviewOutput);
     expect(draft).toEqual({
       type: "game-preview",
       data: {
@@ -86,11 +86,11 @@ describe("Claude preview writer output", () => {
         storylines: ["The NFC West lead."],
         keys: ["Third down."],
         prediction: { winner: "SF", score: { sf: 24, opponent: 20 } },
-        sources: previewOutput.sources,
+        sources: gamePreviewOutput.sources,
         injuries: [{ player: "Fred Warner", practiceStatus: "DNP" }],
-        quotes: previewOutput.quotes,
+        quotes: gamePreviewOutput.quotes,
       },
-      body: previewOutput.body,
+      body: gamePreviewOutput.body,
     });
 
     const result = await publish({
@@ -122,7 +122,7 @@ describe("Claude preview writer output", () => {
       job: "thursday-preview",
       date: "2026-11-26",
       sources: fakeSources(snapshot),
-      writer: { write: async () => [toPreviewDraft(previewOutput), draft] },
+      writer: { write: async () => [toGamePreviewDraft(gamePreviewOutput), draft] },
     });
     expect(result.status).toBe("published");
   });
@@ -136,7 +136,7 @@ describe("Claude preview writer output", () => {
   });
 });
 
-describe("Claude preview writer brief", () => {
+describe("Claude Game Preview writer brief", () => {
   const jobOn = (date: string, contentTypes: Job["contentTypes"]): Job => ({
     type: "thursday-preview",
     date,
@@ -145,7 +145,7 @@ describe("Claude preview writer brief", () => {
   });
 
   it("names the upcoming game, the previous result, and the record for a Game Preview", () => {
-    const brief = renderPreviewBrief(jobOn("2026-11-26", ["game-preview"]), snapshot);
+    const brief = renderGamePreviewBrief(jobOn("2026-11-26", ["game-preview"]), snapshot);
 
     expect(brief).toContain("Upcoming game: 2026 Week 12, vs SEA, kickoff Sun, Nov 29, 1:25 PM PT (2026_12_SEA_SF)");
     expect(brief).toContain("Previous game: 2026 Week 11, vs MIN (neutral site), won 35-10");
@@ -167,7 +167,7 @@ describe("Claude preview writer brief", () => {
   });
 
   it("names the bye and the next game for a season recap", () => {
-    const brief = renderPreviewBrief(jobOn("2026-10-29", ["season-recap"]), snapshot);
+    const brief = renderGamePreviewBrief(jobOn("2026-10-29", ["season-recap"]), snapshot);
 
     expect(brief).toContain("Bye Week: 2026 Week 8");
     expect(brief).toContain("Next game: 2026 Week 9, vs LV");

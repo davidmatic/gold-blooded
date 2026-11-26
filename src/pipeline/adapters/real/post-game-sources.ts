@@ -95,9 +95,9 @@ async function purdyEarlierSeasons(fetchPage: FetchPage, season: number) {
 
 /** The game's Game Preview and the season's Prediction Record, from the content folder. */
 async function predictionInputs(contentDir: string, game: ScheduledGame): Promise<Pick<SourceSnapshot, "gamePreview" | "current">> {
-  const preview = await readValid(contentDir, `game-weeks/${gameWeekSlug(game.season, game.week, game.gameType)}/${GAME_WEEK_FILES["game-preview"]}`, gamePreviewSchema);
+  const gamePreview = await readValid(contentDir, `game-weeks/${gameWeekSlug(game.season, game.week, game.gameType)}/${GAME_WEEK_FILES["game-preview"]}`, gamePreviewSchema);
   const record = await readValid(contentDir, predictionRecordPath(game.season), predictionRecordSchema);
-  return { ...(preview && { gamePreview: preview.data }), current: record ? { "prediction-record": record } : {} };
+  return { ...(gamePreview && { gamePreview: gamePreview.data }), current: record ? { "prediction-record": record } : {} };
 }
 
 async function readValid<T>(contentDir: string, file: string, schema: z.ZodType<T>, consequence = "the Prediction Record can't be scored"): Promise<{ data: T; body: string } | undefined> {

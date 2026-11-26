@@ -1,4 +1,4 @@
-// Game Week Pages and the homepage's Game Preview: which preview is current, how a Game Week
+// Game Week Pages and the homepage's Game Preview: which Game Preview is current, how a Game Week
 // is named, and how kickoff and the prediction read.
 import type { GamePreviewData, HighlightsData, SeasonRecapData, StatBreakdownData } from "../content/game-week";
 
@@ -8,8 +8,8 @@ interface HasData<T> {
 }
 
 /** The homepage's current Game Preview: the one for the latest game. */
-export function currentPreview<T extends HasData<GamePreviewData>>(previews: readonly T[]): T | undefined {
-  return [...previews].sort((a, b) => b.data.kickoff.localeCompare(a.data.kickoff))[0];
+export function currentGamePreview<T extends HasData<GamePreviewData>>(gamePreviews: readonly T[]): T | undefined {
+  return [...gamePreviews].sort((a, b) => b.data.kickoff.localeCompare(a.data.kickoff))[0];
 }
 
 export interface GameWeekPage<P, R, B = never, H = never> {

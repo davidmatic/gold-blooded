@@ -29,7 +29,7 @@ const injuries = z.array(
 );
 const quotes = z.array(z.object({ text: z.string(), speaker: z.string(), source: z.string() }));
 
-const previewOutputSchema = z.object({
+const gamePreviewOutputSchema = z.object({
   title: z.string(),
   body: z.string(),
   storylines: z.array(z.string()),
@@ -39,7 +39,7 @@ const previewOutputSchema = z.object({
   injuries,
   quotes,
 });
-export type PreviewOutput = z.infer<typeof previewOutputSchema>;
+export type GamePreviewOutput = z.infer<typeof gamePreviewOutputSchema>;
 
 const recapOutputSchema = z.object({ title: z.string(), body: z.string(), sources, injuries, quotes });
 export type RecapOutput = z.infer<typeof recapOutputSchema>;
@@ -82,9 +82,9 @@ export const STAT_BREAKDOWN_VOICE = `You write the weekly Stat Breakdown for Gol
 
 Voice: a sharp, numbers-first 49ers fan. Plain about what the numbers say, including where the opponent is better.
 
-It is Thursday of the Game Week. Break down the upcoming game in numbers: the 49ers' and the opponent's team stats in the context of this matchup, the key players on both sides, and recent trends (the last ${RECENT_GAMES} games against the season).
+It is Thursday of the Game Week. Break down the upcoming game in numbers: the 49ers' and the opponent's team stats in the context of this game, the key players on both sides, and recent trends (the last ${RECENT_GAMES} games against the season).
 - title: a short, plain headline in sentence case.
-- body: 2 to 4 short Markdown paragraphs on what the numbers say about this matchup. No headings, no links, no tables.
+- body: 2 to 4 short Markdown paragraphs on what the numbers say about this game. No headings, no links, no tables.
 - trends: 2 to 4 one-sentence trends, each comparing recent games with the season, or one team with the other.
 - stats: every number the body or trends state, and the 8 to 16 stats the page's tables should show, each as a cited stat:
   - player: the player's name exactly as the brief gives it, or null for a team stat.
@@ -98,7 +98,7 @@ Use only the brief's nflverse numbers. Never invent a stat. Every stat is checke
 ${NUMBERS_RULE}`;
 
 /** The user turn: the job, where it falls on the calendar, the season's results, and the snapshot. */
-export function renderPreviewBrief(job: Job, snapshot: SourceSnapshot): string {
+export function renderGamePreviewBrief(job: Job, snapshot: SourceSnapshot): string {
   const calendar = job.calendar;
   const what = calendar?.period === "game-week" ? "Game Preview" : "Bye Week season recap";
   return [
@@ -110,7 +110,7 @@ export function renderPreviewBrief(job: Job, snapshot: SourceSnapshot): string {
 /** The job, where it falls on the calendar, the season's results, and the injury report. */
 function situation(job: Job, snapshot: SourceSnapshot, what: string): string[] {
   const calendar = job.calendar;
-  if (!calendar || calendar.period === "offseason") throw new Error("the preview writer writes only in a Game Week or a Bye Week");
+  if (!calendar || calendar.period === "offseason") throw new Error("the Game Preview writer writes only in a Game Week or a Bye Week");
   const schedule = snapshot.schedule ?? [];
   const season = schedule.filter((game) => game.season === calendar.season && game.gameday < job.date);
   const games =
@@ -181,7 +181,7 @@ function cleanInjuries(list: z.infer<typeof injuries>) {
 }
 
 /** Claude's Game Preview as a pipeline draft: empty lists and null statuses dropped. */
-export function toPreviewDraft(output: PreviewOutput): DraftEntry {
+export function toGamePreviewDraft(output: GamePreviewOutput): DraftEntry {
   const injuryList = cleanInjuries(output.injuries);
   return {
     type: "game-preview",
@@ -226,25 +226,25 @@ export function toRecapDraft(output: RecapOutput): DraftEntry {
   };
 }
 
-export type ClaudePreviewWriterOptions = ClaudeOptions;
+export type ClaudeGamePreviewWriterOptions = ClaudeOptions;
 
-export function claudePreviewWriter(options: ClaudePreviewWriterOptions = {}): ContentWriter {
+export function claudeGamePreviewWriter(options: ClaudeGamePreviewWriterOptions = {}): ContentWriter {
   const ask = claudeAsker(options);
 
   return {
     async write(job, snapshot) {
-      const brief = renderPreviewBrief(job, snapshot);
+      const brief = renderGamePreviewBrief(job, snapshot);
       if (job.contentTypes?.includes("game-preview")) {
-        const [preview, breakdown] = await Promise.all([
-          ask(GAME_PREVIEW_VOICE, previewOutputSchema, brief),
+        const [gamePreview, breakdown] = await Promise.all([
+          ask(GAME_PREVIEW_VOICE, gamePreviewOutputSchema, brief),
           job.contentTypes.includes("stat-breakdown")
             ? ask(STAT_BREAKDOWN_VOICE, statBreakdownOutputSchema, renderStatBreakdownBrief(job, snapshot))
             : undefined,
         ]);
-        return [toPreviewDraft(preview), ...(breakdown ? [toStatBreakdownDraft(breakdown)] : [])];
+        return [toGamePreviewDraft(gamePreview), ...(breakdown ? [toStatBreakdownDraft(breakdown)] : [])];
       }
       if (job.contentTypes?.includes("season-recap")) return [toRecapDraft(await ask(SEASON_RECAP_VOICE, recapOutputSchema, brief))];
-      throw new Error(`the preview writer doesn't write ${job.contentTypes?.join(", ") || "nothing"}`);
+      throw new Error(`the Game Preview writer doesn't write ${job.contentTypes?.join(", ") || "nothing"}`);
     },
   };
 }

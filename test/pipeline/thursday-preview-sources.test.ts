@@ -2,7 +2,7 @@
 // page fetcher and a fake news collector. No network.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { previewSources } from "../../src/pipeline/adapters/real/preview-sources";
+import { thursdayPreviewSources } from "../../src/pipeline/adapters/real/thursday-preview-sources";
 import { statsUrls } from "../../src/pipeline/adapters/real/nflverse-stats";
 import { SCHEDULE_URL } from "../../src/pipeline/adapters/real/schedule";
 import type { FetchPage } from "../../src/pipeline/adapters/real/sources";
@@ -26,7 +26,7 @@ const serving =
 
 describe("real sources: the Thursday preview snapshot", () => {
   it("adds the 49ers' nflverse schedule to the day's news and injury report", async () => {
-    const sources = previewSources({ fetchPage: serving({ [SCHEDULE_URL]: { status: 200, body: csv } }), news: fakeSources(news) });
+    const sources = thursdayPreviewSources({ fetchPage: serving({ [SCHEDULE_URL]: { status: 200, body: csv } }), news: fakeSources(news) });
     const snapshot = await sources.collect(job);
 
     expect(snapshot.date).toBe("2026-11-26");
@@ -36,7 +36,7 @@ describe("real sources: the Thursday preview snapshot", () => {
   });
 
   it("adds the season's nflverse player and team stats, one line per player or team per game", async () => {
-    const sources = previewSources({ fetchPage: serving(nflverse), news: fakeSources(news) });
+    const sources = thursdayPreviewSources({ fetchPage: serving(nflverse), news: fakeSources(news) });
     const snapshot = await sources.collect(job);
 
     const purdy = snapshot.stats?.players.find((line) => line.player === "Brock Purdy" && line.week === 5);
@@ -66,7 +66,7 @@ describe("real sources: the Thursday preview snapshot", () => {
   });
 
   it("records the stats as missing, and carries on, before the season's first stats are out", async () => {
-    const sources = previewSources({ fetchPage: serving({ [SCHEDULE_URL]: { status: 200, body: csv } }), news: fakeSources(news) });
+    const sources = thursdayPreviewSources({ fetchPage: serving({ [SCHEDULE_URL]: { status: 200, body: csv } }), news: fakeSources(news) });
     const snapshot = await sources.collect(job);
 
     expect(snapshot.stats).toEqual({ players: [], teams: [] });
@@ -74,20 +74,20 @@ describe("real sources: the Thursday preview snapshot", () => {
   });
 
   it("collects no stats in the Offseason", async () => {
-    const sources = previewSources({ fetchPage: serving(nflverse), news: fakeSources(news) });
+    const sources = thursdayPreviewSources({ fetchPage: serving(nflverse), news: fakeSources(news) });
     const snapshot = await sources.collect({ type: "thursday-preview", date: "2026-03-12" });
 
     expect(snapshot.stats).toBeUndefined();
   });
 
   it("fails the run when the stats fetch fails for another reason", async () => {
-    const sources = previewSources({ fetchPage: serving({ ...nflverse, [statsUrls(2026).teams]: { status: 500, body: "" } }), news: fakeSources(news) });
+    const sources = thursdayPreviewSources({ fetchPage: serving({ ...nflverse, [statsUrls(2026).teams]: { status: 500, body: "" } }), news: fakeSources(news) });
 
     await expect(sources.collect(job)).rejects.toThrow(/nflverse team stats.*HTTP 500/);
   });
 
   it("fails the run when the schedule can't be fetched", async () => {
-    const sources = previewSources({ fetchPage: serving({}), news: fakeSources(news) });
+    const sources = thursdayPreviewSources({ fetchPage: serving({}), news: fakeSources(news) });
 
     await expect(sources.collect(job)).rejects.toThrow(/nflverse schedule.*HTTP 404/);
   });

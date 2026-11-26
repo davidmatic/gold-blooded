@@ -8,7 +8,7 @@
 import { draftCoverageSchema, freeAgencyTrackerSchema, OFFSEASON_FILES, offseasonYear } from "../../../content/offseason";
 import { readEntry } from "../../content-store";
 import type { Job, SourceAdapter, SourceSnapshot } from "../../types";
-import { previewSources } from "./preview-sources";
+import { thursdayPreviewSources } from "./thursday-preview-sources";
 import type { FetchPage } from "./sources";
 
 export interface OffseasonSourcesOptions {
@@ -24,14 +24,14 @@ const SCHEMAS = { "free-agency-tracker": freeAgencyTrackerSchema, "draft-coverag
 
 export function offseasonSources(options: OffseasonSourcesOptions): SourceAdapter {
   const { contentDir, ...rest } = options;
-  const preview = previewSources(rest);
+  const thursday = thursdayPreviewSources(rest);
 
   return {
     async collect(job: Job): Promise<SourceSnapshot> {
-      const [snapshot, current] = await Promise.all([preview.collect(job), runningDocuments(contentDir, offseasonYear(job.date))]);
+      const [snapshot, current] = await Promise.all([thursday.collect(job), runningDocuments(contentDir, offseasonYear(job.date))]);
       return { ...snapshot, current };
     },
-    linkResolves: (url) => preview.linkResolves(url),
+    linkResolves: (url) => thursday.linkResolves(url),
   };
 }
 

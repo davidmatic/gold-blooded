@@ -2,10 +2,10 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import type { ContentWriter, JobType, SourceAdapter } from "../../types";
-import { claudePreviewWriter } from "./claude-preview-writer";
+import { claudeGamePreviewWriter } from "./claude-game-preview-writer";
 import { claudeWriter } from "./claude-writer";
 import { podcastTranscripts, transcriptCacheDir, whisperTranscriber, type PodcastTranscripts } from "../../../podcasts";
-import { previewSources } from "./preview-sources";
+import { thursdayPreviewSources } from "./thursday-preview-sources";
 import { claudeOffseasonWriter } from "./claude-offseason-writer";
 import { claudePostGameWriter } from "./claude-post-game-writer";
 import { postGameSources } from "./post-game-sources";
@@ -18,8 +18,8 @@ import { ytDlpCaptions } from "./captions";
 export { BOT_USER_AGENT, realSources, SOURCE_URLS } from "./sources";
 export { MODEL, SpendLimitReachedError } from "./claude";
 export { claudeWriter } from "./claude-writer";
-export { claudePreviewWriter } from "./claude-preview-writer";
-export { previewSources } from "./preview-sources";
+export { claudeGamePreviewWriter } from "./claude-game-preview-writer";
+export { thursdayPreviewSources } from "./thursday-preview-sources";
 export { claudeOffseasonWriter } from "./claude-offseason-writer";
 export { offseasonSources } from "./offseason-sources";
 export { claudePostGameWriter } from "./claude-post-game-writer";
@@ -32,7 +32,7 @@ export async function realAdapters(
   job: JobType,
   contentDir: string,
 ): Promise<{ sources: SourceAdapter; writer: ContentWriter }> {
-  if (job === "thursday-preview") return { sources: previewSources(), writer: claudePreviewWriter() };
+  if (job === "thursday-preview") return { sources: thursdayPreviewSources(), writer: claudeGamePreviewWriter() };
   if (job === "offseason") return { sources: offseasonSources({ contentDir }), writer: claudeOffseasonWriter() };
   if (job === "post-game") return { sources: postGameSources({ contentDir }), writer: claudePostGameWriter() };
   if (job === "film-room") {
