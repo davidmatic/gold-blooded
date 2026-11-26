@@ -418,3 +418,33 @@ h2 {
   font-weight: 700;
   color: var(--red-dark);
 }
+
+/* The Film Room. */
+.film-room-lead {
+  margin-bottom: 2rem;
+}
+
+.film-room-entry {
+  padding: 1rem;
+  background: #fff;
+  border-left: 4px solid var(--gold);
+  border-radius: 0.25rem;
+}
+
+.film-room-entry[data-purdy] {
+  border-left-color: var(--red);
+}
+
+.film-room-entry h3 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.film-room-purdy {
+  font-weight: 700;
+  color: var(--red);
+}
+
+.film-room-note {
+  font-size: 0.875rem;
+  font-style: italic;
+}

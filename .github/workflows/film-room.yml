@@ -1,0 +1,111 @@
+name: Film Room
+
+# Runs the Film Room publish job daily. It picks up the week's new QB School videos about the
+# 49ers and new Jonnydel's Football Academy episodes that have no Film Room entry yet, and writes
+# one short, credited entry per breakdown, linking to the original. On a published result it
+# commits the new entries to main and deploys the site. On a rejected result the job fails
+# (GitHub notifies the owner), no content is committed, and the site keeps its previous version.
+# With no new breakdowns it does nothing (no Claude call, no commit, no deploy).
+#
+# Uses the real adapters and writes with Claude. The API key is the ANTHROPIC_API_KEY repository
+# secret (see README: Secrets and cost).
+#
+# QB School captions come from yt-dlp, best effort: YouTube often blocks cloud runners, and then
+# the entry is written from the video's title and description, and the run goes on. yt-dlp is
+# installed unpinned on purpose, since YouTube breaks old versions often. No cookies or account.
+#
+# JFA episodes are transcribed with faster-whisper, as in the daily news job, and share its
+# transcript cache (data/transcripts/), which is committed even when the run is rejected, so an
+# episode is transcribed only once. The Whisper model is kept in actions/cache.
+
+on:
+  schedule:
+    - cron: "0 17 * * *" # 17:00 UTC = 9am / 10am Pacific, after the daily news has transcribed
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Date to run for (YYYY-MM-DD, Pacific). Defaults to today.
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  WHISPER_MODEL: small.en
+
+concurrency:
+  group: content-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Whisper on 4 CPUs: up to two JFA episodes (usually already cached by the daily news).
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements-whisper.txt
+      - run: pip install -r scripts/requirements-whisper.txt
+      - run: pip install -U yt-dlp
+      - name: Cache the Whisper model
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-${{ env.WHISPER_MODEL }}-${{ hashFiles('scripts/requirements-whisper.txt') }}
+      - name: Run the Film Room job
+        id: publish
+        run: npx tsx scripts/publish.ts film-room --adapters real ${DATE:+--date "$DATE"}
+        env:
+          DATE: ${{ inputs.date }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Runs after a rejected publish too, so new transcripts are kept; content only when published.
+      - name: Commit new content and transcripts
+        id: commit
+        if: ${{ !cancelled() }}
+        env:
+          PUBLISHED: ${{ steps.publish.outcome == 'success' }}
+          DATE: ${{ inputs.date }}
+        run: |
+          git add data/transcripts 2>/dev/null || true
+          if [ "$PUBLISHED" = true ]; then mkdir -p content && git add content; fi
+          if git diff --cached --quiet; then
+            echo "No content or transcript changes."
+            exit 0
+          fi
+          content_changed=false
+          if ! git diff --cached --quiet -- content; then content_changed=true; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          day="${DATE:-$(TZ=America/Los_Angeles date +%F)}"
+          if [ "$content_changed" = true ]; then
+            git commit -m "Film Room for $day"
+          else
+            git commit -m "Podcast transcripts for $day"
+          fi
+          git push origin HEAD:main
+          if [ "$content_changed" = true ]; then echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"; fi
+
+  deploy:
+    needs: publish
+    if: needs.publish.outputs.sha != ''
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.publish.outputs.sha }}

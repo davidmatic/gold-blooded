@@ -13,3 +13,9 @@ export interface CheckInput {
  * (none means it passed). Any failure from any check rejects the whole run.
  */
 export type PublishCheck = (input: CheckInput) => Promise<CheckFailure[]>;
+
+/** The source URLs an entry cites: its `sources`, and a Film Room entry's `link` to the original. */
+export function citedUrls(entry: ContentEntry): string[] {
+  const sources = ("sources" in entry.data && entry.data.sources) || [];
+  return [...sources.map((source) => source.url), ...("link" in entry.data ? [entry.data.link] : [])];
+}

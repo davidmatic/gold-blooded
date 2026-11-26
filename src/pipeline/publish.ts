@@ -15,6 +15,7 @@ import { statsMatchNflverse } from "./checks/nflverse-stats";
 import { sourceLinksResolve } from "./checks/source-links";
 import { offseasonItemsSourced } from "./checks/offseason-items";
 import { injuryMentionsStated } from "./checks/injury-mentions";
+import { filmRoomCovered, purdyTagGrounded } from "./checks/film-room";
 import { CONTENT_TYPES } from "./content-types";
 import type {
   CheckFailure,
@@ -69,6 +70,8 @@ export const POST_GAME_DERIVED: ContentType[] = [
 // Later tickets add the other job types and more checks.
 const JOBS: Partial<Record<JobType, JobDefinition>> = {
   "daily-news": { checks: ALL_CHECKS, writes: ["news-summary"] },
+  // Daily: an entry for each new QB School video and JFA episode in the snapshot.
+  "film-room": { checks: [...ALL_CHECKS, filmRoomCovered, purdyTagGrounded], writes: ["film-room"] },
   // A Game Preview and a Stat Breakdown in a Game Week, a season recap in a Bye Week, nothing
   // in the Offseason.
   "thursday-preview": {

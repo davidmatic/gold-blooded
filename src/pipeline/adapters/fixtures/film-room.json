@@ -1,0 +1,54 @@
+{
+  "documents": [
+    {
+      "url": "https://www.youtube.com/watch?v=qbPurdy0001",
+      "outlet": "The QB School",
+      "title": "Brock Purdy vs the Vikings Week 11, 2026 Analysis",
+      "publishedAt": "2026-11-24T17:00:00.000Z",
+      "text": "Breaking down Brock Purdy's three touchdowns against Minnesota in Mexico City.",
+      "film": {
+        "show": "The QB School",
+        "medium": "video",
+        "description": "Breaking down Brock Purdy's three touchdowns against Minnesota in Mexico City.",
+        "transcribed": false
+      }
+    },
+    {
+      "url": "https://www.buzzsprout.com/2047939/episodes/20168779",
+      "outlet": "Jonnydel's Football Academy",
+      "title": "JFA Podcast 355: Victory Monday - The Three Amigos Lead the 49ers to Victory in Mexico City",
+      "publishedAt": "2026-11-23T16:00:00.000Z",
+      "text": "Welcome to Jonnydel's Football Academy. The three amigos were the story in Mexico City. Purdy, McCaffrey and Kittle did whatever they wanted.",
+      "podcast": { "show": "Jonnydel's Football Academy", "hosts": ["Jonnydel"] },
+      "film": {
+        "show": "Jonnydel's Football Academy",
+        "medium": "podcast",
+        "description": "Jonnydel breaks down the 49ers' win over the Vikings in Mexico City.",
+        "transcribed": true
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "type": "film-room",
+      "data": { "title": "Purdy's three touchdowns in Mexico City", "link": "https://www.youtube.com/watch?v=qbPurdy0001", "purdy": true },
+      "body": "The QB School breaks down Brock Purdy's three touchdown throws against Minnesota in Mexico City."
+    },
+    {
+      "type": "film-room",
+      "data": {
+        "title": "The three amigos in Mexico City",
+        "link": "https://www.buzzsprout.com/2047939/episodes/20168779",
+        "purdy": true,
+        "quotes": [
+          {
+            "text": "Purdy, McCaffrey and Kittle did whatever they wanted.",
+            "speaker": "Jonnydel",
+            "source": "https://www.buzzsprout.com/2047939/episodes/20168779"
+          }
+        ]
+      },
+      "body": "On Jonnydel's Football Academy, Jonnydel credits the three amigos for the win: \"Purdy, McCaffrey and Kittle did whatever they wanted.\""
+    }
+  ]
+}

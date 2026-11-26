@@ -5,6 +5,7 @@ import type { PredictionRecordData } from "../content/prediction-record";
 import type { GameStatus, NewsSummaryData, PracticeStatus } from "../content/news-summary";
 import type { DraftCoverageData, FreeAgencyTrackerData } from "../content/offseason";
 import type { LoveLetterData, PurdyStatTrackerData, ReasonsWeLoveBrockData } from "../content/purdy-shrine";
+import type { FilmRoomData, FilmRoomMedium, FilmRoomShow } from "../content/film-room";
 import type { CalendarPosition, ScheduledGame } from "./calendar";
 import type { NflverseStats } from "./stats";
 
@@ -38,6 +39,19 @@ export interface SourceDocument {
   text: string;
   /** Set when the document is a podcast episode's transcript: who to credit its opinions to. */
   podcast?: PodcastCredit;
+  /** Set when the document is a breakdown the Film Room summarises (a video or an episode). */
+  film?: FilmSource;
+}
+
+/**
+ * A Film Room breakdown's details. When it couldn't be transcribed (QB School captions are
+ * best effort), the document's text is its description, and `transcribed` is false.
+ */
+export interface FilmSource {
+  show: FilmRoomShow;
+  medium: FilmRoomMedium;
+  description: string;
+  transcribed: boolean;
 }
 
 export interface PodcastCredit {
@@ -142,6 +156,7 @@ export interface ContentTypes {
   "reasons-we-love-brock": ReasonsWeLoveBrockData;
   "purdy-stat-tracker": PurdyStatTrackerData;
   "prediction-record": PredictionRecordData;
+  "film-room": FilmRoomData;
 }
 export type ContentType = keyof ContentTypes;
 

@@ -1,7 +1,8 @@
 // Seam 2 for the Purdy Shrine: the Shrine page, each Love Letter's page, and the newest Love
 // Letter on the homepage. The content folder is written by the publish pipeline (two post-game
-// runs with fake adapters: Week 10, which Purdy played, and Week 11, which here he didn't), plus
-// the hand-written origin story seeded in the repo's content folder.
+// runs with fake adapters: Week 10, which Purdy played, and Week 11, which here he didn't, and
+// the Film Room runs in support/film-room.ts), plus the hand-written origin story seeded in the
+// repo's content folder.
 import { copyFile, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -11,6 +12,7 @@ import { runJob, type DraftEntry, type SourceSnapshot } from "../src/pipeline";
 import { readEntry } from "../src/pipeline/content-store";
 import { buildSite, type BuiltSite } from "./support/built-site";
 import { fakeSources, fakeWriter, recordedSnapshot, withPurdyCareer } from "./support/fakes";
+import { PURDY_VIDEO, publishFilmRoom } from "./support/film-room";
 
 const recorded = recordedSnapshot("thursday-preview-2026-11-26");
 const WEEK_11 = "2026_11_MIN_SF";
@@ -63,6 +65,7 @@ describe("built site (Purdy Shrine)", () => {
       const result = await runJob({ job: "post-game", date, sources: fakeSources({ ...snapshot, current }), writer: fakeWriter(drafts), contentDir });
       expect(result.status, JSON.stringify(result)).toBe("published");
     }
+    await publishFilmRoom(contentDir);
     await mkdir(path.join(contentDir, "purdy-shrine"), { recursive: true });
     const seeded = fileURLToPath(new URL("../content/purdy-shrine/origin-story.md", import.meta.url));
     await copyFile(seeded, path.join(contentDir, "purdy-shrine", "origin-story.md"));
@@ -134,10 +137,25 @@ describe("built site (Purdy Shrine)", () => {
     expect(tracker).toContain("Week 10 at DAL Won 46-40");
   });
 
-  it("leaves a slot for Purdy's Film Room entries, empty until there are some", async () => {
+  it("shows the Purdy-tagged Film Room entries, credited, linking to the entry and the original", async () => {
     const html = await site.html("/gold-blooded/purdy-shrine/");
+    const section = html.match(/<section[^>]*class="purdy-film-room"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? "";
 
-    expect(html).not.toContain('class="purdy-film-room"');
+    expect(text(section)).toContain("Purdy in the Film Room");
+    expect(text(section)).toContain("Purdy's three touchdowns in Mexico City The QB School, November 25");
+    expect(text(section)).toContain("The QB School breaks down Purdy's three touchdown throws.");
+    expect(section).toContain(`href="${PURDY_VIDEO}"`);
+    expect(section).toMatch(/href="\/gold-blooded\/film-room\/#film-room-[^"]+"/);
+    // The entries not tagged as about Purdy stay in the Film Room.
+    expect(text(section)).not.toContain("The three amigos");
+    expect(text(section)).not.toContain("Shanahan's play-action");
+  });
+
+  it("links each Purdy entry to its place on the Film Room page", async () => {
+    const shrine = await site.html("/gold-blooded/purdy-shrine/");
+    const anchor = shrine.match(/href="\/gold-blooded\/film-room\/#([^"]+)"/)?.[1];
+
+    expect(await site.html("/gold-blooded/film-room/")).toContain(`id="${anchor}"`);
   });
 });
 

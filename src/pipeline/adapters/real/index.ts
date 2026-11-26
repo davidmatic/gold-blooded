@@ -11,6 +11,9 @@ import { claudePostGameWriter } from "./claude-post-game-writer";
 import { postGameSources } from "./post-game-sources";
 import { offseasonSources } from "./offseason-sources";
 import { BOT_USER_AGENT, fetchWithBotUserAgent, realSources } from "./sources";
+import { filmRoomSources } from "./film-room-sources";
+import { claudeFilmRoomWriter } from "./claude-film-room-writer";
+import { ytDlpCaptions } from "./captions";
 
 export { BOT_USER_AGENT, realSources, SOURCE_URLS } from "./sources";
 export { MODEL, SpendLimitReachedError } from "./claude";
@@ -21,6 +24,9 @@ export { claudeOffseasonWriter } from "./claude-offseason-writer";
 export { offseasonSources } from "./offseason-sources";
 export { claudePostGameWriter } from "./claude-post-game-writer";
 export { postGameSources } from "./post-game-sources";
+export { filmRoomSources } from "./film-room-sources";
+export { claudeFilmRoomWriter } from "./claude-film-room-writer";
+export { ytDlpCaptions } from "./captions";
 
 export async function realAdapters(
   job: JobType,
@@ -29,6 +35,12 @@ export async function realAdapters(
   if (job === "thursday-preview") return { sources: previewSources(), writer: claudePreviewWriter() };
   if (job === "offseason") return { sources: offseasonSources({ contentDir }), writer: claudeOffseasonWriter() };
   if (job === "post-game") return { sources: postGameSources({ contentDir }), writer: claudePostGameWriter() };
+  if (job === "film-room") {
+    return {
+      sources: filmRoomSources({ contentDir, podcasts: realPodcastTranscripts(), captions: ytDlpCaptions() }),
+      writer: claudeFilmRoomWriter(),
+    };
+  }
   if (job !== "daily-news") throw new Error(`no real adapters for job type "${job}" yet`);
   return {
     sources: realSources({ alreadyCited: await citedSourceUrls(contentDir), podcasts: realPodcastTranscripts() }),

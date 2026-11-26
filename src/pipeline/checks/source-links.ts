@@ -1,9 +1,10 @@
-// Publish check: every source a News Summary cites must load.
+// Publish check: every source an entry cites (a News Summary's sources, a Film Room entry's
+// link to the original) must load.
 // The only check that touches the network, and it does so through the source adapter.
-import type { PublishCheck } from "./check";
+import { citedUrls, type PublishCheck } from "./check";
 
 export const sourceLinksResolve: PublishCheck = async ({ entries, sources }) => {
-  const cited = entries.flatMap((entry) => (("sources" in entry.data && entry.data.sources) || []).map((source) => ({ entry: entry.path, url: source.url })));
+  const cited = entries.flatMap((entry) => citedUrls(entry).map((url) => ({ entry: entry.path, url })));
   const results = await Promise.all(cited.map(async (link) => ({ ...link, ok: await sources.linkResolves(link.url) })));
   return results
     .filter((link) => !link.ok)
