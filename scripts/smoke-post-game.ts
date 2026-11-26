@@ -14,6 +14,7 @@ import { publish } from "../src/pipeline";
 import { claudePostGameWriter, postGameSources } from "../src/pipeline/adapters/real";
 import { gameJustPlayed, resolveCalendar } from "../src/pipeline/calendar";
 import { writeEntries } from "../src/pipeline/content-store";
+import { contentDir } from "../src/site/content-dir";
 
 const { values } = parseArgs({
   options: {
@@ -24,7 +25,7 @@ const { values } = parseArgs({
 });
 
 const job = { type: "post-game" as const, date: values.date };
-const sources = postGameSources({ log: (message) => console.log(`  [sources] ${message}`) });
+const sources = postGameSources({ contentDir: contentDir(), log: (message) => console.log(`  [sources] ${message}`) });
 
 if (!values.claude) {
   const snapshot = await sources.collect(job);
@@ -34,6 +35,7 @@ if (!values.claude) {
   console.log(`Documents: ${snapshot.documents.length}`);
   console.log(`nflverse stats: ${snapshot.stats ? `${snapshot.stats.players.length} player lines, ${snapshot.stats.teams.length} team lines` : "none"}`);
   console.log(`Official clips: ${snapshot.videos?.map((v) => `\n  ${v.videoId}  ${v.channel}: ${v.title}`).join("") || "none"}`);
+  console.log(`Game Preview to score: ${snapshot.gamePreview ? `${snapshot.gamePreview.prediction.winner} ${snapshot.gamePreview.prediction.score.sf}-${snapshot.gamePreview.prediction.score.opponent}` : "none (the Prediction Record skips the game)"}`);
   console.log(`Skipped: ${snapshot.skipped?.map((s) => `${s.outlet} (${s.reason})`).join(", ") || "none"}`);
 } else {
   const result = await publish({ job: job.type, date: job.date, sources, writer: claudePostGameWriter() });

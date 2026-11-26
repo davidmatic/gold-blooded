@@ -1,7 +1,13 @@
 // The real post-game sources, driven through their SourceAdapter interface with a fake page
 // fetcher and a fake news collector. No network.
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { GamePreviewData } from "../../src/content/game-week";
+import type { PredictionRecordData } from "../../src/content/prediction-record";
+import { writeEntries } from "../../src/pipeline/content-store";
 import { statsUrls } from "../../src/pipeline/adapters/real/nflverse-stats";
 import { postGameSources } from "../../src/pipeline/adapters/real/post-game-sources";
 import { SCHEDULE_URL } from "../../src/pipeline/adapters/real/schedule";
@@ -99,5 +105,75 @@ describe("real sources: the post-game snapshot", () => {
     expect(snapshot).toEqual({ date: "2026-11-25", documents: [], schedule: expect.any(Array) });
     expect(fetchPage.asked).toEqual([SCHEDULE_URL]);
     expect(newsCollected).toBe(false);
+  });
+});
+
+describe("real sources: what the post-game snapshot reads from the content folder", () => {
+  let contentDir: string;
+  beforeEach(async () => {
+    contentDir = await mkdtemp(path.join(tmpdir(), "gold-blooded-post-game-"));
+  });
+  afterEach(() => rm(contentDir, { recursive: true, force: true }));
+
+  const preview: GamePreviewData = {
+    title: "Minnesota in Mexico City",
+    date: "2026-11-19",
+    gameWeek: "2026-week-11",
+    gameId: "2026_11_MIN_SF",
+    season: 2026,
+    week: 11,
+    gameType: "REG",
+    opponent: "MIN",
+    venue: "neutral",
+    kickoff: "2026-11-23T01:20:00.000Z",
+    storylines: ["A neutral-site night game."],
+    keys: ["Start fast."],
+    prediction: { winner: "SF", score: { sf: 24, opponent: 17 } },
+    sources: [{ url: "https://www.49ers.com/news/preview", outlet: "49ers.com" }],
+  };
+  const record: PredictionRecordData = {
+    title: "2026 Prediction Record",
+    season: 2026,
+    updated: "2026-11-16",
+    games: [
+      {
+        gameId: "2026_10_SF_DAL",
+        gameWeek: "2026-week-10",
+        week: 10,
+        gameType: "REG",
+        opponent: "DAL",
+        venue: "away",
+        result: { sf: 27, opponent: 24 },
+        predicted: { winner: "DAL", score: { sf: 21, opponent: 24 } },
+        correctWinner: false,
+        pointsOff: 6,
+      },
+    ],
+  };
+  const collect = () => postGameSources({ contentDir, fetchPage: serving({ ...NFLVERSE, ...YOUTUBE }), news: fakeSources(news) }).collect(job);
+
+  it("adds the game's Game Preview and the season's Prediction Record as they stand", async () => {
+    await writeEntries(contentDir, [
+      { type: "game-preview", path: "game-weeks/2026-week-11/preview.md", data: preview, body: "The 49ers head south." },
+      { type: "prediction-record", path: "prediction-record/2026.md", data: record, body: "" },
+    ]);
+    const snapshot = await collect();
+
+    expect(snapshot.gamePreview).toEqual(preview);
+    expect(snapshot.current).toEqual({ "prediction-record": { data: record, body: "\n" } });
+  });
+
+  it("has neither when no Game Preview was published and no game has been scored", async () => {
+    const snapshot = await collect();
+
+    expect(snapshot.gamePreview).toBeUndefined();
+    expect(snapshot.current).toEqual({});
+  });
+
+  it("fails the run when the Prediction Record doesn't match its schema, rather than overwrite it", async () => {
+    await mkdir(path.join(contentDir, "prediction-record"), { recursive: true });
+    await writeFile(path.join(contentDir, "prediction-record", "2026.md"), "---\ntitle: 2026 Prediction Record\nseason: 2026\n---\n");
+
+    await expect(collect()).rejects.toThrow(/prediction-record\/2026.md doesn't match its schema/);
   });
 });

@@ -28,7 +28,7 @@ export async function realAdapters(
 ): Promise<{ sources: SourceAdapter; writer: ContentWriter }> {
   if (job === "thursday-preview") return { sources: previewSources(), writer: claudePreviewWriter() };
   if (job === "offseason") return { sources: offseasonSources({ contentDir }), writer: claudeOffseasonWriter() };
-  if (job === "post-game") return { sources: postGameSources(), writer: claudePostGameWriter() };
+  if (job === "post-game") return { sources: postGameSources({ contentDir }), writer: claudePostGameWriter() };
   if (job !== "daily-news") throw new Error(`no real adapters for job type "${job}" yet`);
   return {
     sources: realSources({ alreadyCited: await citedSourceUrls(contentDir), podcasts: realPodcastTranscripts() }),
