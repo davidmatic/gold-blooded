@@ -1,17 +1,19 @@
 // Fixture adapters: recorded sources and canned drafts, for local runs (`--adapters fixture`).
 // The source adapter serves a recorded snapshot, and only links in that snapshot "resolve".
-// The writer returns canned drafts. Nothing here touches the network or Claude.
+// The writer returns the canned drafts of the types the run asks for. Nothing here touches the network or Claude.
 import { readFile } from "node:fs/promises";
-import type { ContentWriter, DraftEntry, InjuryReportEntry, JobType, SourceAdapter, SourceDocument } from "../types";
+import type { ContentWriter, DraftEntry, InjuryReportEntry, JobType, ScheduledGame, SourceAdapter, SourceDocument } from "../types";
 
 interface Fixture {
   documents: SourceDocument[];
   injuryReport?: InjuryReportEntry[];
+  schedule?: ScheduledGame[];
   drafts: DraftEntry[];
 }
 
 const FIXTURES: Partial<Record<JobType, URL>> = {
   "daily-news": new URL("./fixtures/daily-news.json", import.meta.url),
+  "thursday-preview": new URL("./fixtures/thursday-preview.json", import.meta.url),
 };
 
 async function loadFixture(job: JobType): Promise<Fixture> {
@@ -25,9 +27,15 @@ export async function fixtureAdapters(job: JobType): Promise<{ sources: SourceAd
   const known = new Set(fixture.documents.map((doc) => doc.url));
   return {
     sources: {
-      collect: async ({ date }) => ({ date, documents: fixture.documents, injuryReport: fixture.injuryReport }),
+      collect: async ({ date }) => ({
+        date,
+        documents: fixture.documents,
+        injuryReport: fixture.injuryReport,
+        ...(fixture.schedule && { schedule: fixture.schedule }),
+      }),
       linkResolves: async (url) => known.has(url),
     },
-    writer: { write: async () => fixture.drafts },
+    // Only the drafts of the types the run asks for (a Game Preview in a Game Week, ...).
+    writer: { write: async (job) => fixture.drafts.filter((draft) => job.contentTypes?.includes(draft.type) ?? true) },
   };
 }

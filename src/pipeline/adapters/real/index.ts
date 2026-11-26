@@ -2,16 +2,21 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import type { ContentWriter, JobType, SourceAdapter } from "../../types";
+import { claudePreviewWriter } from "./claude-preview-writer";
 import { claudeWriter } from "./claude-writer";
+import { previewSources } from "./preview-sources";
 import { realSources } from "./sources";
 
 export { BOT_USER_AGENT, realSources, SOURCE_URLS } from "./sources";
 export { claudeWriter, MODEL, SpendLimitReachedError } from "./claude-writer";
+export { claudePreviewWriter } from "./claude-preview-writer";
+export { previewSources } from "./preview-sources";
 
 export async function realAdapters(
   job: JobType,
   contentDir: string,
 ): Promise<{ sources: SourceAdapter; writer: ContentWriter }> {
+  if (job === "thursday-preview") return { sources: previewSources(), writer: claudePreviewWriter() };
   if (job !== "daily-news") throw new Error(`no real adapters for job type "${job}" yet`);
   return {
     sources: realSources({ alreadyCited: await citedSourceUrls(contentDir) }),

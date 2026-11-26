@@ -26,12 +26,20 @@ npm run build    # static output in dist/
   `adapters/real/` holds the real adapters: `sources.ts` fetches the Preferred Sources into a source
   snapshot (parsing lives in `parsers.ts`), and `claude-writer.ts` writes News Summaries with Claude.
   `adapters/fixture.ts` holds fixture adapters that serve recorded sources and canned drafts.
+  `calendar.ts` is calendar resolution, shared by every job that depends on the calendar (see
+  Calendar below). `content-types.ts` says, per content type, which schema validates a draft, which
+  fields the pipeline fills in, and where the entry is filed. The Thursday preview job's real adapters
+  are `adapters/real/preview-sources.ts` (the news snapshot plus the nflverse schedule, parsed in
+  `schedule.ts`) and `adapters/real/claude-preview-writer.ts`.
 - `scripts/publish.ts`: CLI the workflows run, e.g.
   `npx tsx scripts/publish.ts daily-news --adapters real --date 2026-11-25` (`--adapters fixture`, the
   default, needs no network or key). Exits non-zero, writing nothing, when any publish check fails.
 - `scripts/smoke-daily-news.ts`: manual smoke test for the real adapters (see below).
 - `content/`: the content store (Markdown + data files). Override with `GOLD_BLOODED_CONTENT_DIR`.
   To fix or remove a published piece, edit or delete its file. News Summaries live in `content/news/`.
+  Each Game Week has a folder, `content/game-weeks/<slug>/` (slugs like `2026-week-12` or
+  `2025-wild-card`), with one file per part: `preview.md` (the Game Preview) or `season-recap.md`
+  (a Bye Week's recap). Its Game Week Page is `/game-weeks/<slug>/`.
 - `test/`: tests. `test/support/built-site.ts` builds the site against a fixture content folder in
   `test/fixtures/<name>/` and exposes the generated HTML (the spec's Seam 2). `test/support/fakes.ts`
   has the fake source and writer adapters for pipeline tests (Seam 1), which serve the recorded
@@ -85,6 +93,22 @@ back, a few tens of cents a day at Opus 5.5 prices, so it stays under the cap. W
 the API refuses requests; the daily job then fails with "Anthropic spend limit reached", commits
 nothing, and the site keeps its previous version until the limit resets or is raised.
 
+## Calendar
+
+`resolveCalendar(date, schedule)` in `src/pipeline/calendar.ts` places a Pacific date on the 49ers'
+nflverse schedule (`games.csv`, which has no preseason games):
+
+- **Game Week**: from the day after one game through the day of the next, naming the upcoming and
+  previous game. Each playoff game is its own Game Week. A season's first Game Week starts six days
+  before kickoff.
+- **Bye Week**: when the schedule skips a week. It runs from the day after the previous game until
+  seven days before the next one, where that game's Game Week begins.
+- **Offseason**: every other date, including the preseason and the time after the last scheduled game.
+
+A job opts in through its `writes` entry in `publish.ts`'s `JOBS` registry: given the calendar
+position, it returns the content types to write (none means nothing to do). The pipeline puts the
+position on `job.calendar` for the writer, and needs `snapshot.schedule` from the sources.
+
 ## Smoke test
 
 The real adapters have no unit tests that touch the network or Claude. Check them by hand:
@@ -100,6 +124,9 @@ ANTHROPIC_API_KEY=sk-ant-... npx tsx scripts/smoke-daily-news.ts --claude
 ANTHROPIC_API_KEY=sk-ant-... npx tsx scripts/smoke-daily-news.ts --claude --out /tmp/gb-news
 ```
 
+`scripts/smoke-thursday-preview.ts` does the same for the Thursday preview job (sources only, it
+prints where the date falls on the calendar; `--claude` writes the Game Preview or season recap).
+
 Both take `--date YYYY-MM-DD` (default: today, Pacific). The full check is one real run of the daily
 news workflow (Actions → Daily news → Run workflow): its News Summaries pass the checks, are
 committed to `main`, and appear on the live site's News page.
@@ -113,3 +140,7 @@ they commit, because pushes made with `GITHUB_TOKEN` don't trigger the push even
 `.github/workflows/daily-news.yml` runs the daily news job every morning. A published result is
 committed to `main` and deployed; a rejected one fails the run (GitHub emails the owner) and commits
 nothing. It uses the real adapters and the `ANTHROPIC_API_KEY` secret.
+
+`.github/workflows/thursday-preview.yml` runs the Thursday preview job every Thursday morning, after
+the Wednesday injury report: a Game Preview in a Game Week, a season recap in a Bye Week, and nothing
+(no commit, no deploy) in the Offseason. Same commit, deploy, and failure behaviour as daily news.
