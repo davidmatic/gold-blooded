@@ -1,4 +1,5 @@
-// How an update to an Offseason running document is folded into the document as it stood.
+// How an update to a running document is folded into the document as it stood (the Offseason's
+// two, and the Purdy Shrine's Reasons We Love Brock, at the end).
 //
 // The writer returns only what is new or corrected this run (today's moves, the picks made so
 // far, ...). Each list keeps every item it had, and an update item replaces the item with the
@@ -9,6 +10,7 @@
 //
 // The draft is untrusted, so anything that isn't a list is passed through for the schema to reject.
 import type { DraftCoverageData, FreeAgencyTrackerData } from "../content/offseason";
+import type { ReasonsWeLoveBrockData } from "../content/purdy-shrine";
 
 type Item = Record<string, unknown>;
 
@@ -24,6 +26,15 @@ export function mergeDraftCoverage(draft: Record<string, unknown>, current?: Dra
   if (Array.isArray(picks)) picks.sort((a, b) => Number((a as Item).overall) - Number((b as Item).overall));
   const profiles = inOrder(current?.profiles, draft.profiles, (profile) => name(profile.player));
   return { ...draft, teamNeeds, mockDrafts, picks, profiles, sources: updateSources(draft, [draft.mockDrafts, draft.picks, draft.profiles]) };
+}
+
+/**
+ * Reasons We Love Brock: the writer's one new `reason` goes on the end of the list, with when it
+ * was added and the game it came from. The list's schema rejects a reason it already has.
+ */
+export function appendReason(draft: Record<string, unknown>, current: ReasonsWeLoveBrockData | undefined, stamp: { added: string; gameWeek: string }): Record<string, unknown> {
+  const { reason, ...rest } = draft;
+  return { ...rest, reasons: [...(current?.reasons ?? []), { reason, ...stamp }] };
 }
 
 /** The update's items first, then the current items it doesn't replace. */

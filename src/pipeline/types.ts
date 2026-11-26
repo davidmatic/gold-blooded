@@ -3,6 +3,7 @@ import type { GamePreviewData, HighlightsData, SeasonRecapData, StatBreakdownDat
 import type { SeasonStatsData } from "../content/season-stats";
 import type { GameStatus, NewsSummaryData, PracticeStatus } from "../content/news-summary";
 import type { DraftCoverageData, FreeAgencyTrackerData } from "../content/offseason";
+import type { LoveLetterData, ReasonsWeLoveBrockData } from "../content/purdy-shrine";
 import type { CalendarPosition, ScheduledGame } from "./calendar";
 import type { NflverseStats } from "./stats";
 
@@ -78,14 +79,15 @@ export interface SourceSnapshot {
   /** Best-effort outlets the sources couldn't collect this run (blocked, down), and why. */
   skipped?: SkippedSource[];
   /**
-   * The Offseason's running documents as they stand before this run, read from the content
-   * store. Absent (or missing one) before the Offseason's first update.
+   * The running documents as they stand before this run, read from the content store: the
+   * Offseason's, and the Purdy Shrine's Reasons We Love Brock. Absent (or missing one) before
+   * a document's first update.
    */
   current?: Partial<{ [T in RunningContentType]: { data: ContentTypes[T]; body: string } }>;
 }
 
-/** Content types that are one running document per Offseason, updated run after run. */
-export type RunningContentType = "free-agency-tracker" | "draft-coverage";
+/** Content types that are one running document (per Offseason, or for good), updated run after run. */
+export type RunningContentType = "free-agency-tracker" | "draft-coverage" | "reasons-we-love-brock";
 
 /** One video from an official channel's YouTube RSS feed. */
 export interface OfficialVideo {
@@ -125,6 +127,8 @@ export interface ContentTypes {
   "draft-coverage": DraftCoverageData;
   highlights: HighlightsData;
   "season-stats": SeasonStatsData;
+  "love-letter": LoveLetterData;
+  "reasons-we-love-brock": ReasonsWeLoveBrockData;
 }
 export type ContentType = keyof ContentTypes;
 
