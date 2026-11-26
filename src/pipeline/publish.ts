@@ -11,6 +11,7 @@ import { injuryStatusesMatch } from "./checks/injury-status";
 import { quotesAreVerbatim } from "./checks/quotes";
 import { podcastsAttributed } from "./checks/podcast-attribution";
 import { sourceLinksResolve } from "./checks/source-links";
+import { offseasonItemsSourced } from "./checks/offseason-items";
 import { CONTENT_TYPES } from "./content-types";
 import type {
   CheckFailure,
@@ -43,6 +44,11 @@ const JOBS: Partial<Record<JobType, JobDefinition>> = {
     checks: ALL_CHECKS,
     writes: (calendar) =>
       calendar.period === "game-week" ? ["game-preview"] : calendar.period === "bye-week" ? ["season-recap"] : [],
+  },
+  // The Offseason's running documents, updated every Offseason day; nothing in the season.
+  offseason: {
+    checks: [...ALL_CHECKS, offseasonItemsSourced],
+    writes: (calendar) => (calendar.period === "offseason" ? ["free-agency-tracker", "draft-coverage"] : []),
   },
 };
 
@@ -84,7 +90,7 @@ function toEntry(draft: DraftEntry, job: Job, snapshot: SourceSnapshot): { entry
     return { failure: { check: "schema", entry: draft.type, reason: `the ${job.type} job doesn't write a ${draft.type} on ${job.date}` } };
   }
   const definition = CONTENT_TYPES[draft.type];
-  const data = { ...draft.data, ...definition.owned(job, snapshot) };
+  const data = { ...(definition.merge ? definition.merge(draft.data, snapshot) : draft.data), ...definition.owned(job, snapshot) };
   const path = definition.path(data, job);
   const parsed = definition.schema.safeParse(data);
   if (!parsed.success) {
