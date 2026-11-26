@@ -20,12 +20,11 @@
 //   the run, rather than leave his career short;
 // - from the content folder, the Reasons We Love Brock list as it stands, which the new reason
 //   is added to (a list that fails its schema fails the run, like the Prediction Record).
-import type { z } from "astro/zod";
 import { GAME_WEEK_FILES, gamePreviewSchema } from "../../../content/game-week";
 import { predictionRecordPath, predictionRecordSchema } from "../../../content/prediction-record";
 import { PURDY, PURDY_SHRINE_FILES, reasonsWeLoveBrockSchema } from "../../../content/purdy-shrine";
 import { gameToCover, gameWeekSlug, resolveCalendar, TEAM, type ScheduledGame } from "../../calendar";
-import { readEntry } from "../../content-store";
+import { readEntry, readValid } from "../../content-store";
 import type { Job, SourceAdapter, SourceSnapshot } from "../../types";
 import { fetchNflverseStats, fetchPlayerSeason } from "./nflverse-stats";
 import { fetchSchedule } from "./schedule";
@@ -87,6 +86,8 @@ export function postGameSources(options: PostGameSourcesOptions = {}): SourceAda
   };
 }
 
+const UNSCORED = "the Prediction Record can't be scored";
+
 /** Purdy's nflverse lines from each season since his first, before this one. */
 async function purdyEarlierSeasons(fetchPage: FetchPage, season: number) {
   const seasons = Array.from({ length: Math.max(season - PURDY.firstSeason, 0) }, (_, i) => PURDY.firstSeason + i);
@@ -95,18 +96,7 @@ async function purdyEarlierSeasons(fetchPage: FetchPage, season: number) {
 
 /** The game's Game Preview and the season's Prediction Record, from the content folder. */
 async function predictionInputs(contentDir: string, game: ScheduledGame): Promise<Pick<SourceSnapshot, "gamePreview" | "current">> {
-  const gamePreview = await readValid(contentDir, `game-weeks/${gameWeekSlug(game.season, game.week, game.gameType)}/${GAME_WEEK_FILES["game-preview"]}`, gamePreviewSchema);
-  const record = await readValid(contentDir, predictionRecordPath(game.season), predictionRecordSchema);
+  const gamePreview = await readValid(contentDir, `game-weeks/${gameWeekSlug(game.season, game.week, game.gameType)}/${GAME_WEEK_FILES["game-preview"]}`, gamePreviewSchema, UNSCORED);
+  const record = await readValid(contentDir, predictionRecordPath(game.season), predictionRecordSchema, UNSCORED);
   return { ...(gamePreview && { gamePreview: gamePreview.data }), current: record ? { "prediction-record": record } : {} };
-}
-
-async function readValid<T>(contentDir: string, file: string, schema: z.ZodType<T>, consequence = "the Prediction Record can't be scored"): Promise<{ data: T; body: string } | undefined> {
-  const entry = await readEntry(contentDir, file);
-  if (!entry) return undefined;
-  const parsed = schema.safeParse(entry.data);
-  if (!parsed.success) {
-    const reason = parsed.error.issues.map((issue) => `${issue.path.join(".") || "frontmatter"}: ${issue.message}`).join("; ");
-    throw new Error(`${file} doesn't match its schema, so ${consequence} (fix the file): ${reason}`);
-  }
-  return { data: parsed.data, body: entry.body };
 }

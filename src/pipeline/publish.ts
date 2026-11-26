@@ -18,6 +18,7 @@ import { injuryMentionsStated } from "./checks/injury-mentions";
 import { numbersGrounded } from "./checks/numbers";
 import { filmRoomCovered, purdyTagGrounded } from "./checks/film-room";
 import { CONTENT_TYPES } from "./content-types";
+import { schemaIssues } from "./content-store";
 import type {
   CheckFailure,
   ContentEntry,
@@ -152,10 +153,7 @@ function toEntry(draft: DraftEntry, job: Job, snapshot: SourceSnapshot): { entry
   const data = { ...(definition.merge ? definition.merge(draft.data, snapshot, job) : draft.data), ...definition.owned(job, snapshot) };
   const path = definition.path(data, job);
   const parsed = definition.schema.safeParse(data);
-  if (!parsed.success) {
-    const reason = parsed.error.issues.map((issue) => `${issue.path.join(".") || "draft"}: ${issue.message}`).join("; ");
-    return { failure: { check: "schema", entry: path, reason } };
-  }
+  if (!parsed.success) return { failure: { check: "schema", entry: path, reason: schemaIssues(parsed.error, "draft") } };
   const body = definition.body ? definition.body(draft, snapshot) : draft.body;
   return { entry: { type: draft.type, path, data: parsed.data, body } as ContentEntry };
 }
