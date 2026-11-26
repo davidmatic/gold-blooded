@@ -1,0 +1,38 @@
+{
+  "documents": [
+    {
+      "url": "https://example.com/gold-blooded-fixture/injury-report",
+      "outlet": "Pipeline fixture",
+      "title": "Sample injury report",
+      "publishedAt": "2026-11-25T20:00:00Z",
+      "text": "Sample source text for the daily news pipeline. Not real news."
+    },
+    {
+      "url": "https://example.com/gold-blooded-fixture/transactions",
+      "outlet": "Pipeline fixture",
+      "title": "Sample transactions",
+      "publishedAt": "2026-11-25T18:00:00Z",
+      "text": "Sample source text for the daily news pipeline. Not real news."
+    }
+  ],
+  "drafts": [
+    {
+      "type": "news-summary",
+      "data": {
+        "title": "Sample Injury summary (pipeline fixture)",
+        "category": "Injury",
+        "sources": [{ "url": "https://example.com/gold-blooded-fixture/injury-report", "outlet": "Pipeline fixture" }]
+      },
+      "body": "This is sample content from the daily news pipeline's fixture adapters. It is not real news."
+    },
+    {
+      "type": "news-summary",
+      "data": {
+        "title": "Sample Personnel summary (pipeline fixture)",
+        "category": "Personnel",
+        "sources": [{ "url": "https://example.com/gold-blooded-fixture/transactions", "outlet": "Pipeline fixture" }]
+      },
+      "body": "This is sample content from the daily news pipeline's fixture adapters. It is not real news."
+    }
+  ]
+}

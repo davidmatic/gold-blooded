@@ -1,0 +1,8 @@
+---
+import { getCollection } from "astro:content";
+import NewsPage from "../../components/NewsPage.astro";
+import { newestFirst } from "../../site/news";
+
+const entries = newestFirst(await getCollection("news"));
+---
+<NewsPage entries={entries} />

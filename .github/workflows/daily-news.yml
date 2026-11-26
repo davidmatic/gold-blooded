@@ -1,0 +1,67 @@
+name: Daily news
+
+# Runs the daily news publish job. On a published result it commits the new News Summaries
+# to main and deploys the site. On a rejected result the job fails (GitHub notifies the
+# owner), nothing is committed, and the site keeps its previous version.
+#
+# Uses the fixture adapters until the real source fetchers and Claude writer land (#4).
+
+on:
+  schedule:
+    - cron: "0 15 * * *" # 15:00 UTC = 7am / 8am Pacific
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Date to run for (YYYY-MM-DD, Pacific). Defaults to today.
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Run the daily news job
+        run: npx tsx scripts/publish.ts daily-news --adapters fixture ${DATE:+--date "$DATE"}
+        env:
+          DATE: ${{ inputs.date }}
+      - name: Commit new content
+        id: commit
+        run: |
+          git add content
+          if git diff --cached --quiet; then
+            echo "No content changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Daily news for $(TZ=America/Los_Angeles date +%F)"
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: publish
+    if: needs.publish.outputs.sha != ''
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.publish.outputs.sha }}

@@ -1,12 +1,27 @@
 ---
+import { getCollection } from "astro:content";
+import NewsSummaryCard from "../components/NewsSummaryCard.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { homepageNews } from "../site/news";
 import { sections, sitePath } from "../site/sections";
+
+const latestNews = homepageNews(await getCollection("news"));
 ---
 <BaseLayout>
   <section class="hero">
     <h1>Gold Blooded</h1>
     <p>An unofficial 49ers fan site. Weekly previews, stats, news, film, and a shrine to Brock Purdy.</p>
   </section>
+
+  {latestNews.length > 0 && (
+    <section class="latest-news" aria-labelledby="latest-news-heading">
+      <h2 id="latest-news-heading">Latest News</h2>
+      <div class="news-list">
+        {latestNews.map((entry) => <NewsSummaryCard entry={entry} />)}
+      </div>
+      <p><a href={sitePath("news")}>All News Summaries</a></p>
+    </section>
+  )}
 
   <ul class="section-cards">
     {sections.map((section) => (
